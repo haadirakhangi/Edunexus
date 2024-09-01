@@ -25,3 +25,4 @@ google-search-results
 faiss-cpu
 pypdf
 google-generativeai
+langchain-community
