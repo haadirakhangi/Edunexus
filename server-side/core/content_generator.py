@@ -8,11 +8,7 @@ class ContentGenerator:
         self.openai_client = OpenAIProvider()
 
     def generate_content(self, output, module_name, api_key_to_use):
-        prompt_content_gen = """I'm seeking your expertise on the sub-module : {sub_module_name} \which comes under the module: {module_name}.\
-    As a knowledgeable educational assistant, I trust in your ability to provide \
-    a comprehensive explanation of this sub-module. Think about the sub-module step by step and design the best way to explain the sub-module to a student. \
-    Your response should cover essential aspects such as definition, in-depth examples, and any details crucial for understanding the topic. \
-    Please generate quality content on the sub-module ensuring the response is sufficiently detailed covering all the relevant topics related to the sub-module.
+        prompt_content_gen = """I'm seeking your expertise on the sub-module : {sub_module_name} \which comes under the module: {module_name}. As a knowledgeable educational assistant, I trust in your ability to provide a comprehensive explanation of this sub-module. Think about the sub-module step by step and design the best way to explain the sub-module to a student. Your response should cover essential aspects such as definition, in-depth examples, and any details crucial for understanding the topic. Please generate quality content on the sub-module ensuring the response is sufficiently detailed covering all the relevant topics related to the sub-module.
 
     In your response, organize the information into subsections for clarity and elaborate on each subsection with suitable examples if and only if it is necessary. \
     Include specific hypothetical scenario-based examples (only if it is necessary) or important sub-sections related to the subject to enhance practical understanding. \
