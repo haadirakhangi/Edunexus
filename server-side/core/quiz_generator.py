@@ -60,13 +60,7 @@ class QuizGenerator:
         return output
     
     def generate_applied_quiz(self, sub_modules):
-        quiz_prompt = """As an educational chatbot named ISSAC, your task is to create a set of 10 creative \
-            and application-based quiz questions with multiple-choice options that should be based on the sub-modules \
-            as well as any related sub-topic. Create questions in a scenario-based manner like the ones in a word problem \
-            or applied problems (starting with 'suppose...', 'imagine...', 'if...' or 'let's say...') to efficiently test the understanding of concepts and principles to solve real-world \
-            or hypothetical situations based on the sub modules. The questions should be descriptive and lengthy to give \
-            a complete scenario to the student. \
-            Ensure that the output is a valid JSON format, with a single 'quizData' which is a list of dictionaries structured as follows:
+        quiz_prompt = """As an educational chatbot named ISSAC, your task is to create a set of 10 creative and application-based quiz questions with multiple-choice options that should be based on the sub-modules as well as any related sub-topic. Create questions in a scenario-based manner like the ones in a word problem or applied problems (starting with 'suppose...', 'imagine...', 'if...' or 'let's say...') to efficiently test the understanding of concepts and principles to solve real-world or hypothetical situations based on the sub modules. The questions should be descriptive and lengthy to give a complete scenario to the student. Ensure that the output is a valid JSON format, with a single 'quizData' which is a list of dictionaries structured as follows:
     ```
     "question": "The question here",
     "options": ["Option A", "Option B", "Option C", "Option D"],
@@ -87,8 +81,7 @@ class QuizGenerator:
     def generate_applied_quiz_from_web(self, sub_modules):
         search_result = self.tavily_client.search_context(','.join(sub_modules))
         quiz_prompt_for_web = """
-        As an educational chatbot named ISAAC, your task is to create a diverse set of 10 creative and application-based quiz questions \
-    with multiple-choice options that should be based on the sub-modules. You will be given information from the internet related to the sub-modules. \
+        As an educational chatbot named ISAAC, your task is to create a diverse set of 10 creative and application-based quiz questions with multiple-choice options that should be based on the sub-modules. You will be given information from the internet related to the sub-modules.
     Use this information to create the quiz questions.
 
     Sub Modules : {sub_modules}
@@ -97,10 +90,7 @@ class QuizGenerator:
 
 
     Create questions in a scenario-based manner like the ones in a word problem or applied problems
-    to efficiently test the understanding of concepts and principles to solve real-world or hypothetical situations based on the sub modules. \
-    The questions should be descriptive and should provide hypothetical scenarios to give a complete scenario to the student. \
-
-    Ensure that the output is a valid JSON format, with a single 'quizData' which is a list of dictionaries structured as follows:
+    to efficiently test the understanding of concepts and principles to solve real-world or hypothetical situations based on the sub modules. The questions should be descriptive and should provide hypothetical scenarios to give a complete scenario to the student. Ensure that the output is a valid JSON format, with a single 'quizData' which is a list of dictionaries structured as follows:
     ```
     "question": "The question here",
     "options": ["Option A", "Option B", "Option C", "Option D"],
@@ -117,10 +107,7 @@ class QuizGenerator:
         return output
 
     def generate_conversation_quiz(self, sub_modules):
-        quiz_prompt = """You are an educational examiner and your task is to ask various conceptual questions to a student(asking them to explain or elaborate their answers) \
-    based on the specified list of topics. \
-    Imagine as if you are talking to the student while asking the questions.
-    Ensure that the output is a valid JSON format, with the keys being the question number and values being the questions.
+        quiz_prompt = """You are an educational examiner and your task is to ask various conceptual questions to a student(asking them to explain or elaborate their answers) based on the specified list of topics. Imagine as if you are talking to the student while asking the questions. Ensure that the output is a valid JSON format, with the keys being the question number and values being the questions.
 
     Create a set of 1 concept-based quiz questions in the above-mentioned format.
     ```
@@ -134,10 +121,7 @@ class QuizGenerator:
 
     def generate_conversation_quiz_from_web(self, sub_modules):
         search_result = self.tavily_client.search_context(','.join(sub_modules), search_depth="advanced", max_tokens=4000)
-        quiz_prompt = """You are an educational examiner and your task is to ask various conceptual questions to a student (asking them to explain or elaborate their answers) \
-    based on the specified list of topics. \
-    Imagine as if you are talking to the student while asking the questions. You will be given information from the internet related to the sub-modules. \
-    Use this information to create the questions.
+        quiz_prompt = """You are an educational examiner and your task is to ask various conceptual questions to a student (asking them to explain or elaborate their answers) based on the specified list of topics. Imagine as if you are talking to the student while asking the questions. You will be given information from the internet related to the sub-modules. Use this information to create the questions.
 
     Sub Modules : ```{sub_modules}```
 

@@ -7,13 +7,7 @@ class ModuleGenerator:
         self.tavily_client = TavilyProvider()
 
     def generate_module_summary(self, topic, level):
-        prompt_module_generation = """You are an educational assistant with knowledge in various domains. \
-    You will be provided with a topic and your task is to generate suitable number of module names \
-    that are related to the topic and a brief summary on each module. \
-    Make sure that each Module name should not be a subset of any other modules. \
-    The difficulty and level of the modules that are generated should be of {level}. \
-    The output should be in json format where each key corresponds to the complete module name and the \
-    values are the brief summary of that module.
+        prompt_module_generation = """You are an educational assistant with knowledge in various domains. You will be provided with a topic and your task is to generate suitable number of module names that are related to the topic and a brief summary on each module. Make sure that each Module name should not be a subset of any other modules. The difficulty and level of the modules that are generated should be of {level}. The output should be in json format where each key corresponds to the complete module name and the values are the brief summary of that module.
     ```
     Topic: {topic}
     ```"""
