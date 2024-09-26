@@ -72,3 +72,6 @@ class OpenAIProvider:
     def list_assistant_messages(self, thread_id):
         messages = self.openai_client.beta.threads.messages.list(thread_id=thread_id,order="asc")
         return messages
+    
+    def _client(self):
+        return self.openai_client
