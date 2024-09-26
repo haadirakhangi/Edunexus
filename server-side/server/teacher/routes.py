@@ -2,13 +2,13 @@ import os
 import string
 import secrets
 from io import BytesIO
-from server.app import db, bcrypt
+from app import db, bcrypt, users
 from iso639 import Lang
 from datetime import datetime
 from gtts import gTTS
 from deep_translator import GoogleTranslator
 from lingua import LanguageDetectorBuilder
-from flask import request, session, jsonify,  Blueprint, send_file
+from flask import request, session, jsonify, send_file
 from models.database_model import User, Topic, Module, CompletedModule, Query, OngoingModule
 from concurrent.futures import ThreadPoolExecutor
 from flask_cors import cross_origin
@@ -26,8 +26,6 @@ from core.quiz_generator import QuizGenerator
 from core.pdf_generator import PdfGenerator
 from core.evaluator import Evaluator
 from server.utils import ServerUtils, AssistantUtils
-
-users = Blueprint(name='users', import_name=__name__)
 
 device_type = 'cpu'
 embedding_model_name = "BAAI/bge-small-en-v1.5"
