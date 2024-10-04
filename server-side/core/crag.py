@@ -228,3 +228,30 @@ def web_search(state):
     documents.append(web_results)
 
     return {"keys": {"documents": documents, "question": question}}
+
+def decide_to_generate(state):
+    """
+    Helper function to determine whether to generate an answer or re-generate a question for web search.
+
+    Args:
+        state (dict): The current state of the agent, including all keys.
+
+    Returns:
+        str: Next node to call
+    """
+
+    print("*" * 5, " DECIDE TO GENERATE ", "*" * 5)
+    state_dict = state["keys"]
+    question = state_dict["question"]
+    filtered_documents = state_dict["documents"]
+    search = state_dict["run_web_search"]
+
+    if search == "Yes":
+        # All documents have been filtered check_relevance
+        # We will re-generate a new query
+        print("*" * 5, " DECISION: TRANSFORM QUERY and RUN WEB SEARCH ", "*" * 5)
+        return "transform_query"
+    else:
+        # We have relevant documents, so generate answer
+        print("*" * 5, " DECISION: GENERATE ", "*" * 5)
+        return "generate"
