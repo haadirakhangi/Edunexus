@@ -1,9 +1,9 @@
-from api.openai_client import OpenAIProvider
+from api.gemini_client import GeminiProvider
 from api.tavily_client import TavilyProvider
 
 class QuizGenerator:
     def __init__(self):
-        self.openai_client = OpenAIProvider()
+        self.gemini_client = GeminiProvider()
         self.tavily_client = TavilyProvider()
 
     def generate_quiz(self, sub_modules):
@@ -26,11 +26,11 @@ class QuizGenerator:
     ```
     """
         
-        output = self.openai_client.generate_json_response(quiz_prompt.format(sub_modules = sub_modules))
+        output = self.gemini_client.generate_json_response(quiz_prompt.format(sub_modules = sub_modules))
         return output
     
     def generate_quiz_from_web(self, sub_modules):
-        search_result = self.tavily_client.search_context(','.join(sub_modules))
+        search_result = self.tavily_client.search_context(','.join(sub_modules[:4]))
 
         quiz_prompt_for_web = """As an educational chatbot named ISAAC, your task is to create a set of 10 theoretical quiz questions \
     with multiple-choice options that should cover all the sub-modules. You will be given information from the internet related to the sub-modules. \
@@ -56,7 +56,7 @@ class QuizGenerator:
 
     """
         
-        output = self.openai_client.generate_json_response(quiz_prompt_for_web.format(sub_modules = sub_modules, search_result = search_result))
+        output = self.gemini_client.generate_json_response(quiz_prompt_for_web.format(sub_modules = sub_modules, search_result = search_result))
         return output
     
     def generate_applied_quiz(self, sub_modules):
@@ -75,11 +75,11 @@ class QuizGenerator:
     Sub Modules : {sub_modules}
     """
         
-        output = self.openai_client.generate_json_response(quiz_prompt.format(sub_modules = sub_modules))
+        output = self.gemini_client.generate_json_response(quiz_prompt.format(sub_modules = sub_modules))
         return output
 
     def generate_applied_quiz_from_web(self, sub_modules):
-        search_result = self.tavily_client.search_context(','.join(sub_modules))
+        search_result = self.tavily_client.search_context(','.join(sub_modules[:4]))
         quiz_prompt_for_web = """
         As an educational chatbot named ISAAC, your task is to create a diverse set of 10 creative and application-based quiz questions with multiple-choice options that should be based on the sub-modules. You will be given information from the internet related to the sub-modules.
     Use this information to create the quiz questions.
@@ -103,7 +103,7 @@ class QuizGenerator:
     Create a set of 10 questions that follow the described manner and the above-mentioned format.
     """
 
-        output = self.openai_client.generate_json_response(quiz_prompt_for_web.format(sub_modules = sub_modules, search_result = search_result))
+        output = self.gemini_client.generate_json_response(quiz_prompt_for_web.format(sub_modules = sub_modules, search_result = search_result))
         return output
 
     def generate_conversation_quiz(self, sub_modules):
@@ -115,12 +115,12 @@ class QuizGenerator:
     ```
     """
 
-        output = self.openai_client.generate_json_response(quiz_prompt.format(sub_modules = sub_modules))
+        output = self.gemini_client.generate_json_response(quiz_prompt.format(sub_modules = sub_modules))
         output_list = list(output.values())
         return output_list
 
     def generate_conversation_quiz_from_web(self, sub_modules):
-        search_result = self.tavily_client.search_context(','.join(sub_modules), search_depth="advanced", max_tokens=4000)
+        search_result = self.tavily_client.search_context(','.join(sub_modules[:4]), search_depth="advanced", max_tokens=4000)
         quiz_prompt = """You are an educational examiner and your task is to ask various conceptual questions to a student (asking them to explain or elaborate their answers) based on the specified list of topics. Imagine as if you are talking to the student while asking the questions. You will be given information from the internet related to the sub-modules. Use this information to create the questions.
 
     Sub Modules : ```{sub_modules}```
@@ -133,6 +133,6 @@ class QuizGenerator:
 
     """
         
-        output = self.openai_client.generate_json_response(quiz_prompt.format(sub_modules = sub_modules, search_result = search_result))
+        output = self.gemini_client.generate_json_response(quiz_prompt.format(sub_modules = sub_modules, search_result = search_result))
         output_list = list(output.values())
         return output_list

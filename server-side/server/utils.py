@@ -110,7 +110,11 @@ class ServerUtils:
     
 class AssistantUtils:
     @staticmethod
-    def get_page_context(index=1):
+    def get_page_context(index: int = 1):
+        '''Get information about the current page that the user is exploring. Used to answer user queries related to the current page they're exploring.
+        Args:
+            index (int): Index of the submodule.
+        '''
         module_id = session.get("module_id", None)
         module = Module.query.get(module_id)
         data = module.submodule_content[index]

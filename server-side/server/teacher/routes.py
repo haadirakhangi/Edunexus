@@ -6,18 +6,21 @@ from server import db, bcrypt
 from iso639 import Lang
 from datetime import datetime
 from gtts import gTTS
+from sqlalchemy import desc
 from deep_translator import GoogleTranslator
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from lingua import LanguageDetectorBuilder
 from flask import request, session, jsonify, send_file, Blueprint
-from models.database_model import User, Topic, Module, CompletedModule, Query, OngoingModule
+from models.database_model import User, Topic, Module, CompletedModule, Query, OngoingModule, Transaction
 from concurrent.futures import ThreadPoolExecutor
 from flask_cors import cross_origin
 from werkzeug.utils import secure_filename
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import PyPDFLoader
-from api.openai_client import OpenAIProvider
+from langchain_community.document_loaders import PyPDFLoader, ScrapflyLoader
+from langchain_community.document_loaders.merge import MergedDataLoader
+from api.gemini_client import GeminiProvider
 from api.serper_client import SerperProvider
 from core.submodule_generator import SubModuleGenerator
 from core.content_generator import ContentGenerator
@@ -25,39 +28,36 @@ from core.module_generator import ModuleGenerator
 from core.quiz_generator import QuizGenerator
 from core.pdf_generator import PdfGenerator
 from core.evaluator import Evaluator
+from core.recommendation_generator import RecommendationGenerator
 from server.utils import ServerUtils, AssistantUtils
+import json
 
 users = Blueprint(name='users', import_name=__name__)
 
 device_type = 'cpu'
 embedding_model_name = "BAAI/bge-small-en-v1.5"
 encode_kwargs = {'normalize_embeddings': True} # set True to compute cosine similarity
-EMBEDDINGS = HuggingFaceBgeEmbeddings(
-                model_name=embedding_model_name,
-                model_kwargs={'device': device_type },
-                encode_kwargs=encode_kwargs
-            )
+# EMBEDDINGS = HuggingFaceBgeEmbeddings(
+#                 model_name=embedding_model_name,
+#                 model_kwargs={'device': device_type },
+#                 encode_kwargs=encode_kwargs
+#             )
+
+EMBEDDINGS = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
 LANG_DETECTOR = LanguageDetectorBuilder.from_all_languages().with_preloaded_language_models().build()
-OPENAI_CLIENT = OpenAIProvider()
-TOOLS = [
-    {
-        'type': 'function',
-        'function': {
-            'name': 'get_context_from_page',
-            'description': "Get information about the current page that the user is exploring. Used to answer user queries related to the current page they're exploring.",
-            }
-    }
-]
+GEMINI_CLIENT = GeminiProvider()
+TOOLS = [AssistantUtils.get_page_context]
 MODULE_GENERATOR = ModuleGenerator()
 SUB_MODULE_GENERATOR = SubModuleGenerator()
 CONTENT_GENERATOR = ContentGenerator()
 PDF_GENERATOR = PdfGenerator()
 QUIZ_GENERATOR = QuizGenerator()
+RECOMMENDATION_GENERATOR = RecommendationGenerator()
 EVALUATOR = Evaluator()
+USER_DOCS_PATH = os.path.join('server', 'user_docs')
 AVAILABLE_TOOLS = {
     'get_context_from_page': AssistantUtils.get_page_context
 }
-
 
 @users.route('/register',methods=['POST'])
 @cross_origin(supports_credentials=True)
@@ -116,10 +116,9 @@ def login():
     print("Profile",profile)
 
     # create assistant for user
-    assistant, thread = OPENAI_CLIENT.initialize_assistant_and_thread(profile= profile, tools=TOOLS)
-    session['thread_id'] = thread.id
-    session['assistant_id'] = assistant.id
+    assistant = GEMINI_CLIENT.initialize_assistant(profile= profile, tools=TOOLS)
     return jsonify({"message": "User logged in successfully", "email":user.email, "response":True}), 200
+
 
 
 @users.route('/user_profile', methods=['GET', 'POST'])
@@ -215,10 +214,22 @@ def getuser():
             ongoing_modules.append(temp)
             
 
-        
+    print("ALL ON GOING MODULES", all_ongoing_modules_names)  
     query_message = ""
-    user_queries = user.user_query_association        
-    return jsonify({"message": "User found", "query_message":query_message,"user_ongoing_modules":ongoing_modules, "user_completed_module":completed_modules, "response":True}), 200
+    user_queries = user.user_query_association 
+    print("----------------------",user_queries)  
+    if len(user_queries) == 0:
+        query_message = "You have not searched for any topic yet. Please search for a topic to get recommendations."
+        recommended_modules = RECOMMENDATION_GENERATOR.generate_recommendations_with_interests(user_course, user_interest) 
+
+        return jsonify({"message": "User found", "query_message":query_message,"recommended_topics":recommended_modules, "user_ongoing_modules":ongoing_modules, "user_completed_module":completed_modules, "response":True}), 200
+    else:
+        latest_query = Query.query.filter_by(user_id=user_id).order_by(desc(Query.date_search)).first() 
+        base_module = Module.query.filter_by(topic_id=latest_query.topic_id).first()
+        print("Module Name:", base_module.module_name)
+        print("Module Summary:", base_module.summary)
+        recommended_modules = RECOMMENDATION_GENERATOR.generate_recommendations_with_summary(base_module.summary)
+        return jsonify({"message": "User found", "query_message":query_message,"recommended_topics":recommended_modules, "user_ongoing_modules":ongoing_modules, "user_completed_module":completed_modules, "response":True}), 200
 
 # logout route
 @users.route('/logout', methods=['GET'])
@@ -334,18 +345,19 @@ def doc_query_topic(topicname,level,source_lang):
     if 'file' not in request.files:
         return 'No file part', 400
     file = request.files['file']
+    uploads_path = os.path.join('server', 'uploads')
     if file.filename == '':
         return 'No selected file', 400
-    if not os.path.exists("uploads"):
-        os.makedirs("uploads")
+    if not os.path.exists(uploads_path):
+        os.makedirs(uploads_path)
     if file:
         filename = secure_filename(file.filename)
-        file.save(os.path.join("uploads", filename))
+        file.save(os.path.join(uploads_path, filename))
     
-    docs_path = os.path.join("uploads", filename)
+    docs_path = os.path.join(uploads_path, filename)
     loader = PyPDFLoader(docs_path)
     docs = loader.load()
-    docs_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    docs_splitter = RecursiveCharacterTextSplitter(chunk_size=700, chunk_overlap=150)
     split_docs = docs_splitter.split_documents(docs)
     TEXTBOOK_VECTORSTORE = FAISS.from_documents(split_docs, EMBEDDINGS)
     TEXTBOOK_VECTORSTORE.save_local('teacher_docs')
@@ -409,7 +421,6 @@ def doc_query_topic(topicname,level,source_lang):
 @users.route('/query2/doc-upload',methods=['POST'])
 def personalized_module():
     user_id = session.get('user_id')
-    print(session.get('user_id'))
     if user_id is None:
         return jsonify({"message": "User not logged in", "response":False}), 401
     
@@ -419,33 +430,84 @@ def personalized_module():
         return jsonify({"message": "User not found", "response":False}), 404
     
     if 'file' not in request.files:
-        return 'No file part', 400
-    file = request.files['file']
-    if file.filename == '':
-        return 'No selected file', 400
-    if not os.path.exists("uploads"):
-        os.makedirs("uploads")
+        file=None
+        # return 'No file part', 400
+    else:
+        file = request.files['file']
+    # if file.filename == '':
+    #     return 'No selected file', 400
+    uploads_path = os.path.join('server', 'uploads')
+    if not os.path.exists(uploads_path):
+        os.makedirs(uploads_path)
     if file:
         filename = secure_filename(file.filename)
-        file.save(os.path.join("uploads", filename))
+        file.save(os.path.join(uploads_path, filename))
+    links = request.form.get('links')
+    print("LINKS---------------------", links) 
+    links_list = []
+    if links:
+        links_list = json.loads(links)
+    print("LINKS LIST", links_list)
     title = request.form['title']
     description = request.form['description']
     session['user_profile']=description
     session['title']=title
-    DOCS_PATH = os.path.join("uploads", filename)
-    loader = PyPDFLoader(DOCS_PATH)
-    docs = loader.load()
+    if file and len(links_list[0])>0:
+        print("BOTH------------")
+        DOCS_PATH = os.path.join(uploads_path, filename)
+        scrapfly_scrape_config = {
+            "asp": True,  # Bypass scraping blocking and antibot solutions, like Cloudflare
+            "render_js": True,  # Enable JavaScript rendering with a cloud headless browser
+            "proxy_pool": "public_residential_pool",  # Select a proxy pool (datacenter or residnetial)
+            "country": "us",  # Select a proxy location
+            "auto_scroll": True,  # Auto scroll the page
+            "js": "",  # Execute custom JavaScript code by the headless browser
+        }
+
+        scrapfly_loader = ScrapflyLoader(
+            links_list,
+            api_key=os.getenv("SCRAPFLY_API_KEY"),  # Get your API key from https://www.scrapfly.io/
+            continue_on_failure=True,  # Ignore unprocessable web pages and log their exceptions
+            scrape_config=scrapfly_scrape_config,  # Pass the scrape_config object
+            scrape_format="markdown",  # The scrape result format, either `markdown`(default) or `text`
+        )
+        pdf_loader = PyPDFLoader(DOCS_PATH)
+        loader_all = MergedDataLoader(loaders=[scrapfly_loader, pdf_loader])
+    elif file:
+        DOCS_PATH = os.path.join(uploads_path, filename)
+        print("FILE ONLY-------------------")
+        loader_all = PyPDFLoader(DOCS_PATH)
+    elif len(links_list[0])>0:
+        print("LINKS ONLY--------------")
+        scrapfly_scrape_config = {
+            "asp": True,  # Bypass scraping blocking and antibot solutions, like Cloudflare
+            "render_js": True,  # Enable JavaScript rendering with a cloud headless browser
+            "proxy_pool": "public_residential_pool",  # Select a proxy pool (datacenter or residnetial)
+            "country": "us",  # Select a proxy location
+            "auto_scroll": True,  # Auto scroll the page
+            "js": "",  # Execute custom JavaScript code by the headless browser
+        }
+
+        loader_all = ScrapflyLoader(
+            links_list,
+            api_key=os.getenv("SCRAPFLY_API_KEY"),  # Get your API key from https://www.scrapfly.io/
+            continue_on_failure=True,  # Ignore unprocessable web pages and log their exceptions
+            scrape_config=scrapfly_scrape_config,  # Pass the scrape_config object
+            scrape_format="markdown",  # The scrape result format, either `markdown`(default) or `text`
+        )
+
+    docs = loader_all.load()
     docs_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     split_docs = docs_splitter.split_documents(docs)
     TEXTBOOK_VECTORSTORE = FAISS.from_documents(split_docs, EMBEDDINGS)
-    TEXTBOOK_VECTORSTORE.save_local('user_docs')
+    TEXTBOOK_VECTORSTORE.save_local(USER_DOCS_PATH)
     print('CREATED VECTORSTORE')
-    VECTORDB_TEXTBOOK = FAISS.load_local('user_docs', EMBEDDINGS, allow_dangerous_deserialization=True)
+    VECTORDB_TEXTBOOK = FAISS.load_local(USER_DOCS_PATH, EMBEDDINGS, allow_dangerous_deserialization=True)
     submodules = SUB_MODULE_GENERATOR.generate_submodules_from_textbook(title,VECTORDB_TEXTBOOK)
     values_list = list(submodules.values())
     session['submodules']=submodules
-    return jsonify({"message": "Query successful","submodules":values_list,"response":True}), 200
 
+    return jsonify({"message": "Query successful","submodules":values_list,"response":True}), 200
 @users.route('/query2/doc_generate_content',methods=['GET'])
 def personalized_module_content():
     user_id = session.get("user_id", None)
@@ -461,7 +523,7 @@ def personalized_module_content():
     key = ''.join(secrets.choice(characters) for _ in range(7))
     title=session['title']
     description=session['user_profile']
-    VECTORDB_TEXTBOOK = FAISS.load_local('user_docs', EMBEDDINGS, allow_dangerous_deserialization=True)
+    VECTORDB_TEXTBOOK = FAISS.load_local(USER_DOCS_PATH, EMBEDDINGS, allow_dangerous_deserialization=True)
     # new_module = PersonalizedModule(
     #     module_code=key,
     #     module_name=modulename,
@@ -475,19 +537,22 @@ def personalized_module_content():
         submodules = session['submodules']
         keys_list = list(submodules.keys())
         future_images_list = executor.submit(SerperProvider.module_image_from_web, submodules)
-        future_video_list = executor.submit(SerperProvider.module_videos_from_web, submodules)
-        submodules_split_one = {key: submodules[key] for key in keys_list[:3]}
-        submodules_split_two = {key: submodules[key] for key in keys_list[3:]}
+        # future_video_list = executor.submit(SerperProvider.module_videos_from_web, submodules)
+        submodules_split_one = {key: submodules[key] for key in keys_list[:2]}
+        submodules_split_two = {key: submodules[key] for key in keys_list[2:4]}
+        submodules_split_three = {key: submodules[key] for key in keys_list[4:]}
         future_content_one = executor.submit(ContentGenerator().generate_content_from_textbook,title ,submodules_split_one,description,VECTORDB_TEXTBOOK,'first')
         future_content_two = executor.submit(ContentGenerator().generate_content_from_textbook,title ,submodules_split_two,description,VECTORDB_TEXTBOOK,'second')
+        future_content_three = executor.submit(ContentGenerator().generate_content_from_textbook,title ,submodules_split_three,description,VECTORDB_TEXTBOOK,'third')
 
     # Retrieve the results when both functions are done
     content_one = future_content_one.result()
     content_two = future_content_two.result()
+    content_three = future_content_three.result()
 
-    content = content_one + content_two
+    content = content_one + content_two + content_three
     images_list = future_images_list.result()
-    video_list = future_video_list.result()
+    # video_list = future_video_list.result()
 
     # new_module.submodule_content = content
     # new_module.image_urls = images_list
@@ -502,7 +567,7 @@ def personalized_module_content():
     trans_submodule_content = ServerUtils.translate_submodule_content(content, source_language)
     print(f"Translated submodule content: {trans_submodule_content}")
     
-    return jsonify({"message": "Query successful", "images": images_list,"videos": video_list, "content": trans_submodule_content, "response": True}), 200
+    return jsonify({"message": "Query successful", "images": images_list,"content": trans_submodule_content, "response": True}), 200
 
 # query route --> if websearch is true then fetch from web and feed into model else directly feed into model
 # save frequently searched queries in database for faster retrieval
@@ -633,11 +698,13 @@ def course_overview(module_id, source_language, websearch):
             print(submodules)
             keys_list = list(submodules.keys())
             future_images_list = executor.submit(SerperProvider.module_image_from_web, submodules)
-            future_video_list = executor.submit(SerperProvider.__class__module_videos_from_web, submodules)
-            submodules_split_one = {key: submodules[key] for key in keys_list[:3]}
-            submodules_split_two = {key: submodules[key] for key in keys_list[3:]}
+            future_video_list = executor.submit(SerperProvider.module_videos_from_web, submodules)
+            submodules_split_one = {key: submodules[key] for key in keys_list[:2]}
+            submodules_split_two = {key: submodules[key] for key in keys_list[2:4]}
+            submodules_split_three = {key: submodules[key] for key in keys_list[4:]}
             future_content_one = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_one, module.module_name, 'first')
             future_content_two = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_two, module.module_name, 'second')
+            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_three, module.module_name, 'third')
 
         else:
             submodules = SUB_MODULE_GENERATOR.generate_submodules(module.module_name)
@@ -645,16 +712,19 @@ def course_overview(module_id, source_language, websearch):
             keys_list = list(submodules.keys())
             future_images_list = executor.submit(SerperProvider.module_image_from_web, submodules)
             future_video_list = executor.submit(SerperProvider.module_videos_from_web, submodules)
-            submodules_split_one = {key: submodules[key] for key in keys_list[:3]}
-            submodules_split_two = {key: submodules[key] for key in keys_list[3:]}
+            submodules_split_one = {key: submodules[key] for key in keys_list[:2]}
+            submodules_split_two = {key: submodules[key] for key in keys_list[2:4]}
+            submodules_split_three = {key: submodules[key] for key in keys_list[4:]}
             future_content_one = executor.submit(CONTENT_GENERATOR.generate_content, submodules_split_one, module.module_name,'first')
             future_content_two = executor.submit(CONTENT_GENERATOR.generate_content, submodules_split_two, module.module_name,'second')
+            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content, submodules_split_three, module.module_name,'third')
 
     # Retrieve the results when both functions are done
     content_one = future_content_one.result()
     content_two = future_content_two.result()
+    content_three = future_content_three.result()
 
-    content = content_one + content_two
+    content = content_one + content_two + content_three
     images_list = future_images_list.result()
     video_list = future_video_list.result()
 
@@ -728,7 +798,7 @@ def download_pdf(module_id, source_language):
     trans_submodule_content = ServerUtils.translate_submodule_content(submodule_content, source_language)
 
     # Create a PDF file
-    download_dir = os.path.join(os.getcwd(), "downloads")
+    download_dir = os.path.join(os.getcwd(), "server", "downloads")
     os.makedirs(download_dir, exist_ok=True)
     pdf_file_path = os.path.join(download_dir, f"{clean_modulename}_summary.pdf")
 
@@ -941,35 +1011,46 @@ def chatbot_route():
             trans_query = GoogleTranslator(source=source_language, target='en').translate(query)
         else:
             trans_query = query
-        assistant_id = session['assistant_id']
-        print('ASSISTANT ID', assistant_id)
-        thread_id = session['thread_id']
-        print('THREAD ID', thread_id)
         print(trans_query)
-        message, run = OPENAI_CLIENT.create_assistant_message_and_run(thread_id, trans_query)
+        chat = GEMINI_CLIENT.return_chat()
+        response = chat.send_message(trans_query)
+        print(response)
+        response_text = response.text  # Assuming response.text is a string
         
-        if run.status == 'failed':
-            print(run.error)
-        elif run.status == 'requires_action':
-            run = OPENAI_CLIENT.submit_tool_outputs(thread_id, run.id, run.required_action.submit_tool_outputs.tool_calls, AVAILABLE_TOOLS)
-            
-        messages = OPENAI_CLIENT.list_assistant_messages(thread_id=thread_id)
-        print('message',messages)
-        content = None
-        for thread_message in messages.data:
-            content = thread_message.content
-        print("Content List", content)
-        if len(tool_check) == 0:
-            chatbot_reply = content[0].text.value
-            print("Chatbot reply",chatbot_reply)
-            if source_language != 'en':
-                trans_output = GoogleTranslator(source='auto', target=source_language).translate(chatbot_reply)
-            else:
-                trans_output = chatbot_reply
-            response = {'chatbotResponse': trans_output,'function_name': 'normal_search'}
-        return jsonify(response)
+        # Translate the response back if necessary
+        if source_language != 'en':
+            trans_output = GoogleTranslator(source='auto', target=source_language).translate(response_text)
+        else:
+            trans_output = response_text
+        
+        # Return a JSON response
+        return jsonify({'chatbotResponse': trans_output, 'function_name': 'normal_search'})
+    
     else:
         return jsonify({'error': 'User message not provided'}), 400
+    
+        # if run.status == 'failed':
+        #     print(run.error)
+        # elif run.status == 'requires_action':
+        #     run = GEMINI_CLIENT.submit_tool_outputs(thread_id, run.id, run.required_action.submit_tool_outputs.tool_calls, AVAILABLE_TOOLS)
+            
+    #     messages = GEMINI_CLIENT.list_assistant_messages(thread_id=thread_id)
+    #     print('message',messages)
+    #     content = None
+    #     for thread_message in messages.data:
+    #         content = thread_message.content
+    #     print("Content List", content)
+    #     if len(tool_check) == 0:
+    #         chatbot_reply = content[0].text.value
+    #         print("Chatbot reply",chatbot_reply)
+    #         if source_language != 'en':
+    #             trans_output = GoogleTranslator(source='auto', target=source_language).translate(chatbot_reply)
+    #         else:
+    #             trans_output = chatbot_reply
+    #         response = {'chatbotResponse': trans_output,'function_name': 'normal_search'}
+    #     return jsonify(response)
+    # else:
+    #     return jsonify({'error': 'User message not provided'}), 400
     
 @users.route('/query2/voice-save', methods=['POST'])
 @cross_origin(supports_credentials=True)
@@ -1053,3 +1134,24 @@ def delete_info():
         db.session.delete(module)
         db.session.commit()
     return jsonify({"message": "An error occurred during evaluation"}), 200
+
+
+@users.route('/api/transaction', methods=['POST'])
+@cross_origin(supports_credentials=True)
+def store_transaction():
+    data = request.json
+    new_transaction = Transaction(
+        wallet_address=data['address'],
+        balance=float(data['balance']),
+        transaction_type=data['transaction_type'],
+        amount=float(data['amount'])
+    )
+    db.session.add(new_transaction)
+    db.session.commit()
+    return jsonify(new_transaction.to_dict()), 201
+
+@users.route('/api/transactions', methods=['GET'])
+@cross_origin(supports_credentials=True)
+def get_transactions():
+    transactions = Transaction.query.order_by(Transaction.timestamp.desc()).all()
+    return jsonify([t.to_dict() for t in transactions])

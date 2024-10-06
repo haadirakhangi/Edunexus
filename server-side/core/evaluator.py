@@ -1,9 +1,9 @@
-from api.openai_client import OpenAIProvider
+from api.gemini_client import GeminiProvider
 from api.tavily_client import TavilyProvider
 
 class Evaluator:
     def __init__(self):
-        self.openai_client = OpenAIProvider()
+        self.gemini_client = GeminiProvider()
         self.tavily_client = TavilyProvider()
 
     def evaluate_conversation_quiz(self, question_and_response):
@@ -26,5 +26,5 @@ class Evaluator:
     Make sure your output is a valid json where the keys are the accuracy, completeness, clarity, relevance, understanding and feedback.
     """
 
-        output = self.openai_client.generate_json_response(evaluation_prompt.format(questions = questions, answers = answers))
+        output = self.gemini_client.generate_json_response(evaluation_prompt.format(questions = questions, answers = answers))
         return output
