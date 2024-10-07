@@ -508,6 +508,35 @@ def personalized_module():
     session['submodules']=submodules
 
     return jsonify({"message": "Query successful","submodules":values_list,"response":True}), 200
+
+@users.route('/query2/multimodal-rag',methods=['POST'])
+def personalized_module(): # threading; vectordb;
+    user_id = session.get('user_id')
+    if user_id is None:
+        return jsonify({"message": "User not logged in", "response":False}), 401
+    
+    # check if user exists
+    user = User.query.get(user_id)
+    if user is None:
+        return jsonify({"message": "User not found", "response":False}), 404
+    
+    if 'file' not in request.files:
+        file=None
+        # return 'No file part', 400
+    else:
+        file = request.files['file']
+    # if file.filename == '':
+    #     return 'No selected file', 400
+    uploads_path = os.path.join('server', 'uploads')
+    if not os.path.exists(uploads_path):
+        os.makedirs(uploads_path)
+    if file:
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(uploads_path, filename))
+
+
+    return jsonify({"message": "Query successful","submodules":values_list,"response":True}), 200
+
 @users.route('/query2/doc_generate_content',methods=['GET'])
 def personalized_module_content():
     user_id = session.get("user_id", None)
