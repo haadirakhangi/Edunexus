@@ -9,7 +9,7 @@ import fitz
 import io
 import torch
 
-class PDFImageExtractor:
+class PDFExtractor:
     def __init__(self, device, model, processor, tokenizer):
         self.device = device
         self.model = model
@@ -62,7 +62,7 @@ class PDFImageExtractor:
 # processor = ...
 # tokenizer = ...
 
-# pdf_image_extractor = PDFImageExtractor(device, model, processor, tokenizer)
+# pdf_image_extractor = PDFExtractor(device, model, processor, tokenizer)
 # pdf_image_extractor.extract_images("path/to/pdf", "output/directory")
 # image_features = pdf_image_extractor.embed_image("path/to/image")
 # text_features = pdf_image_extractor.embed_text("some text")

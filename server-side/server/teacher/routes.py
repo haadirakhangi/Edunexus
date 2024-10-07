@@ -533,6 +533,19 @@ def personalized_module(): # threading; vectordb;
     if file:
         filename = secure_filename(file.filename)
         file.save(os.path.join(uploads_path, filename))
+        
+    ################ IDK WTF IS GOING ONNN :cry :cry :cry ################
+    
+    pdf_vector_store = PDFVectorStore()
+    vectorstore, processed_docs = pdf_vector_store.create_faiss_vectorstore("path/to/pdf")
+    
+    pdf_image_extractor = PDFExtractor(device, model, processor, tokenizer)
+    pdf_image_extractor.extract_images("path/to/pdf", "output/directory")
+    image_features = pdf_image_extractor.embed_image("path/to/image")
+    text_features = pdf_image_extractor.embed_text("some text")
+    
+    
+    ######################################################################
 
 
     return jsonify({"message": "Query successful","submodules":values_list,"response":True}), 200
