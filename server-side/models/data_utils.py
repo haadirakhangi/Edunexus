@@ -1,22 +1,12 @@
-'''extract imgs, in class
-func
-
-
-'''
 import os
 from PIL import Image
 import fitz
 import io
 import torch
 
-class PDFExtractor:
-    def __init__(self, device, model, processor, tokenizer):
-        self.device = device
-        self.model = model
-        self.processor = processor
-        self.tokenizer = tokenizer
-
-    def extract_images(self, pdf_path, output_directory_path):
+class PdfUtils:
+    @staticmethod
+    def extract_images(pdf_path, output_directory_path):
         if not os.path.exists(output_directory_path):
             os.makedirs(output_directory_path)
         
@@ -35,19 +25,21 @@ class PDFExtractor:
                 image = Image.open(io.BytesIO(image_bytes))
                 image.save(image_path)
 
-    def embed_image(self, image_path):
+    @staticmethod
+    def embed_image_with_clip(image_path, clip_model, clip_processor, device_type="cpu"):
         image = Image.open(image_path)
-        inputs = self.processor(images=image, return_tensors="pt").to(self.device)
+        inputs = clip_processor(images=image, return_tensors="pt").to(device_type)
         with torch.no_grad():
-            image_features = self.model.get_image_features(**inputs)
+            image_features = clip_model.get_image_features(**inputs)
         image_features_normalized = image_features / image_features.norm(dim=-1, keepdim=True)
         image_features_normalized = image_features_normalized.cpu().numpy()
         return image_features_normalized
 
-    def embed_text(self, text):
-        inputs = self.tokenizer([text], return_tensors="pt").to(self.device)
+    @staticmethod
+    def embed_text_with_clip(text, clip_model, clip_tokenizer, device_type="cpu"):
+        inputs = clip_tokenizer([text], return_tensors="pt").to(device_type)
         with torch.no_grad():
-            text_features = self.model.get_text_features(**inputs)
+            text_features = clip_model.get_text_features(**inputs)
         text_features_normalized = text_features / text_features.norm(dim=-1, keepdim=True)
         text_features_normalized = text_features_normalized.cpu().numpy()
         return text_features_normalized

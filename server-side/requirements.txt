@@ -28,3 +28,5 @@ pypdf
 google-generativeai
 langchain-community
 scrapfly-sdk
+PyMuPDF
+Pillow

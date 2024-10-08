@@ -20,6 +20,8 @@ from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader, ScrapflyLoader
 from langchain_community.document_loaders.merge import MergedDataLoader
+import torch
+from transformers import AutoImageProcessor, AutoModel, AutoTokenizer
 from api.gemini_client import GeminiProvider
 from api.serper_client import SerperProvider
 from core.submodule_generator import SubModuleGenerator
@@ -34,15 +36,11 @@ import json
 
 users = Blueprint(name='users', import_name=__name__)
 
-device_type = 'cpu'
-embedding_model_name = "BAAI/bge-small-en-v1.5"
-encode_kwargs = {'normalize_embeddings': True} # set True to compute cosine similarity
-# EMBEDDINGS = HuggingFaceBgeEmbeddings(
-#                 model_name=embedding_model_name,
-#                 model_kwargs={'device': device_type },
-#                 encode_kwargs=encode_kwargs
-#             )
-
+DEVICE_TYPE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+IMAGE_EMBEDDING_MODEL_NAME = "openai/clip-vit-base-patch16"
+CLIP_MODEL = AutoModel.from_pretrained(IMAGE_EMBEDDING_MODEL_NAME).to(DEVICE_TYPE)
+CLIP_PROCESSOR = AutoImageProcessor.from_pretrained(IMAGE_EMBEDDING_MODEL_NAME)
+CLIP_TOKENIZER = AutoTokenizer.from_pretrained(IMAGE_EMBEDDING_MODEL_NAME)
 EMBEDDINGS = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
 LANG_DETECTOR = LanguageDetectorBuilder.from_all_languages().with_preloaded_language_models().build()
 GEMINI_CLIENT = GeminiProvider()
@@ -535,20 +533,11 @@ def personalized_module(): # threading; vectordb;
         file.save(os.path.join(uploads_path, filename))
         
     ################ IDK WTF IS GOING ONNN :cry :cry :cry ################
-    
-    pdf_vector_store = PDFVectorStore()
-    vectorstore, processed_docs = pdf_vector_store.create_faiss_vectorstore("path/to/pdf")
-    
-    pdf_image_extractor = PDFExtractor(device, model, processor, tokenizer)
-    pdf_image_extractor.extract_images("path/to/pdf", "output/directory")
-    image_features = pdf_image_extractor.embed_image("path/to/image")
-    text_features = pdf_image_extractor.embed_text("some text")
-    
-    
+
     ######################################################################
 
 
-    return jsonify({"message": "Query successful","submodules":values_list,"response":True}), 200
+    return jsonify({"message": "Query successful","submodules":"values_list","response":True}), 200
 
 @users.route('/query2/doc_generate_content',methods=['GET'])
 def personalized_module_content():
