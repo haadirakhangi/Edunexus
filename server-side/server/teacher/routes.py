@@ -572,9 +572,9 @@ def personalized_module_content():
         submodules_split_one = {key: submodules[key] for key in keys_list[:2]}
         submodules_split_two = {key: submodules[key] for key in keys_list[2:4]}
         submodules_split_three = {key: submodules[key] for key in keys_list[4:]}
-        future_content_one = executor.submit(ContentGenerator().generate_content_from_textbook,title ,submodules_split_one,description,VECTORDB_TEXTBOOK,'first')
-        future_content_two = executor.submit(ContentGenerator().generate_content_from_textbook,title ,submodules_split_two,description,VECTORDB_TEXTBOOK,'second')
-        future_content_three = executor.submit(ContentGenerator().generate_content_from_textbook,title ,submodules_split_three,description,VECTORDB_TEXTBOOK,'third')
+        future_content_one = executor.submit(CONTENT_GENERATOR.generate_content_from_textbook,title ,submodules_split_one,description,VECTORDB_TEXTBOOK,'first')
+        future_content_two = executor.submit(CONTENT_GENERATOR.generate_content_from_textbook,title ,submodules_split_two,description,VECTORDB_TEXTBOOK,'second')
+        future_content_three = executor.submit(CONTENT_GENERATOR.generate_content_from_textbook,title ,submodules_split_three,description,VECTORDB_TEXTBOOK,'third')
 
     # Retrieve the results when both functions are done
     content_one = future_content_one.result()

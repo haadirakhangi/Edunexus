@@ -31,6 +31,22 @@ class SerperProvider:
         return images_list
     
     @staticmethod
+    def submodule_image_from_web(submodule_name):
+        url = "https://google.serper.dev/images"
+        headers = {
+            'X-API-KEY': serper_api_key,
+            'Content-Type': 'application/json'
+        }
+        payload = json.dumps({
+            "q": submodule_name
+        })
+        response = requests.request("POST", url, headers=headers, data=payload)
+        json_response = json.loads(response.text)
+        image_results = json_response["images"]
+        image_links = [i["imageUrl"] for i in image_results]
+        return image_links
+    
+    @staticmethod
     def module_videos_from_web(submodules):
         print('FETCHING VIDEOS...')
         keys_list = list(submodules.keys())

@@ -26,6 +26,12 @@ class GeminiProvider:
         output = ast.literal_eval(completion.text)
         return output
     
+    def explain_two_image(self, prompt, image1, image2):
+        completion = self.gemini_client.generate_content(
+            [prompt,image1,image2],
+        )
+        return completion
+    
     def initialize_assistant(self, profile, tools):
         self.gemini_assistant = genai.GenerativeModel(
             "gemini-1.5-flash",
@@ -39,3 +45,5 @@ class GeminiProvider:
         if self.chat is None:
             raise AttributeError("Chat has not been initialized. Call 'initialize_assistant' first.")
         return self.chat
+
+
