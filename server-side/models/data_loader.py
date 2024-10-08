@@ -21,7 +21,7 @@ class PDFVectorStore:
         return vectorstore
     
     @staticmethod
-    def create_faiss_vectorstore_for_image(pdf_path, image_directory_path, clip_model, clip_processor, clip_tokenizer):
+    def create_faiss_vectorstore_for_image(pdf_path, image_directory_path, clip_model, clip_processor):
         PdfUtils.extract_images(pdf_path=pdf_path, output_directory_path=image_directory_path)
         image_embeddings = np.vstack([PdfUtils.embed_image_with_clip(image, clip_model=clip_model, clip_processor=clip_processor) for image in image_directory_path])
         vectorstore = faiss.IndexFlatIP(512)

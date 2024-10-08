@@ -91,8 +91,8 @@ Provide as much detail as possible and aim to enrich the understanding of the im
         output = self.gemini_client.explain_two_image(prompt=prompt, image1=images[0], image2=images[1])
         return output
     
-    def generate_content_from_textbook_and_images(self, module_name, profile, vectordb, api_key_to_use):
-        prompt= """I'm seeking your expertise on the subject of {sub_module_name} which comes under the module: {module_name}. As a knowledgeable educational assistant, I trust in your ability to provide a comprehensive explanation of this sub-module. You will be given explanations for two images related to the topic, and you must use these explanations effectively in your final response. The image explanations are meant to enhance your content, providing visual context and aiding in understanding the sub-module.
+    def generate_content_from_textbook_and_images(self, module_name, submodule_name, profile, image_explanation, context):
+        prompt= f"""I'm seeking your expertise on the subject of {submodule_name} which comes under the module: {module_name}. As a knowledgeable educational assistant, I trust in your ability to provide a comprehensive explanation of this sub-module. You will be given explanations for two images related to the topic, and you must use these explanations effectively in your final response. The image explanations are meant to enhance your content, providing visual context and aiding in understanding the sub-module.
 
 Please think about the sub-module step by step and design the best way to explain it to me. Your response should cover essential aspects such as definitions, in-depth examples, and any details crucial for understanding the topic. You have access to the subject's information, which you should use while generating the educational content. Ensure the response is sufficiently detailed, covering all relevant topics related to the sub-module. Structure the course according to my needs as provided.
 
@@ -111,13 +111,8 @@ In your response, organize the information into subsections for clarity, and ela
     """
 
 
-        relevant_docs = vectordb.similarity_search(val)
-        rel_docs = [doc.page_content for doc in relevant_docs]
-        context = '\n'.join(rel_docs)
-        content_output = self.gemini_client.generate_json_response(prompt.format(sub_module_name = val, module_name = module_name, profile= profile, context=context))
-        print("Thread 1: Module Generated: ",key,"!")   
-        content_output['subject_name'] = val
+        content_output = self.gemini_client.generate_json_response(prompt) 
+        content_output['subject_name'] = submodule_name
         print(content_output)
-        all_content.append(content_output)
 
-        return all_content
+        return content_output

@@ -33,7 +33,7 @@ class MultiModalRAG:
 
         self.text_vectorstore = PDFVectorStore.create_faiss_vectorstore_for_text(pdf_path=pdf_path, embeddings=embeddings, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
-        self.image_vectorstore = PDFVectorStore.create_faiss_vectorstore_for_image(pdf_path=pdf_path, course_name=course_name, clip_model=clip_model, clip_processor=clip_processor, clip_tokenizer=clip_tokenizer)
+        self.image_vectorstore = PDFVectorStore.create_faiss_vectorstore_for_image(pdf_path=pdf_path, course_name=course_name, clip_model=clip_model, clip_processor=clip_processor)
 
     async def search_image(self, query_text, k):
         images_list = os.listdir(self.image_directory_path)
@@ -60,9 +60,11 @@ class MultiModalRAG:
                 rel_docs = [doc.page_content for doc in docs]
                 context = '\n'.join(rel_docs)
                 image_explanation = content_generator.generate_explanation_from_images(images[:2], submodule_name)
-                output = content_generator.generate_content_from_textbook_and_images(module_name, )
-
-        else: 
-            future_docs = executor.submit(self.search_text, submodule_name, top_k_docs)
-            future_images = executor.submit(SerperProvider.submodule_image_from_web(submodule_name))
+                output = content_generator.generate_content_from_textbook_and_images(module_name, submodule_name, profile, image_explanation, context)
+            else:
+                images = SerperProvider.submodule_image_from_web(submodule_name)
+                rel_docs = [doc.page_content for doc in docs]
+                context = '\n'.join(rel_docs)
+                # output = content_generator.generate_content_from_textbook(module_name ,submodules_split_three,description,VECTORDB_TEXTBOOK,'third')
+        return output, images
 
