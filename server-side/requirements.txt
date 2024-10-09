@@ -2,10 +2,11 @@ flask
 python-dotenv
 openai
 langchain
+langchain-openai
+langchain-google-genai
 pandas
 numpy
 pymongo
-chainlit
 flask-sqlalchemy
 flask-bcrypt
 flask-session
@@ -26,3 +27,7 @@ faiss-cpu
 pypdf
 google-generativeai
 langchain-community
+scrapfly-sdk
+PyMuPDF
+Pillow
+pykka

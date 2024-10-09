@@ -1,23 +1,71 @@
-# from langchain_community.vectorstores import FAISS
-# from langchain_community.embeddings import HuggingFaceBgeEmbeddings
-# from langchain.text_splitter import RecursiveCharacterTextSplitter
-# from langchain_community.document_loaders import PyPDFLoader
-# from lingua import LanguageDetectorBuilder
+import faiss
+from langchain.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores import FAISS
+from langchain.schema import Document
+from models.data_utils import PdfUtils
+import numpy as np
+import os
 
-class AssistantDataLoader:
-    def __init__(self) -> None:
-        device_type = 'cpu'
-        embedding_model_name = "BAAI/bge-small-en-v1.5"
-        encode_kwargs = {'normalize_embeddings': True} # set True to compute cosine similarity
+class PDFVectorStore:
+    @staticmethod
+    def create_faiss_vectorstore_for_text(pdf_path, embeddings, chunk_size, chunk_overlap):
+        loader = PyPDFLoader(pdf_path)
+        documents = loader.load()
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size, chunk_overlap=chunk_overlap, length_function=len
+        )
+        docs = text_splitter.split_documents(documents)
+        processed_docs = [Document(metadata=doc.metadata, page_content=doc.page_content.replace('\t', ' ')) for doc in docs]
+        vectorstore = FAISS.from_documents(processed_docs, embeddings)
+        return vectorstore
+    
+    @staticmethod
+    def create_faiss_vectorstore_for_image(pdf_path, image_directory_path, clip_model, clip_processor):
+        PdfUtils.extract_images(pdf_path=pdf_path, output_directory_path=image_directory_path)
+        image_embeddings = np.vstack([PdfUtils.embed_image_with_clip(image, clip_model=clip_model, clip_processor=clip_processor) for image in image_directory_path])
+        vectorstore = faiss.IndexFlatIP(512)
+        vectorstore.add(image_embeddings)
+        return vectorstore
 
-        
+# Example usage
+# pdf_vector_store = PDFVectorStore()
+# vectorstore, processed_docs = pdf_vector_store.create_faiss_vectorstore("path/to/pdf")
 
-        # FEATURE_DOCS_PATH = 'assistant_data/Description.pdf'
-        # loader = PyPDFLoader(FEATURE_DOCS_PATH)
-        # docs = loader.load()
-        # docs_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-        # split_docs = docs_splitter.split_documents(docs)
-        # NYAYMITRA_FEATURES_VECTORSTORE = FAISS.from_documents(split_docs, EMBEDDINGS)
-        # NYAYMITRA_FEATURES_VECTORSTORE.save_local('assistant_data/faiss_index_assistant')
-        # print('CREATED VECTORSTORE')
-        # VECTORDB = FAISS.load_local('assistant_data/faiss_index_assistant', EMBEDDINGS, allow_dangerous_deserialization=True)
+
+
+
+
+
+# def create_faiss_vectorstore(path, chunk_size=1000, chunk_overlap=200):
+#     """
+#     Encodes a PDF book into a vector store using OpenAI embeddings.
+
+#     Args:
+#         path: The path to the PDF file.
+#         chunk_size: The desired size of each text chunk.
+#         chunk_overlap: The amount of overlap between consecutive chunks.
+
+#     Returns:
+#         A FAISS vector store containing the encoded book content.
+#     """
+
+#     # Load PDF documents
+#     loader = PyPDFLoader(path)
+#     documents = loader.load()
+
+#     # Split documents into chunks
+#     text_splitter = RecursiveCharacterTextSplitter(
+#         chunk_size=chunk_size, chunk_overlap=chunk_overlap, length_function=len
+#     )
+#     docs = text_splitter.split_documents(documents)
+
+#     # Replacing \t with space
+#     processed_docs = [Document(metadata= doc.metadata, page_content=doc.page_content.replace('\t', ' ')) for doc in docs]
+#     # Create embeddings and vector store
+#     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+#     vectorstore = FAISS.from_documents(processed_docs, embeddings)
+
+#     return vectorstore, processed_docs
+
+

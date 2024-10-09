@@ -1,9 +1,9 @@
-from api.openai_client import OpenAIProvider
+from api.gemini_client import GeminiProvider
 from api.tavily_client import TavilyProvider
 
 class ModuleGenerator:
     def __init__(self):
-        self.openai_client = OpenAIProvider()
+        self.gemini_client = GeminiProvider()
         self.tavily_client = TavilyProvider()
 
     def generate_module_summary(self, topic, level):
@@ -11,7 +11,7 @@ class ModuleGenerator:
     ```
     Topic: {topic}
     ```"""
-        output = self.openai_client.generate_json_response(prompt_module_generation.format(topic=topic, level=level))
+        output = self.gemini_client.generate_json_response(prompt_module_generation.format(topic=topic, level=level))
         return output
     
     def generate_module_summary_from_web(self, topic, level):
@@ -26,6 +26,6 @@ class ModuleGenerator:
     Follow the provided JSON format diligently, incorporating information from the search results into the summaries and ensuring the modules are appropriately {level} in difficulty.
     """
 
-        output = self.openai_client.generate_json_response(module_generation_prompt.format(topic= topic, search_result = search_result, level = level))
+        output = self.gemini_client.generate_json_response(module_generation_prompt.format(topic= topic, search_result = search_result, level = level))
 
         return output
