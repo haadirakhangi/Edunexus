@@ -31,7 +31,7 @@ class SerperProvider:
         return images_list
     
     @staticmethod
-    def submodule_image_from_web(submodule_name):
+    async def submodule_image_from_web(submodule_name):
         url = "https://google.serper.dev/images"
         headers = {
             'X-API-KEY': serper_api_key,

@@ -40,10 +40,10 @@ class MultiModalRAG:
 
         self.current_dir = os.path.dirname(__file__)
         self.image_directory_path = os.path.join(self.current_dir, course_name)
-        self.text_vectorstore_path = os.path.join(self.current_dir, 'models', 'text-faiss-index')
-        self.image_vectorstore_path = os.path.join(self.current_dir, 'models', 'image-faiss-index')
+        self.text_vectorstore_path = os.path.join(self.current_dir, 'faiss-vectorstore', 'text-faiss-index')
+        self.image_vectorstore_path = os.path.join(self.current_dir, 'faiss-vectorstore', 'image-faiss-index')
         if text_vectorstore_path is not None:
-            self.text_vectorstore = FAISS.load_local(text_vectorstore_path)
+            self.text_vectorstore = FAISS.load_local(text_vectorstore_path, embeddings=embeddings, allow_dangerous_deserialization=True)
         else:
             self.text_vectorstore = None
         
@@ -59,7 +59,7 @@ class MultiModalRAG:
         faiss.write_index(self.image_vectorstore, self.image_vectorstore_path)
         return self.text_vectorstore_path, self.image_vectorstore_path
 
-    async def search_image(self, query_text):
+    def search_image(self, query_text):
         images_list = os.listdir(self.image_directory_path)
         query_image_embeddings = PdfUtils.embed_text_with_clip(text=query_text, clip_model=self.clip_model, clip_tokenizer=self.clip_tokenizer)
         dist, indx = self.image_vectorstore.search(query_image_embeddings, k=len(images_list))
@@ -69,21 +69,21 @@ class MultiModalRAG:
         
         return top_k_images
 
-    async def search_text(self, query_text, k):
+    def search_text(self, query_text, k):
         top_k_docs = self.text_vectorstore.similarity_search(query_text, k=k)
         return top_k_docs
     
     async def run(self, content_generator, module_name, submodule_split, profile, top_k_docs):
         images_list = os.listdir(self.image_directory_path)
-        submodule_content=[]
+        submodule_content = []
         for key, val in submodule_split.items():
-            if len(images_list)>=5:
+            if len(images_list) >= 5:
                 with ThreadPoolExecutor() as executor:
                     future_docs = executor.submit(self.search_text, val, top_k_docs)
                     future_images = executor.submit(self.search_image, val)
                 relevant_docs = future_docs.result()
                 relevant_images = future_images.result()
-                if len(relevant_images)>=2:
+                if len(relevant_images) >= 2:
                     rel_docs = [doc.page_content for doc in relevant_docs]
                     context = '\n'.join(rel_docs)
                     image_explanation = content_generator.generate_explanation_from_images(relevant_images[:2], val)
@@ -94,18 +94,18 @@ class MultiModalRAG:
                 context = '\n'.join(rel_docs)
                 result_handler = ResultHandler.start()
                 try:
-                    results = asyncio.gather(
+                    # Unpacking the results of gather instead of assigning a list to results
+                    submodule_images, submodule_output = await asyncio.gather(
                         SerperProvider.submodule_image_from_web(val),
                         content_generator.generate_single_content_from_textbook(module_name, val, profile, context)
                     )
-                    images = results[0]
-                    output = results[1]
-                    for result in results:
-                        result_handler.tell(result)
+                    output = submodule_output
+                    result_handler.tell(submodule_images)
+                    result_handler.tell(submodule_output)
                 finally:
                     result_handler.stop()
             submodule_content.append(output)
-        return submodule_content, images
+        return submodule_content, submodule_images
     
     async def execute(self, content_generator, module_name, submodules, profile, top_k_docs=5):
         keys_list = list(submodules.keys())

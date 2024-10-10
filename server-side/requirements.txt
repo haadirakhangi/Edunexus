@@ -31,3 +31,4 @@ scrapfly-sdk
 PyMuPDF
 Pillow
 pykka
+flask[async]
