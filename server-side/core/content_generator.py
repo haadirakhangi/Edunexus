@@ -91,7 +91,7 @@ Provide as much detail as possible and aim to enrich the understanding of the im
         output = self.gemini_client.explain_two_image(prompt=prompt, image1=images[0], image2=images[1])
         return output
     
-    def generate_content_from_textbook_and_images(self, module_name, submodule_name, profile, image_explanation, context):
+    def generate_content_from_textbook_and_images(self, module_name, submodule_name, profile, context, image_explanation):
         prompt= f"""I'm seeking your expertise on the subject of {submodule_name} which comes under the module: {module_name}. As a knowledgeable educational assistant, I trust in your ability to provide a comprehensive explanation of this sub-module. You will be given explanations for two images related to the topic, and you must use these explanations effectively in your final response. The image explanations are meant to enhance your content, providing visual context and aiding in understanding the sub-module.
 
 Please think about the sub-module step by step and design the best way to explain it to me. Your response should cover essential aspects such as definitions, in-depth examples, and any details crucial for understanding the topic. You have access to the subject's information, which you should use while generating the educational content. Ensure the response is sufficiently detailed, covering all relevant topics related to the sub-module. Structure the course according to my needs as provided.
@@ -110,6 +110,25 @@ MY COURSE REQUIREMENTS:
 In your response, organize the information into subsections for clarity, and elaborate on each subsection with suitable examples if and only if necessary. Make sure to integrate the image explanations into your content, explaining how they relate to and support the sub-module. If applicable, incorporate real-world examples, applications, or use-cases to illustrate the relevance of the topic in various contexts. Additionally, incorporate anything that helps me better understand the topic. Please format your output as valid JSON, with the following keys: title_for_the_content (suitable title for the sub-module), content(the main content of the sub-module), subsections (a list of dictionaries with keys - title and content). Be a good educational assistant and craft the best way to explain the sub-module following my course requirement. Strictly follow the course requirements and output format provided to you.
     """
 
+
+        content_output = self.gemini_client.generate_json_response(prompt) 
+        content_output['subject_name'] = submodule_name
+        print(content_output)
+
+        return content_output
+    
+    def generate_single_content_from_textbook(self, module_name, submodule_name, profile, context):
+        prompt= f"""I'm seeking your expertise on the subject of {submodule_name} which comes under the module: {module_name}. As a knowledgeable educational assistant, I trust in your ability to provide a comprehensive explanation of this sub-module. Think about the sub-module step by step and design the best way to explain the sub-module to me. Your response should cover essential aspects such as definition, in-depth examples, and any details crucial for understanding the topic. You have access to the subject's information which you have to use while generating the educational content. Please generate quality content on the sub-module ensuring the response is sufficiently detailed covering all the relevant topics related to the sub-module. You will also be provided with my course requirements and needs inside <INSTRUCTIONS>. Structure the course according to my needs.
+    
+    SUBJECT INFORMATION : ```{context}```
+
+    <INSTRUCTIONS>
+    MY COURSE REQUIREMENTS : {profile}
+    </INSTRUCTIONS>
+
+    In your response, organize the information into subsections for clarity and elaborate on each subsection with suitable examples if and only if it is necessary. If applicable, incorporate real-world examples, applications or use-cases to illustrate the relevance of the topic in various contexts. Additionally, incorporate anything that helps me to better understand the topic. Please format your output as valid JSON, with the following keys: title_for_the_content (suitable title for the sub-module), content(the main content of the sub-module), subsections (a list of dictionaries with keys - title and content).
+    Be a good educational assistant and craft the best way to explain the sub-module following my course requirement. Strictly follow the course requirements and output format provided to you.
+    """
 
         content_output = self.gemini_client.generate_json_response(prompt) 
         content_output['subject_name'] = submodule_name
