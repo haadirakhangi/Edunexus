@@ -52,7 +52,7 @@ class MultiModalRAG:
         else:
             self.image_vectorstore = None
 
-    async def create_text_and_image_vectorstores(self):
+    def create_text_and_image_vectorstores(self):
         self.text_vectorstore = PDFVectorStore.create_faiss_vectorstore_for_text(pdf_path=self.pdf_path, embeddings=self.embeddings, chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap)
         self.image_vectorstore = PDFVectorStore.create_faiss_vectorstore_for_image(pdf_path=self.pdf_path, image_directory_path=self.image_directory_path, clip_model=self.clip_model, clip_processor=self.clip_processor)
         self.text_vectorstore.save_local(self.text_vectorstore_path)
@@ -77,7 +77,7 @@ class MultiModalRAG:
         images_list = os.listdir(self.image_directory_path)
         submodule_content=[]
         for key, val in submodule_split.items():
-            if len(images_list)>5:
+            if len(images_list)>=5:
                 with ThreadPoolExecutor() as executor:
                     future_docs = executor.submit(self.search_text, val, top_k_docs)
                     future_images = executor.submit(self.search_image, val)

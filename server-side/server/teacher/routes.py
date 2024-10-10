@@ -510,13 +510,13 @@ def personalized_module():
 
 @users.route('/query2/multimodal-rag-submodules', methods=['POST'])
 def multimodal_rag_submodules():
-    user_id = session.get('user_id')
-    if user_id is None:
-        return jsonify({"message": "User not logged in", "response":False}), 401
+    # user_id = session.get('user_id')
+    # if user_id is None:
+    #     return jsonify({"message": "User not logged in", "response":False}), 401
     
-    user = User.query.get(user_id)
-    if user is None:
-        return jsonify({"message": "User not found", "response":False}), 404
+    # user = User.query.get(user_id)
+    # if user is None:
+    #     return jsonify({"message": "User not found", "response":False}), 404
     
     if 'file' not in request.files:
         file=None
@@ -548,7 +548,7 @@ def multimodal_rag_submodules():
     return jsonify({"message": "Query successful","submodules":values_list,"response":True}), 200
 
 @users.route('/query2/multimodal-rag-content',methods=['POST'])
-def multimodal_rag_content():
+async def multimodal_rag_content():
     user_id = session.get("user_id", None)
     if user_id is None:
         return jsonify({"message": "User not logged in", "response": False}), 401
@@ -565,7 +565,7 @@ def multimodal_rag_content():
     image_vectorstore_path = session.get("image_vectorstore_path")
     multimodal_rag = MultiModalRAG(pdf_path=document_path, course_name=title, embeddings=EMBEDDINGS, clip_model=CLIP_MODEL, clip_processor=CLIP_PROCESSOR, clip_tokenizer=CLIP_TOKENIZER, chunk_size=1000, chunk_overlap=200, image_similarity_threshold=0.3, text_vectorstore_path=text_vectorstore_path, image_vectorstore_path=image_vectorstore_path)
 
-    content, images = multimodal_rag.execute(CONTENT_GENERATOR, title, submodules=submodules, profile=user_profile, top_k_images=2, top_k_docs=7)
+    content, images = await multimodal_rag.execute(CONTENT_GENERATOR, title, submodules=submodules, profile=user_profile, top_k_images=2, top_k_docs=7)
     
     return jsonify({"message": "Query successful","images": images,"content": content,"response":True}), 200
 
