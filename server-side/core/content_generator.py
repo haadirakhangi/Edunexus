@@ -117,7 +117,7 @@ In your response, organize the information into subsections for clarity, and ela
 
         return content_output
     
-    def generate_single_content_from_textbook(self, module_name, submodule_name, profile, context):
+    async def generate_single_content_from_textbook(self, module_name, submodule_name, profile, context):
         prompt= f"""I'm seeking your expertise on the subject of {submodule_name} which comes under the module: {module_name}. As a knowledgeable educational assistant, I trust in your ability to provide a comprehensive explanation of this sub-module. Think about the sub-module step by step and design the best way to explain the sub-module to me. Your response should cover essential aspects such as definition, in-depth examples, and any details crucial for understanding the topic. You have access to the subject's information which you have to use while generating the educational content. Please generate quality content on the sub-module ensuring the response is sufficiently detailed covering all the relevant topics related to the sub-module. You will also be provided with my course requirements and needs inside <INSTRUCTIONS>. Structure the course according to my needs.
     
     SUBJECT INFORMATION : ```{context}```

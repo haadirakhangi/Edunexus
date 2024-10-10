@@ -1,7 +1,7 @@
 import faiss
-from langchain.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain.schema import Document
 from models.data_utils import PdfUtils
 import numpy as np
@@ -25,7 +25,6 @@ class PDFVectorStore:
         PdfUtils.extract_images(pdf_path=pdf_path, output_directory_path=image_directory_path)
         image_files = [f for f in os.listdir(image_directory_path) if f.endswith(('.png', '.jpg', '.jpeg'))]
         image_paths = [os.path.join(image_directory_path, image_file) for image_file in image_files]
-        
         image_embeddings = np.vstack([PdfUtils.embed_image_with_clip(image, clip_model=clip_model, clip_processor=clip_processor) for image in image_paths])
         vectorstore = faiss.IndexFlatIP(512)
         vectorstore.add(image_embeddings)
