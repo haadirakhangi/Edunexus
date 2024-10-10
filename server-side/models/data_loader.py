@@ -5,6 +5,7 @@ from langchain.vectorstores import FAISS
 from langchain.schema import Document
 from models.data_utils import PdfUtils
 import numpy as np
+import os
 
 class PDFVectorStore:
     @staticmethod
@@ -22,7 +23,10 @@ class PDFVectorStore:
     @staticmethod
     def create_faiss_vectorstore_for_image(pdf_path, image_directory_path, clip_model, clip_processor):
         PdfUtils.extract_images(pdf_path=pdf_path, output_directory_path=image_directory_path)
-        image_embeddings = np.vstack([PdfUtils.embed_image_with_clip(image, clip_model=clip_model, clip_processor=clip_processor) for image in image_directory_path])
+        image_files = [f for f in os.listdir(image_directory_path) if f.endswith(('.png', '.jpg', '.jpeg'))]
+        image_paths = [os.path.join(image_directory_path, image_file) for image_file in image_files]
+        
+        image_embeddings = np.vstack([PdfUtils.embed_image_with_clip(image, clip_model=clip_model, clip_processor=clip_processor) for image in image_paths])
         vectorstore = faiss.IndexFlatIP(512)
         vectorstore.add(image_embeddings)
         return vectorstore
