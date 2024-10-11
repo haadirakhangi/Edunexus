@@ -17,15 +17,19 @@ class GeminiProvider:
             self.chat = None
 
     def generate_json_response(self, prompt):
-        completion = self.gemini_client.generate_content(
-            prompt,
-            generation_config=genai.GenerationConfig(
-                response_mime_type="application/json"
-            ),
-        )
-        output = ast.literal_eval(completion.text)
-        return output
-    
+        while True:
+            try:
+                completion = self.gemini_client.generate_content(
+                    prompt,
+                    generation_config=genai.GenerationConfig(
+                        response_mime_type="application/json"
+                    ),
+                )
+                output = ast.literal_eval(completion.text)
+                return output
+            except (ValueError, SyntaxError):
+                print("Invalid JSON response, retrying...")
+        
     def explain_two_image(self, prompt, image1, image2):
         completion = self.gemini_client.generate_content(
             [prompt,image1,image2],
