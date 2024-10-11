@@ -39,7 +39,7 @@ class MultiModalRAG:
         self.image_similarity_threshold = image_similarity_threshold
 
         self.current_dir = os.path.dirname(__file__)
-        self.image_directory_path = os.path.join(self.current_dir, course_name)
+        self.image_directory_path = os.path.join(self.current_dir, 'document-images', course_name)
         self.text_vectorstore_path = os.path.join(self.current_dir, 'faiss-vectorstore', 'text-faiss-index')
         self.image_vectorstore_path = os.path.join(self.current_dir, 'faiss-vectorstore', 'image-faiss-index')
         if text_vectorstore_path is not None:
