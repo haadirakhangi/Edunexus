@@ -39,7 +39,7 @@ class MultiModalRAG:
         self.image_similarity_threshold = image_similarity_threshold
 
         self.current_dir = os.path.dirname(__file__)
-        self.image_directory_path = os.path.join(self.current_dir, course_name)
+        self.image_directory_path = os.path.join(self.current_dir, 'document-images', course_name)
         self.text_vectorstore_path = os.path.join(self.current_dir, 'faiss-vectorstore', 'text-faiss-index')
         self.image_vectorstore_path = os.path.join(self.current_dir, 'faiss-vectorstore', 'image-faiss-index')
         if text_vectorstore_path is not None:
@@ -60,19 +60,15 @@ class MultiModalRAG:
         return self.text_vectorstore_path, self.image_vectorstore_path
 
     def search_image(self, query_text):
-        image_files = [f for f in os.listdir(self.image_directory_path) if f.endswith(('.png', '.jpg', '.jpeg'))]
-        images_list = [os.path.join(self.image_directory_path, image_file) for image_file in image_files]
-        # images_list = os.listdir(self.image_directory_path)
-        # print("Length of the images list",len(images_list))
-        # print("Length of the images list = ",images_list)
+        images_in_directory = os.listdir(self.image_directory_path)
+        image_paths = [os.path.join(self.image_directory_path, image_name) for image_name in images_in_directory]
         query_image_embeddings = PdfUtils.embed_text_with_clip(text=query_text, clip_model=self.clip_model, clip_tokenizer=self.clip_tokenizer)
-        dist, indx = self.image_vectorstore.search(query_image_embeddings, k=len(images_list))
+        dist, indx = self.image_vectorstore.search(query_image_embeddings, k=len(image_paths))
         distances = dist[0]
         print("Distances",distances)
         indexes = indx[0]
-        print("Indexes",indexes)
-        top_k_images = [images_list[idx] for idx in indexes if distances[idx]>=self.image_similarity_threshold]
-        
+        sorted_images = [image_paths[idx] for idx in indexes]
+        top_k_images = [sorted_images[i] for i in range(len(indexes)) if distances[i]>= self.image_similarity_threshold]
         return top_k_images
 
     def search_text(self, query_text, k):
@@ -82,6 +78,7 @@ class MultiModalRAG:
     async def run(self, content_generator, module_name, submodule_split, profile, top_k_docs):
         images_list = os.listdir(self.image_directory_path)
         submodule_content = []
+        submodule_images=[]
         for key, val in submodule_split.items():
             if len(images_list) >= 5:
                 with ThreadPoolExecutor() as executor:
@@ -94,26 +91,40 @@ class MultiModalRAG:
                     print("I am inside this shit")
                     rel_docs = [doc.page_content for doc in relevant_docs]
                     context = '\n'.join(rel_docs)
-                    image_explanation = await content_generator.generate_explanation_from_images(submodule_images[:2], val)
+                    image_explanation = await content_generator.generate_explanation_from_images(relevant_images[:2], val)
                     output = await content_generator.generate_content_from_textbook_and_images(module_name, val, profile, context, image_explanation)
+                # else:
+                #     relevant_docs = self.search_text(val, top_k_docs)
+                #     rel_docs = [doc.page_content for doc in relevant_docs]
+                #     context = '\n'.join(rel_docs)
+                #     result_handler = ResultHandler.start()
+                #     try:
+                #         submodule_images, submodule_output = await asyncio.gather(
+                #             SerperProvider.submodule_image_from_web(val),
+                #             content_generator.generate_single_content_from_textbook(module_name, val, profile, context)
+                #         )
+                #         output = submodule_output
+                #         result_handler.tell(submodule_images)
+                #         result_handler.tell(submodule_output)
+                #     finally:
+                #         result_handler.stop()
             else:
                 relevant_docs = self.search_text(val, top_k_docs)
                 rel_docs = [doc.page_content for doc in relevant_docs]
                 context = '\n'.join(rel_docs)
                 result_handler = ResultHandler.start()
                 try:
-                    # Unpacking the results of gather instead of assigning a list to results
-                    submodule_images, submodule_output = await asyncio.gather(
+                    relevant_images, output = await asyncio.gather(
                         SerperProvider.submodule_image_from_web(val),
                         content_generator.generate_single_content_from_textbook(module_name, val, profile, context)
                     )
-                    output = submodule_output
-                    result_handler.tell(submodule_images)
-                    result_handler.tell(submodule_output)
+                    result_handler.tell(relevant_images)
+                    result_handler.tell(output)
                 finally:
 
                     result_handler.stop()
             submodule_content.append(output)
+            submodule_images.append(relevant_images)
         return submodule_content, submodule_images
     
     async def execute(self, content_generator, module_name, submodules, profile, top_k_docs=5):
