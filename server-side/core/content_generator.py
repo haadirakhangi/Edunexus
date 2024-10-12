@@ -74,7 +74,7 @@ class ContentGenerator:
 
         return all_content
     
-    def generate_explanation_from_images(self, images, sub_module_name):
+    async def generate_explanation_from_images(self, images, sub_module_name):
         prompt = f"""I am providing you with two images that relates to {sub_module_name}. Your role is to analyze the images in great detail and provide a comprehensive explanation that another language model will use to explain {sub_module_name}. Your explanation should be structured, covering:
 
 Descriptive Elements: Identify and describe all visible elements such as objects, people, settings, colors, and activities. Include their physical characteristics and positioning.
@@ -91,7 +91,7 @@ Provide as much detail as possible and aim to enrich the understanding of the im
         output = self.gemini_client.explain_two_image(prompt=prompt, image1=images[0], image2=images[1])
         return output
     
-    def generate_content_from_textbook_and_images(self, module_name, submodule_name, profile, context, image_explanation):
+    async def generate_content_from_textbook_and_images(self, module_name, submodule_name, profile, context, image_explanation):
         prompt= f"""I'm seeking your expertise on the subject of {submodule_name} which comes under the module: {module_name}. As a knowledgeable educational assistant, I trust in your ability to provide a comprehensive explanation of this sub-module. You will be given explanations for two images related to the topic, and you must use these explanations effectively in your final response. The image explanations are meant to enhance your content, providing visual context and aiding in understanding the sub-module.
 
 Please think about the sub-module step by step and design the best way to explain it to me. Your response should cover essential aspects such as definitions, in-depth examples, and any details crucial for understanding the topic. You have access to the subject's information, which you should use while generating the educational content. Ensure the response is sufficiently detailed, covering all relevant topics related to the sub-module. Structure the course according to my needs as provided.

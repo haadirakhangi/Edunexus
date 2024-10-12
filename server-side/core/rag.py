@@ -23,7 +23,7 @@ class MultiModalRAG:
             clip_tokenizer=None,
             chunk_size=1000,
             chunk_overlap=200,
-            image_similarity_threshold=0.5,
+            image_similarity_threshold=0.1,
             text_vectorstore_path=None,
             image_vectorstore_path=None,
         ):
@@ -60,12 +60,18 @@ class MultiModalRAG:
         return self.text_vectorstore_path, self.image_vectorstore_path
 
     def search_image(self, query_text):
-        images_list = os.listdir(self.image_directory_path)
+        image_files = [f for f in os.listdir(self.image_directory_path) if f.endswith(('.png', '.jpg', '.jpeg'))]
+        images_list = [os.path.join(self.image_directory_path, image_file) for image_file in image_files]
+        # images_list = os.listdir(self.image_directory_path)
+        # print("Length of the images list",len(images_list))
+        # print("Length of the images list = ",images_list)
         query_image_embeddings = PdfUtils.embed_text_with_clip(text=query_text, clip_model=self.clip_model, clip_tokenizer=self.clip_tokenizer)
         dist, indx = self.image_vectorstore.search(query_image_embeddings, k=len(images_list))
         distances = dist[0]
+        print("Distances",distances)
         indexes = indx[0]
-        top_k_images = [images_list[idx] for idx in indexes if distances[idx]>=self.image_similarity_threshold] # 
+        print("Indexes",indexes)
+        top_k_images = [images_list[idx] for idx in indexes if distances[idx]>=self.image_similarity_threshold]
         
         return top_k_images
 
@@ -82,12 +88,14 @@ class MultiModalRAG:
                     future_docs = executor.submit(self.search_text, val, top_k_docs)
                     future_images = executor.submit(self.search_image, val)
                 relevant_docs = future_docs.result()
-                relevant_images = future_images.result()
-                if len(relevant_images) >= 2:
+                submodule_images = future_images.result()
+                print("I am inside this shit2", submodule_images)
+                if len(submodule_images) >= 2:
+                    print("I am inside this shit")
                     rel_docs = [doc.page_content for doc in relevant_docs]
                     context = '\n'.join(rel_docs)
-                    image_explanation = content_generator.generate_explanation_from_images(relevant_images[:2], val)
-                    output = content_generator.generate_content_from_textbook_and_images(module_name, val, profile, context, image_explanation)
+                    image_explanation = await content_generator.generate_explanation_from_images(submodule_images[:2], val)
+                    output = await content_generator.generate_content_from_textbook_and_images(module_name, val, profile, context, image_explanation)
             else:
                 relevant_docs = self.search_text(val, top_k_docs)
                 rel_docs = [doc.page_content for doc in relevant_docs]
@@ -103,6 +111,7 @@ class MultiModalRAG:
                     result_handler.tell(submodule_images)
                     result_handler.tell(submodule_output)
                 finally:
+
                     result_handler.stop()
             submodule_content.append(output)
         return submodule_content, submodule_images
