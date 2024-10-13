@@ -1,5 +1,5 @@
-from models.data_loader import PDFVectorStore
-from models.data_utils import PdfUtils
+from models.data_loader import DocumentLoader
+from models.data_utils import DocumentUtils
 from api.serper_client import SerperProvider
 from core.content_generator import ContentGenerator
 from langchain_community.vectorstores.faiss import FAISS
@@ -55,20 +55,16 @@ class MultiModalRAG:
 
     def create_text_and_image_vectorstores(self):
         with ThreadPoolExecutor() as executor:
-            future_text_vectorstore = executor.submit(PDFVectorStore.create_faiss_vectorstore_for_text, self.documents_directory_path, self.embeddings, self.chunk_size, self.chunk_overlap)
-            future_image_vectorstore = executor.submit(PDFVectorStore.create_faiss_vectorstore_for_image, self.documents_directory_path, self.image_directory_path, self.clip_model, self.clip_processor)
-            # self.text_vectorstore = PDFVectorStore.create_faiss_vectorstore_for_text(documents_directory=self.documents_directory_path, embeddings=self.embeddings, chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap)
-            # self.image_vectorstore = PDFVectorStore.create_faiss_vectorstore_for_image(documents_directory=self.documents_directory_path, image_directory_path=self.image_directory_path, clip_model=self.clip_model, clip_processor=self.clip_processor)
+            future_text_vectorstore = executor.submit(DocumentLoader.create_faiss_vectorstore_for_text, self.documents_directory_path, self.embeddings, self.chunk_size, self.chunk_overlap)
+            future_image_vectorstore = executor.submit(DocumentLoader.create_faiss_vectorstore_for_image, self.documents_directory_path, self.image_directory_path, self.clip_model, self.clip_processor)
         self.text_vectorstore = future_text_vectorstore.result()
         self.image_vectorstore = future_image_vectorstore.result()
         self.text_vectorstore.save_local(self.text_vectorstore_path)
         faiss.write_index(self.image_vectorstore, self.image_vectorstore_path)
         return self.text_vectorstore_path, self.image_vectorstore_path
 
-    def search_image(self, query_text):
-        images_in_directory = os.listdir(self.image_directory_path)
-        image_paths = [os.path.join(self.image_directory_path, image_name) for image_name in images_in_directory]
-        query_image_embeddings = PdfUtils.embed_text_with_clip(text=query_text, clip_model=self.clip_model, clip_tokenizer=self.clip_tokenizer)
+    def search_image(self, query_text, image_paths):
+        query_image_embeddings = DocumentUtils.embed_text_with_clip(text=query_text, clip_model=self.clip_model, clip_tokenizer=self.clip_tokenizer)
         dist, indx = self.image_vectorstore.search(query_image_embeddings, k=len(image_paths))
         distances = dist[0]
         indexes = indx[0]
@@ -81,14 +77,18 @@ class MultiModalRAG:
         return top_k_docs
     
     async def run(self, content_generator : ContentGenerator, module_name, submodule_split, profile, top_k_docs):
-        images_list = os.listdir(self.image_directory_path)
+        images_in_directory = []
+        for root, dirs, files in os.walk(self.image_directory_path):
+            for file in files:
+                if file.endswith(('png', 'jpg', 'jpeg')):
+                    images_in_directory.append(os.path.join(root, file))
         submodule_content = []
         submodule_images=[]
         for key, val in submodule_split.items():
-            if len(images_list) >= 5:
+            if len(images_in_directory) >= 5:
                 with ThreadPoolExecutor() as executor:
                     future_docs = executor.submit(self.search_text, val, top_k_docs)
-                    future_images = executor.submit(self.search_image, val)
+                    future_images = executor.submit(self.search_image, val, images_in_directory)
                 relevant_docs = future_docs.result()
                 relevant_images = future_images.result()
                 if len(relevant_images) >= 2:

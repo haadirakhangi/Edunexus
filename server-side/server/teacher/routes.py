@@ -515,35 +515,29 @@ def multimodal_rag_submodules():
     # if user is None:
     #     return jsonify({"message": "User not found", "response":False}), 404
 
-    # Check if multiple files are uploaded
     if 'files[]' not in request.files:
         return jsonify({"message": "No files uploaded", "response": False}), 400
     
     title = request.form['title']
     description = request.form['description']
-
     files = request.files.getlist('files[]')
     
     uploads_path = os.path.join('server', 'uploads', title)
     if not os.path.exists(uploads_path):
         os.makedirs(uploads_path)
     
-    document_paths = []  # List to store paths of uploaded files
     for file in files:
         if file:
             filename = secure_filename(file.filename)
             file.save(os.path.join(uploads_path, filename))
-            document_paths.append(os.path.join(uploads_path, filename))  # Save the file path
 
-    # Process each file with MultiModalRAG
-    multimodal_rag = MultiModalRAG(pdf_path=document_paths,  # Pass the list of document paths
+    multimodal_rag = MultiModalRAG(documents_directory_path=uploads_path,  
                                    course_name=title,
                                    embeddings=EMBEDDINGS,
                                    clip_model=CLIP_MODEL,
                                    clip_processor=CLIP_PROCESSOR,
                                    clip_tokenizer=CLIP_TOKENIZER)
     
-    # Create text and image vectorstores for all the documents
     text_vectorstore_path, image_vectorstore_path = multimodal_rag.create_text_and_image_vectorstores()
     
     session['text_vectorstore_path'] = text_vectorstore_path
@@ -551,14 +545,13 @@ def multimodal_rag_submodules():
     
     VECTORDB_TEXTBOOK = FAISS.load_local(text_vectorstore_path, EMBEDDINGS, allow_dangerous_deserialization=True)
     
-    # Generate submodules for the combined content of all documents
     submodules = SUB_MODULE_GENERATOR.generate_submodules_from_textbook(title, VECTORDB_TEXTBOOK)
     values_list = list(submodules.values())
     
     session['title'] = title
     session['user_profile'] = description
     session['submodules'] = submodules
-    session['pdf_paths'] = document_paths  # Store the paths of all uploaded files
+    session['document_directory_path'] = uploads_path 
     
     print("submodules:--------", submodules)
     return jsonify({"message": "Query successful", "submodules": values_list, "response": True}), 200
@@ -581,7 +574,7 @@ async def multimodal_rag_content():
     text_vectorstore_path = session.get("text_vectorstore_path")
     image_vectorstore_path = session.get("image_vectorstore_path")
     
-    multimodal_rag = MultiModalRAG(pdf_paths=document_paths,  # Pass multiple document paths
+    multimodal_rag = MultiModalRAG(documents_directory_path=document_paths,  # Pass multiple document paths
                                    course_name=title,
                                    embeddings=EMBEDDINGS,
                                    clip_model=CLIP_MODEL,
