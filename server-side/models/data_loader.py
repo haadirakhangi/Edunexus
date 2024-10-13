@@ -28,11 +28,15 @@ class PDFVectorStore:
         return vectorstore
     
     @staticmethod
-    def create_faiss_vectorstore_for_image(pdf_paths, image_directory_path, clip_model, clip_processor):
-        PdfUtils.extract_images(pdf_path=pdf_paths, output_directory_path=image_directory_path)
-        images_in_directory = os.listdir(image_directory_path)   
-        image_paths = [os.path.join(image_directory_path, image_name) for image_name in images_in_directory]
-        image_embeddings = np.vstack([PdfUtils.embed_image_with_clip(image, clip_model=clip_model, clip_processor=clip_processor) for image in image_paths])
+    def create_faiss_vectorstore_for_image(documents_directory, image_directory_path, clip_model, clip_processor):
+        PdfUtils.extract_images_from_directory(documents_directory=documents_directory, output_directory_path=image_directory_path)
+        images_in_directory = []
+        for root, dirs, files in os.walk(image_directory_path):
+            for file in files:
+                if file.endswith(('png', 'jpg', 'jpeg')):
+                    images_in_directory.append(os.path.join(root, file))
+        
+        image_embeddings = np.vstack([PdfUtils.embed_image_with_clip(image, clip_model=clip_model, clip_processor=clip_processor) for image in images_in_directory])
         vectorstore = faiss.IndexFlatIP(512)
         vectorstore.add(image_embeddings)
         return vectorstore

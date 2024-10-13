@@ -55,7 +55,7 @@ class MultiModalRAG:
 
     def create_text_and_image_vectorstores(self):
         self.text_vectorstore = PDFVectorStore.create_faiss_vectorstore_for_text(documents_directory=self.documents_directory_path, embeddings=self.embeddings, chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap)
-        self.image_vectorstore = PDFVectorStore.create_faiss_vectorstore_for_image(pdf_paths=self.documents_directory_path, image_directory_path=self.image_directory_path, clip_model=self.clip_model, clip_processor=self.clip_processor)
+        self.image_vectorstore = PDFVectorStore.create_faiss_vectorstore_for_image(documents_directory=self.documents_directory_path, image_directory_path=self.image_directory_path, clip_model=self.clip_model, clip_processor=self.clip_processor)
         self.text_vectorstore.save_local(self.text_vectorstore_path)
         faiss.write_index(self.image_vectorstore, self.image_vectorstore_path)
         return self.text_vectorstore_path, self.image_vectorstore_path
