@@ -567,7 +567,7 @@ async def multimodal_rag_content():
     # if user is None:
     #     return jsonify({"message": "User not found", "response": False}), 404
 
-    document_paths = session.get("pdf_paths")  # Now it's a list of paths
+    document_paths = session.get("document_directory_path") 
     title = session.get("title")
     user_profile = session.get("user_profile")
     submodules = session.get("submodules")
