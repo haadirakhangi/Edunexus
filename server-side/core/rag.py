@@ -23,7 +23,7 @@ class MultiModalRAG:
             clip_tokenizer=None,
             chunk_size=1000,
             chunk_overlap=200,
-            image_similarity_threshold=0.1,
+            image_similarity_threshold=0.5,
             text_vectorstore_path=None,
             image_vectorstore_path=None,
         ):
@@ -65,7 +65,6 @@ class MultiModalRAG:
         query_image_embeddings = PdfUtils.embed_text_with_clip(text=query_text, clip_model=self.clip_model, clip_tokenizer=self.clip_tokenizer)
         dist, indx = self.image_vectorstore.search(query_image_embeddings, k=len(image_paths))
         distances = dist[0]
-        print("Distances",distances)
         indexes = indx[0]
         sorted_images = [image_paths[idx] for idx in indexes]
         top_k_images = [sorted_images[i] for i in range(len(indexes)) if distances[i]>= self.image_similarity_threshold]
@@ -85,10 +84,8 @@ class MultiModalRAG:
                     future_docs = executor.submit(self.search_text, val, top_k_docs)
                     future_images = executor.submit(self.search_image, val)
                 relevant_docs = future_docs.result()
-                submodule_images = future_images.result()
-                print("I am inside this shit2", submodule_images)
-                if len(submodule_images) >= 2:
-                    print("I am inside this shit")
+                relevant_images = future_images.result()
+                if len(relevant_images) >= 2:
                     rel_docs = [doc.page_content for doc in relevant_docs]
                     context = '\n'.join(rel_docs)
                     image_explanation = await content_generator.generate_explanation_from_images(relevant_images[:2], val)
@@ -121,7 +118,6 @@ class MultiModalRAG:
                     result_handler.tell(relevant_images)
                     result_handler.tell(output)
                 finally:
-
                     result_handler.stop()
             submodule_content.append(output)
             submodule_images.append(relevant_images)
