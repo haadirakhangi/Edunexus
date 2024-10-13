@@ -28,8 +28,6 @@ class PdfUtils:
                         base_image = pdf_document.extract_image(xref)
                         image_bytes = base_image["image"]
                         image_ext = base_image["ext"]
-                        
-                        # Save images to the respective PDF subdirectory
                         image_path = f"{pdf_output_directory}/image_{page_index + 1}_{image_index}.{image_ext}"
                         image = Image.open(io.BytesIO(image_bytes))
                         image.save(image_path)

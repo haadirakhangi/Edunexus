@@ -54,8 +54,13 @@ class MultiModalRAG:
             self.image_vectorstore = None
 
     def create_text_and_image_vectorstores(self):
-        self.text_vectorstore = PDFVectorStore.create_faiss_vectorstore_for_text(documents_directory=self.documents_directory_path, embeddings=self.embeddings, chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap)
-        self.image_vectorstore = PDFVectorStore.create_faiss_vectorstore_for_image(documents_directory=self.documents_directory_path, image_directory_path=self.image_directory_path, clip_model=self.clip_model, clip_processor=self.clip_processor)
+        with ThreadPoolExecutor() as executor:
+            future_text_vectorstore = executor.submit(PDFVectorStore.create_faiss_vectorstore_for_text, self.documents_directory_path, self.embeddings, self.chunk_size, self.chunk_overlap)
+            future_image_vectorstore = executor.submit(PDFVectorStore.create_faiss_vectorstore_for_image, self.documents_directory_path, self.image_directory_path, self.clip_model, self.clip_processor)
+            # self.text_vectorstore = PDFVectorStore.create_faiss_vectorstore_for_text(documents_directory=self.documents_directory_path, embeddings=self.embeddings, chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap)
+            # self.image_vectorstore = PDFVectorStore.create_faiss_vectorstore_for_image(documents_directory=self.documents_directory_path, image_directory_path=self.image_directory_path, clip_model=self.clip_model, clip_processor=self.clip_processor)
+        self.text_vectorstore = future_text_vectorstore.result()
+        self.image_vectorstore = future_image_vectorstore.result()
         self.text_vectorstore.save_local(self.text_vectorstore_path)
         faiss.write_index(self.image_vectorstore, self.image_vectorstore_path)
         return self.text_vectorstore_path, self.image_vectorstore_path
