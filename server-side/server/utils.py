@@ -3,6 +3,11 @@ from gtts import gTTS
 from deep_translator import GoogleTranslator
 from server.teacher.routes import session
 from models.database_model import Module
+from iso639 import Lang
+from lingua import LanguageDetectorBuilder
+
+
+LANG_DETECTOR = LanguageDetectorBuilder.from_all_languages().with_preloaded_language_models().build()
 
 class ServerUtils:
     @staticmethod
@@ -107,6 +112,30 @@ class ServerUtils:
         # Save the speech to the specified file path
         speech.save(file_path)
         return file_path
+    
+    @staticmethod
+    def detect_source_language(text):
+        return Lang(str(LANG_DETECTOR.detect_language_of(text)).split('.')[1].title()).pt1
+    
+    @staticmethod
+    def json_list_to_markdown(content_list : list[dict]):
+        final_content = []
+        for content in content_list:
+            markdown = ""
+            for key, value in content.items():
+                if key == "title_for_the_content":
+                    markdown += f"# {value}\n"
+                elif key == "content":
+                    markdown += f"{value}\n\n"
+                elif key == "subsections":
+                    for i in content["subsections"]:
+                        for key, value in i.items():
+                            if key == "title":
+                                markdown += f"## {value}\n"
+                            elif key == "content":
+                                markdown += f"{value}\n"
+            final_content.append({content["subject_name"]: markdown})
+        return final_content
     
 class AssistantUtils:
     @staticmethod

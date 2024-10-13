@@ -3,13 +3,11 @@ import string
 import secrets
 from io import BytesIO
 from server import db, bcrypt
-from iso639 import Lang
 from datetime import datetime
 from gtts import gTTS
 from sqlalchemy import desc
 from deep_translator import GoogleTranslator
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from lingua import LanguageDetectorBuilder
 from flask import request, session, jsonify, send_file, Blueprint
 from models.database_model import User, Topic, Module, CompletedModule, Query, OngoingModule, Transaction
 from concurrent.futures import ThreadPoolExecutor
@@ -43,7 +41,6 @@ CLIP_MODEL = AutoModel.from_pretrained(IMAGE_EMBEDDING_MODEL_NAME).to(DEVICE_TYP
 CLIP_PROCESSOR = AutoImageProcessor.from_pretrained(IMAGE_EMBEDDING_MODEL_NAME)
 CLIP_TOKENIZER = AutoTokenizer.from_pretrained(IMAGE_EMBEDDING_MODEL_NAME)
 EMBEDDINGS = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
-LANG_DETECTOR = LanguageDetectorBuilder.from_all_languages().with_preloaded_language_models().build()
 GEMINI_CLIENT = GeminiProvider()
 TOOLS = [AssistantUtils.get_page_context]
 MODULE_GENERATOR = ModuleGenerator()
@@ -365,7 +362,7 @@ def doc_query_topic(topicname,level,source_lang):
 
     # language detection for input provided
     if source_lang == 'auto':
-        source_language = Lang(str(LANG_DETECTOR.detect_language_of(topicname)).split('.')[1].title()).pt1
+        source_language = ServerUtils.detect_source_language(topicname)
         print(f"Source Language: {source_language}")
     else:
         source_language=source_lang
@@ -518,38 +515,57 @@ def multimodal_rag_submodules():
     # user = User.query.get(user_id)
     # if user is None:
     #     return jsonify({"message": "User not found", "response":False}), 404
+
+    if 'files[]' not in request.files:
+        return jsonify({"message": "No files uploaded", "response": False}), 400
     
-    if 'file' not in request.files:
-        file=None
-    else:
-        file = request.files['file']
-    uploads_path = os.path.join('server', 'uploads')
-    if not os.path.exists(uploads_path):
-        os.makedirs(uploads_path)
-    if file:
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(uploads_path, filename))
-    document_path = os.path.join(uploads_path, filename)
     title = request.form['title']
     description = request.form['description']
+    files = request.files.getlist('files[]')
+    
+    uploads_path = os.path.join('server', 'uploads', title)
+    if not os.path.exists(uploads_path):
+        os.makedirs(uploads_path)
+    
+    for file in files:
+        if file:
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(uploads_path, filename))
 
-    if file:
-        multimodal_rag = MultiModalRAG(pdf_path=document_path, course_name=title, embeddings=EMBEDDINGS, clip_model=CLIP_MODEL, clip_processor=CLIP_PROCESSOR, clip_tokenizer=CLIP_TOKENIZER)
-        text_vectorstore_path, image_vectorstore_path = multimodal_rag.create_text_and_image_vectorstores()
-        session['text_vectorstore_path']= text_vectorstore_path
-        session['image_vectorstore_path']= image_vectorstore_path
-
+    multimodal_rag = MultiModalRAG(documents_directory_path=uploads_path,  
+                                   course_name=title,
+                                   embeddings=EMBEDDINGS,
+                                   clip_model=CLIP_MODEL,
+                                   clip_processor=CLIP_PROCESSOR,
+                                   clip_tokenizer=CLIP_TOKENIZER)
+    
+    text_vectorstore_path, image_vectorstore_path = multimodal_rag.create_text_and_image_vectorstores()
+    
+    session['text_vectorstore_path'] = text_vectorstore_path
+    session['image_vectorstore_path'] = image_vectorstore_path
+    
     VECTORDB_TEXTBOOK = FAISS.load_local(text_vectorstore_path, EMBEDDINGS, allow_dangerous_deserialization=True)
-    submodules = SUB_MODULE_GENERATOR.generate_submodules_from_textbook(title,VECTORDB_TEXTBOOK)
+    
+    submodules = SUB_MODULE_GENERATOR.generate_submodules_from_textbook(title, VECTORDB_TEXTBOOK)
     values_list = list(submodules.values())
+    
     session['title'] = title
     session['user_profile'] = description
+<<<<<<< HEAD
     session['submodules']=submodules
     session['pdf_path'] = document_path
     print("submodules:--------", session.get('pdf_path'))
     return jsonify({"message": "Query successful","submodules":values_list,"response":True}), 200
+=======
+    session['submodules'] = submodules
+    session['document_directory_path'] = uploads_path 
+    
+    print("submodules:--------", submodules)
+    return jsonify({"message": "Query successful", "submodules": values_list, "response": True}), 200
+>>>>>>> 1c1f5695e0c43847e11597bd60f9ddb88de0b8d5
 
-@users.route('/query2/multimodal-rag-content',methods=['GET'])
+
+@users.route('/query2/multimodal-rag-content', methods=['GET'])
 async def multimodal_rag_content():
     # user_id = session.get("user_id", None)
     # if user_id is None:
@@ -558,35 +574,36 @@ async def multimodal_rag_content():
     # user = User.query.get(user_id)
     # if user is None:
     #     return jsonify({"message": "User not found", "response": False}), 404
+<<<<<<< HEAD
     
     document_path = session.get("pdf_path")
+=======
+
+    document_paths = session.get("document_directory_path") 
+>>>>>>> 1c1f5695e0c43847e11597bd60f9ddb88de0b8d5
     title = session.get("title")
     user_profile = session.get("user_profile")
     submodules = session.get("submodules")
     text_vectorstore_path = session.get("text_vectorstore_path")
     print("session variable:- ",document_path)
     image_vectorstore_path = session.get("image_vectorstore_path")
-    multimodal_rag = MultiModalRAG(pdf_path=document_path, course_name=title, embeddings=EMBEDDINGS, clip_model=CLIP_MODEL, clip_processor=CLIP_PROCESSOR, clip_tokenizer=CLIP_TOKENIZER, chunk_size=1000, chunk_overlap=200, image_similarity_threshold=0.1, text_vectorstore_path=text_vectorstore_path, image_vectorstore_path=image_vectorstore_path)
-
-    content_list, images_list = await multimodal_rag.execute(CONTENT_GENERATOR, title, submodules=submodules, profile=user_profile, top_k_docs=7)
-    final_content = []
-    for content in content_list:
-        markdown = ""
-        for key, value in content.items():
-            if key=="title_for_the_content":
-                markdown += f"# {value}\n"
-            elif key=="content":
-                markdown += f"{value}\n\n"
-            elif key=="subsections":
-                for i in content["subsections"]:
-                    for key, value in i.items():
-                        if key=="title":
-                            markdown += f"## {value}\n"
-                        elif key=="content":
-                            markdown += f"{value}\n"
-        final_content.append({content["subject_name"]: markdown})
     
-    return jsonify({"message": "Query successful","images": images_list,"content": final_content,"response":True}), 200
+    multimodal_rag = MultiModalRAG(documents_directory_path=document_paths,  # Pass multiple document paths
+                                   course_name=title,
+                                   embeddings=EMBEDDINGS,
+                                   clip_model=CLIP_MODEL,
+                                   clip_processor=CLIP_PROCESSOR,
+                                   clip_tokenizer=CLIP_TOKENIZER,
+                                   chunk_size=1000,
+                                   chunk_overlap=200,
+                                   image_similarity_threshold=0.1,
+                                   text_vectorstore_path=text_vectorstore_path,
+                                   image_vectorstore_path=image_vectorstore_path)
+    
+    content_list, relevant_images_list = await multimodal_rag.execute(CONTENT_GENERATOR, title, submodules=submodules, profile=user_profile, top_k_docs=7)
+    final_content = ServerUtils.json_list_to_markdown(content_list)
+    
+    return jsonify({"message": "Query successful", "relevant_images": relevant_images_list, "content": final_content, "response": True}), 200
 
 @users.route('/query2/doc_generate_content',methods=['GET'])
 def personalized_module_content():
@@ -667,7 +684,7 @@ def query_topic(topicname,level,websearch,source_lang):
 
     # language detection for input provided
     if source_lang == 'auto':
-        source_language = Lang(str(LANG_DETECTOR.detect_language_of(topicname)).split('.')[1].title()).pt1
+        source_language = ServerUtils.detect_source_language(topicname)
         print(f"Source Language: {source_language}")
     else:
         source_language=source_lang
@@ -1086,7 +1103,7 @@ def chatbot_route():
         session['index_chatbot'] = index
 
     if query:
-        source_language = Lang(str(LANG_DETECTOR.detect_language_of(query)).split('.')[1].title()).pt1
+        source_language = ServerUtils.detect_source_language(query)
         if source_language != 'en':
             trans_query = GoogleTranslator(source=source_language, target='en').translate(query)
         else:

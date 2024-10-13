@@ -32,3 +32,6 @@ PyMuPDF
 Pillow
 pykka
 flask[async]
+unstructured[docx]
+unstructured[pdf]
+python-docx
