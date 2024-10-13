@@ -3,7 +3,7 @@ import ast
 from dotenv import load_dotenv
 from server.teacher.routes import session
 import google.generativeai as genai
-
+import time 
 load_dotenv()
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 os.environ["GOOGLE_API_KEY"] = os.getenv("GEMINI_API_KEY")
@@ -27,7 +27,8 @@ class GeminiProvider:
                 )
                 output = ast.literal_eval(completion.text)
                 return output
-            except (ValueError, SyntaxError):
+            except Exception as e:
+                time.sleep(10)
                 print("Invalid JSON response, retrying...")
         
     def explain_two_image(self, prompt, image1, image2):
