@@ -1,6 +1,7 @@
 from models.data_loader import PDFVectorStore
 from models.data_utils import PdfUtils
 from api.serper_client import SerperProvider
+from core.content_generator import ContentGenerator
 from langchain_community.vectorstores.faiss import FAISS
 import faiss
 import os
@@ -15,7 +16,7 @@ class ResultHandler(ThreadingActor):
 class MultiModalRAG:
     def __init__(
             self, 
-            pdf_path=None, 
+            documents_directory_path=None, 
             course_name=None,
             embeddings=None, 
             clip_model=None, 
@@ -27,9 +28,9 @@ class MultiModalRAG:
             text_vectorstore_path=None,
             image_vectorstore_path=None,
         ):
-        if pdf_path is None:
-            raise Exception("PDF path must be provided")
-        self.pdf_path = pdf_path
+        if documents_directory_path is None:
+            raise Exception("Document Directory Path path must be provided")
+        self.documents_directory_path = documents_directory_path
         self.embeddings = embeddings
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
@@ -53,8 +54,8 @@ class MultiModalRAG:
             self.image_vectorstore = None
 
     def create_text_and_image_vectorstores(self):
-        self.text_vectorstore = PDFVectorStore.create_faiss_vectorstore_for_text(pdf_path=self.pdf_path, embeddings=self.embeddings, chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap)
-        self.image_vectorstore = PDFVectorStore.create_faiss_vectorstore_for_image(pdf_path=self.pdf_path, image_directory_path=self.image_directory_path, clip_model=self.clip_model, clip_processor=self.clip_processor)
+        self.text_vectorstore = PDFVectorStore.create_faiss_vectorstore_for_text(documents_directory=self.documents_directory_path, embeddings=self.embeddings, chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap)
+        self.image_vectorstore = PDFVectorStore.create_faiss_vectorstore_for_image(pdf_paths=self.documents_directory_path, image_directory_path=self.image_directory_path, clip_model=self.clip_model, clip_processor=self.clip_processor)
         self.text_vectorstore.save_local(self.text_vectorstore_path)
         faiss.write_index(self.image_vectorstore, self.image_vectorstore_path)
         return self.text_vectorstore_path, self.image_vectorstore_path
@@ -74,7 +75,7 @@ class MultiModalRAG:
         top_k_docs = self.text_vectorstore.similarity_search(query_text, k=k)
         return top_k_docs
     
-    async def run(self, content_generator, module_name, submodule_split, profile, top_k_docs):
+    async def run(self, content_generator : ContentGenerator, module_name, submodule_split, profile, top_k_docs):
         images_list = os.listdir(self.image_directory_path)
         submodule_content = []
         submodule_images=[]
@@ -90,21 +91,21 @@ class MultiModalRAG:
                     context = '\n'.join(rel_docs)
                     image_explanation = await content_generator.generate_explanation_from_images(relevant_images[:2], val)
                     output = await content_generator.generate_content_from_textbook_and_images(module_name, val, profile, context, image_explanation)
-                # else:
-                #     relevant_docs = self.search_text(val, top_k_docs)
-                #     rel_docs = [doc.page_content for doc in relevant_docs]
-                #     context = '\n'.join(rel_docs)
-                #     result_handler = ResultHandler.start()
-                #     try:
-                #         submodule_images, submodule_output = await asyncio.gather(
-                #             SerperProvider.submodule_image_from_web(val),
-                #             content_generator.generate_single_content_from_textbook(module_name, val, profile, context)
-                #         )
-                #         output = submodule_output
-                #         result_handler.tell(submodule_images)
-                #         result_handler.tell(submodule_output)
-                #     finally:
-                #         result_handler.stop()
+                else:
+                    relevant_docs = self.search_text(val, top_k_docs)
+                    rel_docs = [doc.page_content for doc in relevant_docs]
+                    context = '\n'.join(rel_docs)
+                    result_handler = ResultHandler.start()
+                    try:
+                        submodule_images, submodule_output = await asyncio.gather(
+                            SerperProvider.submodule_image_from_web(val),
+                            content_generator.generate_single_content_from_textbook(module_name, val, profile, context)
+                        )
+                        output = submodule_output
+                        result_handler.tell(submodule_images)
+                        result_handler.tell(submodule_output)
+                    finally:
+                        result_handler.stop()
             else:
                 relevant_docs = self.search_text(val, top_k_docs)
                 rel_docs = [doc.page_content for doc in relevant_docs]
