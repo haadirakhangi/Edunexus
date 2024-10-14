@@ -90,6 +90,7 @@ def multimodal_rag_submodules():
         print(f"\nLinks provided: {links_list}\n")
 
     if file and len(links_list[0])>0:
+        session['input_type']='pdf_and_link'
         print("\nInput: File + Links...\n")
         multimodal_rag = MultiModalRAG(
             course_name=title,
@@ -102,6 +103,7 @@ def multimodal_rag_submodules():
             links=links_list
         )
     elif file:
+        session['input_type']='pdf'
         print("\nInput: File only...\n")
         multimodal_rag = MultiModalRAG(
             course_name=title,
@@ -113,6 +115,7 @@ def multimodal_rag_submodules():
             input_type="pdf"
         )
     elif len(links_list[0])>0:
+        session['input_type']='link'
         print("\nInput: Links only..\n")
         multimodal_rag = MultiModalRAG(
             course_name=title,
@@ -173,7 +176,7 @@ async def multimodal_rag_content():
         submodules = session.get("submodules")
         text_vectorstore_path = session.get("text_vectorstore_path")
         image_vectorstore_path = session.get("image_vectorstore_path")
-        
+        input_type = session.get('input_type')
         multimodal_rag = MultiModalRAG(
             documents_directory_path=document_paths,
             course_name=title,
@@ -184,6 +187,7 @@ async def multimodal_rag_content():
             chunk_size=1000,
             chunk_overlap=200,
             image_similarity_threshold=0.1,
+            input_type=input_type,
             text_vectorstore_path=text_vectorstore_path,
             image_vectorstore_path=image_vectorstore_path
         )

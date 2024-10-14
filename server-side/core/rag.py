@@ -1,5 +1,5 @@
 from models.data_loader import DocumentLoader
-from models.data_utils import DocumentUtils
+from models.data_utils import DocumentUtils,WebUtils
 from api.serper_client import SerperProvider
 from core.content_generator import ContentGenerator
 from langchain_community.vectorstores.faiss import FAISS
@@ -60,13 +60,21 @@ class MultiModalRAG:
             self.image_vectorstore = None
 
     def create_text_and_image_vectorstores(self):
-        with ThreadPoolExecutor() as executor:
-            future_text_vectorstore = executor.submit(DocumentLoader.create_faiss_vectorstore_for_text, self.documents_directory_path, self.embeddings, self.chunk_size, self.chunk_overlap, self.input_type, self.links)
-            future_image_vectorstore = executor.submit(DocumentLoader.create_faiss_vectorstore_for_image, self.documents_directory_path, self.image_directory_path, self.clip_model, self.clip_processor)
-        self.text_vectorstore = future_text_vectorstore.result()
-        self.image_vectorstore = future_image_vectorstore.result()
-        self.text_vectorstore.save_local(self.text_vectorstore_path)
-        faiss.write_index(self.image_vectorstore, self.image_vectorstore_path)
+        if self.input_type=='link':
+            with ThreadPoolExecutor() as executor:
+                future_text_vectorstore = executor.submit(DocumentLoader.create_faiss_vectorstore_for_text, self.documents_directory_path, self.embeddings, self.chunk_size, self.chunk_overlap, self.input_type, self.links)
+                WebUtils.scrape_images(self.links)
+                future_image_vectorstore = executor.submit(DocumentLoader.create_faiss_vectorstore_for_image, self.documents_directory_path, self.image_directory_path, self.clip_model, self.clip_processor)
+            
+            self.text_vectorstore = future_text_vectorstore.result()
+        else:
+            with ThreadPoolExecutor() as executor:
+                future_text_vectorstore = executor.submit(DocumentLoader.create_faiss_vectorstore_for_text, self.documents_directory_path, self.embeddings, self.chunk_size, self.chunk_overlap, self.input_type, self.links)
+                future_image_vectorstore = executor.submit(DocumentLoader.create_faiss_vectorstore_for_image, self.documents_directory_path, self.image_directory_path, self.clip_model, self.clip_processor)
+            self.text_vectorstore = future_text_vectorstore.result()
+            self.image_vectorstore = future_image_vectorstore.result()
+            self.text_vectorstore.save_local(self.text_vectorstore_path)
+            faiss.write_index(self.image_vectorstore, self.image_vectorstore_path)
         return self.text_vectorstore_path, self.image_vectorstore_path
 
     def search_image(self, query_text, image_paths):
