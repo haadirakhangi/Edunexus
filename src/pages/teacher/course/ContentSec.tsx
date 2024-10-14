@@ -183,11 +183,11 @@ const ContentSec: React.FC<ContentSecProps> = ({ contentData, selectedSubmodule,
               {renderMarkdown(markdownContent)}
             </Box>
 
-            <VStack mt={4} spacing={4}>
+            {/* <VStack mt={4} spacing={4}>
               {uploadedImages.map((image, idx) => (
                 <img key={idx} src={image} alt={`Uploaded ${idx}`} width="100%" />
               ))}
-            </VStack>
+            </VStack> */}
           </TabPanel>
         </TabPanels>
       </Tabs>

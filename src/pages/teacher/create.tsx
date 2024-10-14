@@ -57,7 +57,7 @@ export default function Create() {
     formData.append('description', courseStyle);
 
     if (pdfFile) {
-      formData.append('file', pdfFile);
+      formData.append('files[]', pdfFile);
     }
 
     modules.forEach((module, index) => {
