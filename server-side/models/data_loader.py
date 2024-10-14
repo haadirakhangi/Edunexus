@@ -1,5 +1,5 @@
 import faiss
-from langchain_community.document_loaders import DirectoryLoader, UnstructuredFileLoader
+from langchain_community.document_loaders import DirectoryLoader, UnstructuredFileLoader, PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from models.data_utils import DocumentUtils
@@ -11,7 +11,7 @@ import os
 class DocumentLoader:
     @staticmethod
     def create_faiss_vectorstore_for_text(documents_directory, embeddings, chunk_size, chunk_overlap):
-        loader = DirectoryLoader(documents_directory, loader_cls=UnstructuredFileLoader)
+        loader = DirectoryLoader(documents_directory, loader_cls=PyPDFLoader)
         documents = loader.load()
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size, chunk_overlap=chunk_overlap, length_function=len

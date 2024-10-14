@@ -2,6 +2,8 @@ import os
 from PIL import Image
 import fitz
 from docx import Document
+import base64
+
 import io
 import torch
 
@@ -80,3 +82,8 @@ class DocumentUtils:
         text_features_normalized = text_features / text_features.norm(dim=-1, keepdim=True)
         text_features_normalized = text_features_normalized.cpu().numpy()
         return text_features_normalized
+    
+    @staticmethod
+    def image_to_base64(image_path):
+        with open(image_path, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode("utf-8")

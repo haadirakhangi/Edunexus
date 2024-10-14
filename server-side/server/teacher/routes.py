@@ -522,8 +522,8 @@ def multimodal_rag_submodules():
     title = request.form['title']
     description = request.form['description']
     files = request.files.getlist('files[]')
-    
-    uploads_path = os.path.join('server', 'uploads', title)
+    current_dir = os.path.dirname(__file__)
+    uploads_path = os.path.join(current_dir, 'uploads', title)
     if not os.path.exists(uploads_path):
         os.makedirs(uploads_path)
     

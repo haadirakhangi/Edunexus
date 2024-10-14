@@ -90,11 +90,12 @@ class MultiModalRAG:
                     future_docs = executor.submit(self.search_text, val, top_k_docs)
                     future_images = executor.submit(self.search_image, val, images_in_directory)
                 relevant_docs = future_docs.result()
-                relevant_images = future_images.result()
-                if len(relevant_images) >= 2:
+                top_images = future_images.result()
+                relevant_images = [DocumentUtils.image_to_base64(image_path) for image_path in top_images]
+                if len(top_images) >= 2:
                     rel_docs = [doc.page_content for doc in relevant_docs]
                     context = '\n'.join(rel_docs)
-                    image_explanation = await content_generator.generate_explanation_from_images(relevant_images[:2], val)
+                    image_explanation = await content_generator.generate_explanation_from_images(top_images[:2], val)
                     output = await content_generator.generate_content_from_textbook_and_images(module_name, val, profile, context, image_explanation)
                 else:
                     relevant_docs = self.search_text(val, top_k_docs)
@@ -102,13 +103,12 @@ class MultiModalRAG:
                     context = '\n'.join(rel_docs)
                     result_handler = ResultHandler.start()
                     try:
-                        submodule_images, submodule_output = await asyncio.gather(
+                        relevant_images, output = await asyncio.gather(
                             SerperProvider.submodule_image_from_web(val),
                             content_generator.generate_single_content_from_textbook(module_name, val, profile, context)
                         )
-                        output = submodule_output
-                        result_handler.tell(submodule_images)
-                        result_handler.tell(submodule_output)
+                        result_handler.tell(relevant_images)
+                        result_handler.tell(output)
                     finally:
                         result_handler.stop()
             else:
