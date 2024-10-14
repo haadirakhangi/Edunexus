@@ -175,6 +175,7 @@ export default function Create() {
                 type="file"
                 borderColor={'purple.600'}
                 p={1}
+                multiple={true}
                 _hover={{borderColor: "purple.600"}}
                 accept=".pdf"
                 onChange={handleFileChange}

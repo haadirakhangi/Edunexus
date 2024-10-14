@@ -19,7 +19,7 @@ interface ContentDataItem {
 const PerContent: React.FC = () => {
     const [data, setData] = useState<ContentDataItem[]>([]);
     const [selectedSubmodule, setSelectedSubmodule] = useState<string | null>(null);
-    // const [images, setImages] = useState<string[][]>([]);
+    const [images, setImages] = useState<string[][]>([]);
     // const [videos, setVideos] = useState<string[][]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -34,7 +34,7 @@ const PerContent: React.FC = () => {
                 // Example static data for now
                 // Replace with actual data fetching
 
-                // setImages(imageUrls);
+                setImages(response.data.relevant_images);
                 // setVideos(videoUrls);
                 setData(response.data.content);
                 // setData(contentData);
@@ -88,7 +88,7 @@ const PerContent: React.FC = () => {
                         contentData={data} // Pass the entire data
                         selectedSubmodule={selectedSubmodule}
                         onUpdateContent={handleUpdateContent}
-                        // images={images}
+                        relevant_images={images}
                         // videos={videos}
                     />
                 )}

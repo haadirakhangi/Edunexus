@@ -5,7 +5,7 @@ export default function LandingPage() {
   return (
     <Box bg={"purple.600"} minHeight={'100vh'}> {/* Change to minHeight for better responsiveness */}
       <Navbar />
-      <VStack spacing={4} align="center" py={8} px={4}> {/* Add padding for smaller screens */}
+      <VStack spacing={4} align="center" py={5} px={4}> {/* Add padding for smaller screens */}
         <Box textAlign="center">
           {/* <Heading as="h1" size={['2xl', '3xl']} color="white" display="inline">
             Welcome to{' '}
@@ -17,7 +17,7 @@ export default function LandingPage() {
         <Flex
           alignItems="center"
           justifyContent="space-between"
-          p={'8'}
+          px={'10'}
           flexDirection={['column', 'column', 'row']} // Stack on small screens, row on larger ones
         >
           <Box flex={1} bg={'white'} p={'5'} borderRadius={20} style={{ boxShadow: "20px 20px 20px rgba(0, 0, 0, 0.5)" }}>

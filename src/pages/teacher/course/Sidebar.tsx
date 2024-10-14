@@ -139,6 +139,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                             borderColor={'purple.300'}
                                             borderWidth={3}
                                             borderRadius={15}
+                                            _focus={{ outline: 'none', boxShadow: 'none' }}
                                             bg={activeContentIndex === index ? 'purple.500' : 'white'}
                                             color={activeContentIndex === index ? 'white' : 'inherit'}
                                             className="roboto-bold"

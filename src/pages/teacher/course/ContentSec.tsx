@@ -6,9 +6,15 @@ interface ContentSecProps {
   contentData: { [submodule: string]: string }[]; // List of dictionaries
   selectedSubmodule: string; // Currently selected submodule
   onUpdateContent: (updatedContent: { [submodule: string]: string }[]) => void; // Handler for updating contentData
+  relevant_images: (string[])[]; // List of lists containing either base64 or image links for each submodule
 }
 
-const ContentSec: React.FC<ContentSecProps> = ({ contentData, selectedSubmodule, onUpdateContent }) => {
+const ContentSec: React.FC<ContentSecProps> = ({
+  contentData,
+  selectedSubmodule,
+  onUpdateContent,
+  relevant_images,
+}) => {
   const [markdownContent, setMarkdownContent] = useState<string>('');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
@@ -65,8 +71,7 @@ const ContentSec: React.FC<ContentSecProps> = ({ contentData, selectedSubmodule,
   const renderMarkdown = (content: string) => {
     const lines = content.split('\n');
     const renderedContent = lines.map((line, index) => {
-      // Check for image markdown
-      const imagePattern = /!\[(.*?)\]\((.*?)\)/; // Matches the markdown for images
+      const imagePattern = /!\[(.*?)\]\((.*?)\)/;
       const imageMatch = line.match(imagePattern);
 
       if (imageMatch) {
@@ -77,54 +82,48 @@ const ContentSec: React.FC<ContentSecProps> = ({ contentData, selectedSubmodule,
         );
       }
 
-      // Headings
       if (line.startsWith('## ')) {
-        return (
-          <Heading as="h2" size="xl" key={index} fontWeight="bold">
-            {line.slice(3)}
-          </Heading>
-        );
+        return <Heading as="h4" size={'lg'} key={index} fontWeight="bold">{line.slice(3)}</Heading>;
       } else if (line.startsWith('# ')) {
-        return (
-          <Heading as="h1" size="2xl" key={index}>
-            {line.slice(2)}
-          </Heading>
-        );
+        return <Heading as="h2" key={index}>{line.slice(2)}</Heading>;
       } else if (line.startsWith('### ')) {
-        return (
-          <Heading as="h3" size="lg" key={index} fontWeight="bold">
-            {line.slice(4)}
-          </Heading>
-        );
+        return <Heading as="h4" size={"md"} key={index} fontWeight="bold">{line.slice(4)}</Heading>;
       }
 
-      // Bold text regex
       const boldPattern = /\*\*(.*?)\*\*/g;
-
-      // Bullet points handling
       if (line.startsWith('* ') || line.startsWith('- ')) {
         const formattedLine = line.slice(2).replace(boldPattern, (match, p1) => `<strong>${p1}</strong>`);
-        return (
-          <li key={index} style={{ marginLeft: '20px', listStyleType: 'disc' }} dangerouslySetInnerHTML={{ __html: formattedLine }} />
-        );
+        return <li key={index} style={{ marginLeft: '20px', listStyleType: 'disc' }} dangerouslySetInnerHTML={{ __html: formattedLine }} />;
       }
 
-      // Bold text for non-bullet points
       const formattedLine = line.replace(boldPattern, (match, p1) => `<strong>${p1}</strong>`);
 
-      // Ensure line breaks and empty lines are respected
       if (line.trim() === '') {
-        return <br key={index} />; // Add line breaks for empty lines
+        return <br key={index} />;
       } else {
-        return (
-          <p key={index} dangerouslySetInnerHTML={{ __html: formattedLine.replace(/\n/g, '<br />') }} />
-        );
+        return <p key={index} dangerouslySetInnerHTML={{ __html: formattedLine.replace(/\n/g, '<br />') }} />;
       }
     });
 
     return renderedContent;
   };
 
+  // const renderRelevantImages = () => {
+  //   const index = contentData.findIndex((item) => selectedSubmodule in item);
+  //   const imagesForSubmodule = relevant_images[index] || [];
+
+  //   return imagesForSubmodule.map((image, idx) => {
+  //     const isBase64 = image.startsWith('data:image');
+  //     return (
+  //       <img
+  //         key={idx}
+  //         src={isBase64 ? image : image}
+  //         alt={`Relevant image ${idx + 1}`}
+  //         style={{ maxWidth: '100%', height: 'auto', marginBottom: '10px' }}
+  //       />
+  //     );
+  //   });
+  // };
 
   return (
     <Box p={8} width={'full'} height={'100vh'} display="flex">
@@ -135,8 +134,8 @@ const ContentSec: React.FC<ContentSecProps> = ({ contentData, selectedSubmodule,
             borderRightRadius={0}
             bg="purple.500"
             _hover={{ border: 'none' }}
-            _selected={{ bg: "purple.800", color: "white" }} // Change background and text color for selected tab
-            color="white" // Set default text color
+            _selected={{ bg: "purple.800", color: "white" }}
+            color="white"
             className='roboto-bold'
             p={2}
             _focus={{ outline: 'none', boxShadow: 'none' }}
@@ -163,7 +162,7 @@ const ContentSec: React.FC<ContentSecProps> = ({ contentData, selectedSubmodule,
         <TabPanels>
           <TabPanel>
             <Textarea
-              id="markdown-textarea" // Add an ID to reference the textarea for cursor position
+              id="markdown-textarea"
               value={markdownContent}
               bg={'white'}
               borderRadius={"30"}
@@ -173,7 +172,7 @@ const ContentSec: React.FC<ContentSecProps> = ({ contentData, selectedSubmodule,
               placeholder="Write your Markdown content here..."
               size="2xl"
               rows={20}
-              style={{ whiteSpace: 'pre-wrap' }} // Ensures line breaks show in the textarea
+              style={{ whiteSpace: 'pre-wrap' }}
             />
             <input type="file" accept="image/*" multiple onChange={handleImageUpload} />
           </TabPanel>
@@ -181,13 +180,10 @@ const ContentSec: React.FC<ContentSecProps> = ({ contentData, selectedSubmodule,
           <TabPanel>
             <Box bg={'white'} p={8} borderRadius={"30"}>
               {renderMarkdown(markdownContent)}
+              {/* <VStack mt={4} spacing={4}>
+                {renderRelevantImages()}
+              </VStack> */}
             </Box>
-
-            {/* <VStack mt={4} spacing={4}>
-              {uploadedImages.map((image, idx) => (
-                <img key={idx} src={image} alt={`Uploaded ${idx}`} width="100%" />
-              ))}
-            </VStack> */}
           </TabPanel>
         </TabPanels>
       </Tabs>
