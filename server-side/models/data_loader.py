@@ -3,9 +3,10 @@ from langchain_community.document_loaders import PyPDFDirectoryLoader, ScrapflyL
 from langchain_community.document_loaders.merge import MergedDataLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-from models.data_utils import DocumentUtils
+from models.data_utils import DocumentUtils, WebUtils
 from server.utils import ServerUtils
 from deep_translator import GoogleTranslator
+from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import os
 
@@ -59,9 +60,16 @@ class DocumentLoader:
         return vectorstore
     
     @staticmethod
-    def create_faiss_vectorstore_for_image(documents_directory, image_directory_path, clip_model, clip_processor):
+    def create_faiss_vectorstore_for_image(documents_directory, image_directory_path, clip_model, clip_processor, input_type, links):
         print("\nCreating FAISS Vector database for images...\n")
-        DocumentUtils.extract_images_from_directory(documents_directory=documents_directory, output_directory_path=image_directory_path)
+        if input_type=="pdf":
+            DocumentUtils.extract_images_from_directory(documents_directory=documents_directory, output_directory_path=image_directory_path)
+        elif input_type == "link":
+            WebUtils.extract_images_from_webpages(urls=links, output_directory_path=image_directory_path)
+        elif input_type =="pdf_and_link":
+            with ThreadPoolExecutor() as executor:
+                executor.submit(DocumentUtils.extract_images_from_directory,documents_directory,image_directory_path)
+                executor.submit(WebUtils.extract_images_from_webpages,links,image_directory_path)
         images_in_directory = []
         for root, dirs, files in os.walk(image_directory_path):
             for file in files:

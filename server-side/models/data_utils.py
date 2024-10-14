@@ -67,28 +67,27 @@ class DocumentUtils:
             return base64.b64encode(image_file.read()).decode("utf-8")
         
 class WebUtils:
-
     @staticmethod
-    async def download_image(url, filepath, client):
+    async def download_image(url, filepath: Path, client: httpx.AsyncClient):
         response = await client.get(url)
         filepath.write_bytes(response.content)
-        print(f"Downloaded {url} to {filepath}")
 
     @staticmethod
-    async def scrape_images(url,output_directory_path):
+    async def extract_images_from_webpages(urls, output_directory_path):
         download_dir = Path(output_directory_path)
         download_dir.mkdir(parents=True, exist_ok=True)
 
         async with httpx.AsyncClient() as client:
-            response = await client.get(url)
-            soup = BeautifulSoup(response.text, "html.parser")
-            download_tasks = []
-            for img_tag in soup.find_all("img"):
-                img_url = img_tag.get("src")
-                if img_url:
-                    img_url = response.url.join(img_url)
-                    img_filename = download_dir / Path(str(img_url)).name
-                    download_tasks.append(
-                        WebLoader.download_image(img_url, img_filename, client)
-                    )
-            await asyncio.gather(*download_tasks)
+            for url in urls:
+                response = await client.get(url)
+                soup = BeautifulSoup(response.text, "html.parser")
+                download_tasks = []
+                for img_tag in soup.find_all("img"):
+                    img_url = img_tag.get("src")
+                    if img_url:
+                        img_url = response.url.join(img_url)
+                        img_filename = download_dir / Path(str(img_url)).name
+                        download_tasks.append(
+                            WebUtils.download_image(img_url, img_filename, client)
+                        )
+                await asyncio.gather(*download_tasks)

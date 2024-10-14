@@ -56,7 +56,7 @@ AVAILABLE_TOOLS = {
 }
 
 @users.route('/query2/multimodal-rag-submodules', methods=['POST'])
-def multimodal_rag_submodules():
+async def multimodal_rag_submodules():
     # user_id = session.get('user_id')
 
     # if user_id is None:
@@ -138,7 +138,7 @@ def multimodal_rag_submodules():
         print("\nGenerated Submodules:\n", submodules)
         return jsonify({"message": "Query successful", "submodules": values_list, "response": True}), 200
 
-    text_vectorstore_path, image_vectorstore_path = multimodal_rag.create_text_and_image_vectorstores()
+    text_vectorstore_path, image_vectorstore_path = await multimodal_rag.create_text_and_image_vectorstores()
     
     session['text_vectorstore_path'] = text_vectorstore_path
     session['image_vectorstore_path'] = image_vectorstore_path
