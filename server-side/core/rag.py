@@ -16,8 +16,8 @@ class ResultHandler(ThreadingActor):
 class MultiModalRAG:
     def __init__(
             self, 
-            documents_directory_path=None, 
             course_name=None,
+            documents_directory_path=None, 
             embeddings=None, 
             clip_model=None, 
             clip_processor=None,
@@ -27,6 +27,8 @@ class MultiModalRAG:
             image_similarity_threshold=0.5,
             text_vectorstore_path=None,
             image_vectorstore_path=None,
+            input_type=None,
+            links=None,
         ):
         if documents_directory_path is None:
             raise Exception("Document Directory Path path must be provided")
@@ -38,6 +40,10 @@ class MultiModalRAG:
         self.clip_processor = clip_processor
         self.clip_tokenizer = clip_tokenizer
         self.image_similarity_threshold = image_similarity_threshold
+        if input_type not in ["pdf", "link", "pdf_and_link"]:
+            raise Exception("input_type should be pdf, link or pdf_and_link")
+        self.input_type = input_type
+        self.links = links
 
         self.current_dir = os.path.dirname(__file__)
         self.image_directory_path = os.path.join(self.current_dir, 'document-images', course_name)
@@ -55,7 +61,7 @@ class MultiModalRAG:
 
     def create_text_and_image_vectorstores(self):
         with ThreadPoolExecutor() as executor:
-            future_text_vectorstore = executor.submit(DocumentLoader.create_faiss_vectorstore_for_text, self.documents_directory_path, self.embeddings, self.chunk_size, self.chunk_overlap)
+            future_text_vectorstore = executor.submit(DocumentLoader.create_faiss_vectorstore_for_text, self.documents_directory_path, self.embeddings, self.chunk_size, self.chunk_overlap, self.input_type, self.links)
             future_image_vectorstore = executor.submit(DocumentLoader.create_faiss_vectorstore_for_image, self.documents_directory_path, self.image_directory_path, self.clip_model, self.clip_processor)
         self.text_vectorstore = future_text_vectorstore.result()
         self.image_vectorstore = future_image_vectorstore.result()

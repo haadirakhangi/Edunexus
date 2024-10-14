@@ -1,51 +1,10 @@
 import os
 from PIL import Image
 import fitz
-from docx import Document
 import base64
 
 import io
 import torch
-
-class PdfUtils:
-    @staticmethod
-    def extract_images_from_pdf(pdf_path, output_directory_path):
-        pdf_document = fitz.open(pdf_path)
-        
-        pdf_output_directory = os.path.join(output_directory_path, os.path.splitext(os.path.basename(pdf_path))[0])
-        if not os.path.exists(pdf_output_directory):
-            os.makedirs(pdf_output_directory)
-
-        for page_index in range(len(pdf_document)):
-            page = pdf_document.load_page(page_index)
-            image_list = page.get_images(full=True)
-
-            for image_index, img in enumerate(image_list, start=1):
-                xref = img[0]
-                base_image = pdf_document.extract_image(xref)
-                image_bytes = base_image["image"]
-                image_ext = base_image["ext"]
-                image_path = f"{pdf_output_directory}/image_{page_index + 1}_{image_index}.{image_ext}"
-                image = Image.open(io.BytesIO(image_bytes))
-                image.save(image_path)
-
-class DocxUtils:
-    @staticmethod
-    def extract_images_from_docx(docx_path, output_directory_path):
-        docx_document = Document(docx_path)
-        docx_output_directory = os.path.join(output_directory_path, os.path.splitext(os.path.basename(docx_path))[0])
-        if not os.path.exists(docx_output_directory):
-            os.makedirs(docx_output_directory)
-
-        image_index = 1
-        for rel in docx_document.part.rels.values():
-            if "image" in rel.target_ref:
-                image_bytes = rel.target_part.blob
-                image = Image.open(io.BytesIO(image_bytes))
-                image_ext = image.format.lower()
-                image_path = f"{docx_output_directory}/image_{image_index}.{image_ext}"
-                image.save(image_path)
-                image_index += 1
 class DocumentUtils:
     @staticmethod
     def extract_images_from_directory(documents_directory, output_directory_path):
@@ -56,13 +15,28 @@ class DocumentUtils:
             file_path = os.path.join(documents_directory, filename)
             
             if filename.endswith(".pdf"):
-                PdfUtils.extract_images_from_pdf(file_path, output_directory_path)
-            
-            elif filename.endswith(".docx"):
-                DocxUtils.extract_images_from_docx(file_path, output_directory_path)
+                pdf_document = fitz.open(file_path)
         
-        print(f"Images extracted from all documents in {documents_directory} and saved to {output_directory_path}")
+                pdf_output_directory = os.path.join(output_directory_path, os.path.splitext(os.path.basename(file_path))[0])
+                if not os.path.exists(pdf_output_directory):
+                    os.makedirs(pdf_output_directory)
 
+                for page_index in range(len(pdf_document)):
+                    page = pdf_document.load_page(page_index)
+                    image_list = page.get_images(full=True)
+
+                    for image_index, img in enumerate(image_list, start=1):
+                        xref = img[0]
+                        base_image = pdf_document.extract_image(xref)
+                        image_bytes = base_image["image"]
+                        image_ext = base_image["ext"]
+                        image_path = f"{pdf_output_directory}/image_{page_index + 1}_{image_index}.{image_ext}"
+                        image = Image.open(io.BytesIO(image_bytes))
+                        image.save(image_path)
+                    
+            else:
+                raise Exception("Only PDF format is supported.")
+        print(f"Images extracted from all documents in {documents_directory} and saved to {output_directory_path}")
 
     @staticmethod
     def embed_image_with_clip(image_path, clip_model, clip_processor, device_type="cpu"):
