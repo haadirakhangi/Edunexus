@@ -3,7 +3,6 @@ from gtts import gTTS
 from deep_translator import GoogleTranslator
 from server.teacher.routes import session
 from models.database_model import Module
-from iso639 import Lang
 from lingua import LanguageDetectorBuilder
 
 
@@ -115,7 +114,7 @@ class ServerUtils:
     
     @staticmethod
     def detect_source_language(text):
-        return Lang(str(LANG_DETECTOR.detect_language_of(text)).split('.')[1].title()).pt1
+        return str(LANG_DETECTOR.detect_language_of(text)).split('.')[1].lower()
     
     @staticmethod
     def json_list_to_markdown(content_list : list[dict]):

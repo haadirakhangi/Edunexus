@@ -402,7 +402,7 @@ def doc_query_topic(topicname,level,source_lang):
     db.session.commit()
 
     trans_moduleids = {}
-    if source_language !='en':
+    if source_language !='english':
         for key, value in module_ids.items():
             trans_key = GoogleTranslator(source='en', target=source_language).translate(str(key))
             trans_moduleids[trans_key]=value
@@ -573,7 +573,7 @@ async def multimodal_rag_content():
     user_profile = session.get("user_profile")
     submodules = session.get("submodules")
     text_vectorstore_path = session.get("text_vectorstore_path")
-    print("session variable:- ",document_path)
+    print("session variable:- ",document_paths)
     image_vectorstore_path = session.get("image_vectorstore_path")
     
     multimodal_rag = MultiModalRAG(documents_directory_path=document_paths,  # Pass multiple document paths
@@ -680,7 +680,7 @@ def query_topic(topicname,level,websearch,source_lang):
 
     trans_topic_name = ""
     # translate other languages input to english
-    if source_lang!="en":
+    if source_lang!="english":
         trans_topic_name = GoogleTranslator(source=source_lang, target='en').translate(topicname)
         print(f"Translated topic name: {trans_topic_name}")
     else:
@@ -700,7 +700,7 @@ def query_topic(topicname,level,websearch,source_lang):
             trans_module_summary_content = ServerUtils.translate_module_summary(module_summary_content, source_language)
             print(f"Translated module summary content: {trans_module_summary_content}")
             trans_moduleids = {}
-            if source_language !='en':
+            if source_language !='english':
                 for key, value in module_ids.items():
                     trans_key = GoogleTranslator(source='en', target=source_language).translate(str(key))
                     trans_moduleids[trans_key]=value
@@ -734,7 +734,7 @@ def query_topic(topicname,level,websearch,source_lang):
     db.session.commit()
 
     trans_moduleids = {}
-    if source_language !='en':
+    if source_language !='english':
         for key, value in module_ids.items():
             trans_key = GoogleTranslator(source='en', target=source_language).translate(str(key))
             trans_moduleids[trans_key]=value
@@ -1092,8 +1092,8 @@ def chatbot_route():
 
     if query:
         source_language = ServerUtils.detect_source_language(query)
-        if source_language != 'en':
-            trans_query = GoogleTranslator(source=source_language, target='en').translate(query)
+        if source_language != 'english':
+            trans_query = GoogleTranslator(source=source_language, target='english').translate(query)
         else:
             trans_query = query
         print(trans_query)
@@ -1103,7 +1103,7 @@ def chatbot_route():
         response_text = response.text  # Assuming response.text is a string
         
         # Translate the response back if necessary
-        if source_language != 'en':
+        if source_language != 'english':
             trans_output = GoogleTranslator(source='auto', target=source_language).translate(response_text)
         else:
             trans_output = response_text
@@ -1128,7 +1128,7 @@ def chatbot_route():
     #     if len(tool_check) == 0:
     #         chatbot_reply = content[0].text.value
     #         print("Chatbot reply",chatbot_reply)
-    #         if source_language != 'en':
+    #         if source_language != 'english':
     #             trans_output = GoogleTranslator(source='auto', target=source_language).translate(chatbot_reply)
     #         else:
     #             trans_output = chatbot_reply
