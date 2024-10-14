@@ -13,7 +13,7 @@ import os
 SCRAPFLY_API_KEY = os.getenv("SCRAPFLY_API_KEY")
 class DocumentLoader:
     @staticmethod
-    def create_faiss_vectorstore_for_text(documents_directory, embeddings, chunk_size, chunk_overlap, input_type, links):
+    async def create_faiss_vectorstore_for_text(documents_directory, embeddings, chunk_size, chunk_overlap, input_type, links):
         print("\nCreating FAISS Vector database for text...\n")
         scrapfly_scrape_config = {
             "asp": True,  # Bypass scraping blocking and antibot solutions, like Cloudflare
@@ -60,12 +60,12 @@ class DocumentLoader:
         return vectorstore
     
     @staticmethod
-    def create_faiss_vectorstore_for_image(documents_directory, image_directory_path, clip_model, clip_processor, input_type, links):
+    async def create_faiss_vectorstore_for_image(documents_directory, image_directory_path, clip_model, clip_processor, input_type, links):
         print("\nCreating FAISS Vector database for images...\n")
         if input_type=="pdf":
             DocumentUtils.extract_images_from_directory(documents_directory=documents_directory, output_directory_path=image_directory_path)
         elif input_type == "link":
-            WebUtils.extract_images_from_webpages(urls=links, output_directory_path=image_directory_path)
+            await WebUtils.extract_images_from_webpages(urls=links, output_directory_path=image_directory_path)
         elif input_type =="pdf_and_link":
             with ThreadPoolExecutor() as executor:
                 executor.submit(DocumentUtils.extract_images_from_directory,documents_directory,image_directory_path)

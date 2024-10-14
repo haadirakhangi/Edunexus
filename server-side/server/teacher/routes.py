@@ -89,9 +89,9 @@ async def multimodal_rag_submodules():
         links_list = json.loads(links)
         print(f"\nLinks provided: {links_list}\n")
 
-    if file and len(links_list[0])>0:
+    if file and len(links_list)>0:
         session['input_type']='pdf_and_link'
-        print("\nInput: File + Links...\n")
+        print("\nInput: File + Links...\n",links_list)
         multimodal_rag = MultiModalRAG(
             course_name=title,
             documents_directory_path=uploads_path,  
@@ -114,7 +114,7 @@ async def multimodal_rag_submodules():
             clip_tokenizer=CLIP_TOKENIZER,
             input_type="pdf"
         )
-    elif len(links_list[0])>0:
+    elif len(links_list)>0:
         session['input_type']='link'
         print("\nInput: Links only..\n")
         multimodal_rag = MultiModalRAG(
