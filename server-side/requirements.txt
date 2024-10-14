@@ -34,3 +34,4 @@ flask[async]
 unstructured[docx]
 unstructured[pdf]
 python-docx
+python-magic-bin
