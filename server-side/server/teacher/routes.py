@@ -551,18 +551,11 @@ def multimodal_rag_submodules():
     
     session['title'] = title
     session['user_profile'] = description
-<<<<<<< HEAD
-    session['submodules']=submodules
-    session['pdf_path'] = document_path
-    print("submodules:--------", session.get('pdf_path'))
-    return jsonify({"message": "Query successful","submodules":values_list,"response":True}), 200
-=======
     session['submodules'] = submodules
     session['document_directory_path'] = uploads_path 
     
     print("submodules:--------", submodules)
     return jsonify({"message": "Query successful", "submodules": values_list, "response": True}), 200
->>>>>>> 1c1f5695e0c43847e11597bd60f9ddb88de0b8d5
 
 
 @users.route('/query2/multimodal-rag-content', methods=['GET'])
@@ -574,13 +567,8 @@ async def multimodal_rag_content():
     # user = User.query.get(user_id)
     # if user is None:
     #     return jsonify({"message": "User not found", "response": False}), 404
-<<<<<<< HEAD
-    
-    document_path = session.get("pdf_path")
-=======
 
     document_paths = session.get("document_directory_path") 
->>>>>>> 1c1f5695e0c43847e11597bd60f9ddb88de0b8d5
     title = session.get("title")
     user_profile = session.get("user_profile")
     submodules = session.get("submodules")
