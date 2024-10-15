@@ -9,6 +9,7 @@ import {
     TabPanel,
     TabPanels,
     Tabs,
+    SimpleGrid,
     Flex,
     Text,
     Collapse,
@@ -19,7 +20,8 @@ interface SidebarProps {
     contentData: { [submodule: string]: string }[]; // List of dictionaries, each with one submodule
     setSelectedSubmodule: (submodule: string) => void; // Function to set selected submodule
     isLoading: boolean;
-    setCurrentIndex: (index: number) => void; // Function to set current index
+    setCurrentIndex: (index: number) => void;
+    relevant_images: (string[])[];
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -27,6 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     setSelectedSubmodule,
     isLoading,
     setCurrentIndex,
+    relevant_images,
 }) => {
     const [activeTabIndex, setActiveTabIndex] = useState<number | null>(null); // Controls which tab is open
     const [activeContentIndex, setActiveContentIndex] = useState<number>(0); // Controls which topic is selected
@@ -36,6 +39,31 @@ const Sidebar: React.FC<SidebarProps> = ({
     const changeCon = (index: number) => {
         setActiveContentIndex(index); // Update when clicking inside the topics list
     };
+
+    const categorizeImages = (images: string[]) => {
+        const textbookImages = [];
+        const googleImages = [];
+
+        images.forEach((image) => {
+            if (image.startsWith('https://')) {
+                googleImages.push(image); // If it's an HTTPS link, go to Google tab
+            } else {
+                textbookImages.push(image); // Else go to Textbook/Links tab
+            }
+        });
+
+        return { textbookImages, googleImages };
+    };
+
+    const allTextbookImages: string[] = [];
+    const allGoogleImages: string[] = [];
+
+    relevant_images.forEach((images) => {
+        const { textbookImages, googleImages } = categorizeImages(images);
+        allTextbookImages.push(...textbookImages);
+        allGoogleImages.push(...googleImages);
+    });
+
 
     useEffect(() => {
         localStorage.setItem('active_content_index', activeContentIndex.toString());
@@ -60,7 +88,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             >
                 <TabList bg={'#D1D1D1'} height={"100vh"} p={"2"} borderTopRightRadius={20} borderBottomRightRadius={20}>
                     <Tab
-                        _hover={{ transform: 'scale(1.05)', backgroundColor: 'gray.100', border:'none' }}   
+                        _hover={{ transform: 'scale(1.05)', backgroundColor: 'gray.100', border: 'none' }}
                         _selected={{ bg: 'purple.500', color: 'white' }}
                         padding={1}
                         my={2}
@@ -75,7 +103,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         </Flex>
                     </Tab>
                     <Tab
-                        _hover={{ transform: 'scale(1.05)', backgroundColor: 'gray.100', border:'none' }}
+                        _hover={{ transform: 'scale(1.05)', backgroundColor: 'gray.100', border: 'none' }}
                         _selected={{ bg: 'purple.500', color: 'white' }}
                         padding={1}
                         my={2}
@@ -90,7 +118,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         </Flex>
                     </Tab>
                     <Tab
-                        _hover={{ transform: 'scale(1.05)', backgroundColor: 'gray.100', border:'none' }}
+                        _hover={{ transform: 'scale(1.05)', backgroundColor: 'gray.100', border: 'none' }}
                         _selected={{ bg: 'purple.500', color: 'white' }}
                         padding={1}
                         my={2}
@@ -105,7 +133,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         </Flex>
                     </Tab>
                     <Tab
-                        _hover={{ transform: 'scale(1.05)', backgroundColor: 'gray.100', border:'none' }}
+                        _hover={{ transform: 'scale(1.05)', backgroundColor: 'gray.100', border: 'none' }}
                         _selected={{ bg: 'purple.500', color: 'white' }}
                         padding={1}
                         my={2}
@@ -163,7 +191,45 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 <Heading as="h3" size="md" textAlign="center" mb={2}>
                                     Image Section
                                 </Heading>
+                                <Tabs variant="soft-rounded" colorScheme="purple">
+                                    <TabList>
+                                        <Tab>Textbook/Links</Tab>
+                                        <Tab>Google</Tab>
+                                        <Tab>Uploaded</Tab>
+                                    </TabList>
+
+                                    <TabPanels>
+                                        <TabPanel>
+                                            <Box height={"600px"} overflowY="auto">
+                                                <SimpleGrid columns={[2, 2, 3]} spacing={4}>
+                                                    {allTextbookImages.map((image, index) => (
+                                                        <Box key={index} p={2} borderWidth={1} borderRadius="md">
+                                                            <img src={`data:image/png;base64,${image}`} alt={`Textbook Link ${index}`} style={{ width: '100%', height: 'auto' }} />
+                                                        </Box>
+                                                    ))}
+                                                </SimpleGrid>
+                                            </Box>
+                                        </TabPanel>
+
+                                        <TabPanel>
+                                            <Box maxHeight="400px" overflowY="auto">
+                                                <SimpleGrid columns={[2, 2, 3]} spacing={4}>
+                                                    {allGoogleImages.map((image, index) => (
+                                                        <Box key={index} p={2} borderWidth={1} borderRadius="md">
+                                                            <img src={image} alt={`Google Link ${index}`} style={{ width: '100%', height: 'auto' }} />
+                                                        </Box>
+                                                    ))}
+                                                </SimpleGrid>
+                                            </Box>
+                                        </TabPanel>
+
+                                        <TabPanel>
+                                            <Text textAlign="center">No uploaded images yet.</Text>
+                                        </TabPanel>
+                                    </TabPanels>
+                                </Tabs>
                             </TabPanel>
+
                         </Collapse>
 
                         <Collapse in={activeTabIndex === 2}>

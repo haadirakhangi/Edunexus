@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Box, Heading, VStack, Tabs, TabList, TabPanels, Tab, TabPanel, Textarea } from '@chakra-ui/react';
+import { Box, Image, Heading, Tabs, TabList, TabPanels, Tab, TabPanel, Textarea } from '@chakra-ui/react';
 import { debounce } from 'lodash';
 
 interface ContentSecProps {
@@ -70,60 +70,94 @@ const ContentSec: React.FC<ContentSecProps> = ({
 
   const renderMarkdown = (content: string) => {
     const lines = content.split('\n');
-    const renderedContent = lines.map((line, index) => {
-      const imagePattern = /!\[(.*?)\]\((.*?)\)/;
-      const imageMatch = line.match(imagePattern);
+    const renderedContent = [];
+    const imagePattern = /!\[(.*?)\]\((.*?)\)/;
 
+    const index = contentData.findIndex((item) => selectedSubmodule in item);
+    const imagesForSubmodule = relevant_images[index]?.slice(0, 2) || [];
+
+    let imageInserted = 0;
+
+    lines.forEach((line, idx) => {
+      // Insert the relevant images as markdown links at the appropriate positions
+      if (imageInserted < imagesForSubmodule.length && idx === 3) {
+        const imageLink = imagesForSubmodule[imageInserted];
+        renderedContent.push(
+          <Box display="flex" justifyContent="center" alignItems="center" mx={4} key={`img-link-${imageInserted}`}>
+            <a href={`data:image/png;base64,${imageLink}`} target="_blank" rel="noopener noreferrer">
+              <Image
+                src={`data:image/png;base64,${imageLink}`}
+                alt={`Relevant Image ${imageInserted + 1}`}
+                objectFit="cover"
+                boxSize={{ base: '100px', md: '300px', lg: '500px' }}
+              />
+            </a>
+          </Box>
+        );
+        imageInserted++;
+      }
+
+      // Similar insertion for the second image
+      if (imageInserted < imagesForSubmodule.length && idx === 6) {
+        const imageLink = imagesForSubmodule[imageInserted];
+        renderedContent.push(
+          <Box display="flex" justifyContent="center" alignItems="center" mx={4} key={`img-link-${imageInserted}`}>
+            <a href={`data:image/png;base64,${imageLink}`} target="_blank" rel="noopener noreferrer">
+              <Image
+                src={`data:image/png;base64,${imageLink}`}
+                alt={`Relevant Image ${imageInserted + 1}`}
+                objectFit="cover"
+                boxSize={{ base: '100px', md: '300px', lg: '500px' }}
+              />
+            </a>
+          </Box>
+        );
+        imageInserted++;
+      }
+
+      const imageMatch = line.match(imagePattern);
       if (imageMatch) {
         const altText = imageMatch[1];
         const imageUrl = imageMatch[2];
-        return (
-          <img key={index} src={imageUrl} alt={altText} style={{ maxWidth: '100%', height: 'auto' }} />
+        renderedContent.push(
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            mx={4}
+            key={`rendered-img-${idx}`}
+          >
+            <Image
+              src={imageUrl}
+              alt={altText}
+              objectFit="cover"
+              boxSize={{ base: '100px', md: '300px', lg: '500px' }}
+            />
+          </Box>
         );
-      }
-
-      if (line.startsWith('## ')) {
-        return <Heading as="h4" size={'lg'} key={index} fontWeight="bold">{line.slice(3)}</Heading>;
+      } else if (line.startsWith('## ')) {
+        renderedContent.push(<Heading size={'md'} key={idx} fontWeight="bold">{line.slice(3)}</Heading>);
       } else if (line.startsWith('# ')) {
-        return <Heading as="h2" key={index}>{line.slice(2)}</Heading>;
+        renderedContent.push(<Heading size={'lg'} key={idx}>{line.slice(2)}</Heading>);
       } else if (line.startsWith('### ')) {
-        return <Heading as="h4" size={"md"} key={index} fontWeight="bold">{line.slice(4)}</Heading>;
-      }
-
-      const boldPattern = /\*\*(.*?)\*\*/g;
-      if (line.startsWith('* ') || line.startsWith('- ')) {
+        renderedContent.push(<Heading size={"sm"} key={idx} fontWeight="bold">{line.slice(4)}</Heading>);
+      } else if (line.startsWith('* ') || line.startsWith('- ')) {
+        const boldPattern = /\*\*(.*?)\*\*/g;
         const formattedLine = line.slice(2).replace(boldPattern, (match, p1) => `<strong>${p1}</strong>`);
-        return <li key={index} style={{ marginLeft: '20px', listStyleType: 'disc' }} dangerouslySetInnerHTML={{ __html: formattedLine }} />;
-      }
-
-      const formattedLine = line.replace(boldPattern, (match, p1) => `<strong>${p1}</strong>`);
-
-      if (line.trim() === '') {
-        return <br key={index} />;
+        renderedContent.push(<li key={idx} style={{ marginLeft: '20px', listStyleType: 'disc' }} dangerouslySetInnerHTML={{ __html: formattedLine }} />);
       } else {
-        return <p key={index} dangerouslySetInnerHTML={{ __html: formattedLine.replace(/\n/g, '<br />') }} />;
+        const boldPattern = /\*\*(.*?)\*\*/g;
+        const formattedLine = line.replace(boldPattern, (match, p1) => `<strong>${p1}</strong>`);
+        if (line.trim() === '') {
+          renderedContent.push(<br key={idx} />);
+        } else {
+          renderedContent.push(<p key={idx} dangerouslySetInnerHTML={{ __html: formattedLine.replace(/\n/g, '<br />') }} />);
+        }
       }
     });
 
     return renderedContent;
   };
-
-  // const renderRelevantImages = () => {
-  //   const index = contentData.findIndex((item) => selectedSubmodule in item);
-  //   const imagesForSubmodule = relevant_images[index] || [];
-
-  //   return imagesForSubmodule.map((image, idx) => {
-  //     const isBase64 = image.startsWith('data:image');
-  //     return (
-  //       <img
-  //         key={idx}
-  //         src={isBase64 ? image : image}
-  //         alt={`Relevant image ${idx + 1}`}
-  //         style={{ maxWidth: '100%', height: 'auto', marginBottom: '10px' }}
-  //       />
-  //     );
-  //   });
-  // };
 
   return (
     <Box p={8} width={'full'} height={'100vh'} display="flex">
@@ -180,9 +214,6 @@ const ContentSec: React.FC<ContentSecProps> = ({
           <TabPanel>
             <Box bg={'white'} p={8} borderRadius={"30"}>
               {renderMarkdown(markdownContent)}
-              {/* <VStack mt={4} spacing={4}>
-                {renderRelevantImages()}
-              </VStack> */}
             </Box>
           </TabPanel>
         </TabPanels>
