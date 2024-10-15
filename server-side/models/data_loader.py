@@ -31,7 +31,7 @@ class DocumentLoader:
                 api_key=SCRAPFLY_API_KEY,  
                 continue_on_failure=True,
                 scrape_config=scrapfly_scrape_config,
-                scrape_format="markdown",  # The scrape result format, either `markdown`(default) or `text`
+                scrape_format="text",  # The scrape result format, either `markdown`(default) or `text`
             )
         elif input_type=="pdf_and_link":
             scrapfly_loader = ScrapflyLoader(

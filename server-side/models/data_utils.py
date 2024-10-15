@@ -69,22 +69,35 @@ class DocumentUtils:
 class WebUtils:
     @staticmethod
     async def download_image(url, filepath, client):
-        response = await client.get(url)
-        filepath.write_bytes(response.content)
+        try:
+            response = await client.get(url)
+            response.raise_for_status()
+            filepath.write_bytes(response.content)
+        except (httpx.HTTPStatusError, httpx.RequestError) as e:
+            print(f"Error downloading image from {url}: {e}")
 
     @staticmethod
     async def scrape_images(url, client, download_dir):
-        response = await client.get(url)
+        try:
+            response = await client.get(url)
+            response.raise_for_status()
+        except (httpx.HTTPStatusError, httpx.RequestError) as e:
+            print(f"Error fetching page {url}: {e}")
+            return
         soup = BeautifulSoup(response.text, "html.parser")
         download_tasks = []
         for img_tag in soup.find_all("img"):
-            img_url = img_tag.get("src")  # get image url
+            img_url = img_tag.get("src")
             if img_url:
-                img_url = response.url.join(img_url)  # turn url absolute
-                img_filename = download_dir / Path(str(img_url)).name
-                download_tasks.append(
-                    WebUtils.download_image(img_url, img_filename, client)
-                )
+                try:
+                    img_url = response.url.join(img_url)
+                    valid_img_url = httpx.URL(img_url)
+                    img_filename = download_dir / Path(str(valid_img_url)).name
+                    download_tasks.append(
+                        WebUtils.download_image(valid_img_url, img_filename, client)
+                    )
+                except (httpx.InvalidURL, ValueError):
+                    print(f"Invalid image URL: {img_url}. Skipping.")
         await asyncio.gather(*download_tasks)
 
     @staticmethod
@@ -95,7 +108,13 @@ class WebUtils:
         async with httpx.AsyncClient() as client:
             scrape_tasks = []
             for url in urls:
-                url_download_dir = download_dir / Path(httpx.URL(url).host)
+                try:
+                    valid_url = httpx.URL(url)
+                except (httpx.InvalidURL, ValueError):
+                    print(f"Invalid URL: {url}. Skipping.")
+                    continue  # Skip invalid URLs
+
+                url_download_dir = download_dir / Path(valid_url.host)
                 url_download_dir.mkdir(parents=True, exist_ok=True)
-                scrape_tasks.append(WebUtils.scrape_images(url, client, url_download_dir))
+                scrape_tasks.append(WebUtils.scrape_images(valid_url, client, url_download_dir))
             await asyncio.gather(*scrape_tasks)
