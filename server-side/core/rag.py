@@ -9,9 +9,14 @@ import asyncio
 from pykka import ThreadingActor
 from concurrent.futures import ThreadPoolExecutor
 
+from pykka import ThreadingActor
+
 class ResultHandler(ThreadingActor):
     async def receive(self, message):
-        print("Received result:", message)
+        if isinstance(message, str):
+            print("Received result:", message)
+        else:
+            print(f"Warning: Unexpected message type received: {type(message)}")
 
 class MultiModalRAG:
     def __init__(
@@ -66,8 +71,8 @@ class MultiModalRAG:
                 DocumentLoader.create_faiss_vectorstore_for_text(self.documents_directory_path, self.embeddings, self.chunk_size, self.chunk_overlap, self.input_type, self.links),
                 DocumentLoader.create_faiss_vectorstore_for_image(self.documents_directory_path, self.image_directory_path, self.clip_model, self.clip_processor, self.input_type, self.links)
             )
-            result_handler.tell(self.text_vectorstore)
-            result_handler.tell(self.image_vectorstore)
+            result_handler.tell("Text Vector store created")
+            result_handler.tell("Image Vector store created")
         finally:
             result_handler.stop()
             

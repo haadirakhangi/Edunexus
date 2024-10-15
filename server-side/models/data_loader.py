@@ -6,7 +6,7 @@ from langchain_community.vectorstores import FAISS
 from models.data_utils import DocumentUtils, WebUtils
 from server.utils import ServerUtils
 from deep_translator import GoogleTranslator
-from concurrent.futures import ThreadPoolExecutor
+import asyncio
 import numpy as np
 import os
 
@@ -63,13 +63,14 @@ class DocumentLoader:
     async def create_faiss_vectorstore_for_image(documents_directory, image_directory_path, clip_model, clip_processor, input_type, links):
         print("\nCreating FAISS Vector database for images...\n")
         if input_type=="pdf":
-            DocumentUtils.extract_images_from_directory(documents_directory=documents_directory, output_directory_path=image_directory_path)
+            await DocumentUtils.extract_images_from_directory(documents_directory=documents_directory, output_directory_path=image_directory_path)
         elif input_type == "link":
             await WebUtils.extract_images_from_webpages(urls=links, output_directory_path=image_directory_path)
         elif input_type =="pdf_and_link":
-            with ThreadPoolExecutor() as executor:
-                executor.submit(DocumentUtils.extract_images_from_directory,documents_directory,image_directory_path)
-                executor.submit(WebUtils.extract_images_from_webpages,links,image_directory_path)
+            await asyncio.gather(
+                DocumentUtils.extract_images_from_directory(documents_directory,image_directory_path),
+                WebUtils.extract_images_from_webpages(links,image_directory_path)
+            )
         images_in_directory = []
         for root, dirs, files in os.walk(image_directory_path):
             for file in files:

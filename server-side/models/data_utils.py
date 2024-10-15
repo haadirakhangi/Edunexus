@@ -11,7 +11,7 @@ from pathlib import Path
 
 class DocumentUtils:
     @staticmethod
-    def extract_images_from_directory(documents_directory, output_directory_path):
+    async def extract_images_from_directory(documents_directory, output_directory_path):
         if not os.path.exists(output_directory_path):
             os.makedirs(output_directory_path)
 
@@ -68,31 +68,34 @@ class DocumentUtils:
         
 class WebUtils:
     @staticmethod
-    async def download_image(url, filepath: Path, client: httpx.AsyncClient):
+    async def download_image(url, filepath, client):
         response = await client.get(url)
         filepath.write_bytes(response.content)
 
     @staticmethod
+    async def scrape_images(url, client, download_dir):
+        response = await client.get(url)
+        soup = BeautifulSoup(response.text, "html.parser")
+        download_tasks = []
+        for img_tag in soup.find_all("img"):
+            img_url = img_tag.get("src")  # get image url
+            if img_url:
+                img_url = response.url.join(img_url)  # turn url absolute
+                img_filename = download_dir / Path(str(img_url)).name
+                download_tasks.append(
+                    WebUtils.download_image(img_url, img_filename, client)
+                )
+        await asyncio.gather(*download_tasks)
+
+    @staticmethod
     async def extract_images_from_webpages(urls, output_directory_path):
-        print("I was called ohkay",urls)
         download_dir = Path(output_directory_path)
         download_dir.mkdir(parents=True, exist_ok=True)
 
         async with httpx.AsyncClient() as client:
+            scrape_tasks = []
             for url in urls:
-                print("frist url-------------",url)
-                response = await client.get(url)
-                soup = BeautifulSoup(response.text, "html.parser")
-                download_tasks = []
-                print("Reponse url",response)
-                for img_tag in soup.find_all("img"):
-                    img_url = img_tag.get("src")
-                    print("Image Url",img_url)
-                    if img_url:
-                        img_url = response.url.join(img_url)
-                        print("Final Image Url",img_url)
-                        img_filename = download_dir / Path(str(img_url)).name
-                        download_tasks.append(
-                            WebUtils.download_image(img_url, img_filename, client)
-                        )
-                await asyncio.gather(*download_tasks)
+                url_download_dir = download_dir / Path(httpx.URL(url).host)
+                url_download_dir.mkdir(parents=True, exist_ok=True)
+                scrape_tasks.append(WebUtils.scrape_images(url, client, url_download_dir))
+            await asyncio.gather(*scrape_tasks)
