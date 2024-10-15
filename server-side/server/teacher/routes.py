@@ -67,13 +67,19 @@ async def multimodal_rag_submodules():
     #     return jsonify({"message": "User not found", "response":False}), 404
 
     if 'files[]' not in request.files:
-        return jsonify({"message": "No files uploaded", "response": False}), 400
-    
+        files = []
+    else:
+        files = request.files.getlist('files[]')
     title = request.form['title']
+    includeImages = request.form['includeImages']
+    if includeImages=="true":
+        includeImages=True
+    else:
+        includeImages=False
     if title=="":
         raise Exception("Title must be provided")
     description = request.form['description']
-    files = request.files.getlist('files[]')
+    
     current_dir = os.path.dirname(__file__)
     uploads_path = os.path.join(current_dir, 'uploaded-documents', title)
     if not os.path.exists(uploads_path):
@@ -89,7 +95,7 @@ async def multimodal_rag_submodules():
         links_list = json.loads(links)
         print(f"\nLinks provided: {links_list}\n")
 
-    if file and len(links_list)>0:
+    if len(files)>0 and len(links_list)>0:
         session['input_type']='pdf_and_link'
         print("\nInput: File + Links...\n",links_list)
         multimodal_rag = MultiModalRAG(
@@ -100,9 +106,10 @@ async def multimodal_rag_submodules():
             clip_processor=CLIP_PROCESSOR,
             clip_tokenizer=CLIP_TOKENIZER,
             input_type="pdf_and_link",
-            links=links_list
+            links=links_list,
+            includeImages=includeImages
         )
-    elif file:
+    elif len(files)>0:
         session['input_type']='pdf'
         print("\nInput: File only...\n")
         multimodal_rag = MultiModalRAG(
@@ -112,7 +119,8 @@ async def multimodal_rag_submodules():
             clip_model=CLIP_MODEL,
             clip_processor=CLIP_PROCESSOR,
             clip_tokenizer=CLIP_TOKENIZER,
-            input_type="pdf"
+            input_type="pdf",
+            includeImages=includeImages
         )
     elif len(links_list)>0:
         session['input_type']='link'
@@ -125,18 +133,18 @@ async def multimodal_rag_submodules():
             clip_processor=CLIP_PROCESSOR,
             clip_tokenizer=CLIP_TOKENIZER,
             input_type="link",
-            links=links_list
+            links=links_list,
+            includeImages=includeImages
         )
     else:
         print("\nInput: None\n")
         submodules = SUB_MODULE_GENERATOR.generate_submodules(title)
-        values_list = list(submodules.values())
         session['title'] = title
         session['user_profile'] = description
         session['submodules'] = submodules
         session['is_multimodal_rag'] = False
         print("\nGenerated Submodules:\n", submodules)
-        return jsonify({"message": "Query successful", "submodules": values_list, "response": True}), 200
+        return jsonify({"message": "Query successful", "submodules": submodules, "response": True}), 200
 
     text_vectorstore_path, image_vectorstore_path = await multimodal_rag.create_text_and_image_vectorstores()
     
@@ -146,18 +154,23 @@ async def multimodal_rag_submodules():
     VECTORDB_TEXTBOOK = FAISS.load_local(text_vectorstore_path, EMBEDDINGS, allow_dangerous_deserialization=True)
     
     submodules = SUB_MODULE_GENERATOR.generate_submodules_from_textbook(title, VECTORDB_TEXTBOOK)
-    values_list = list(submodules.values())
-    
+        
     session['title'] = title
     session['user_profile'] = description
     session['submodules'] = submodules
     session['document_directory_path'] = uploads_path 
     session['is_multimodal_rag'] = True
-    
+    session['includeImages']=includeImages
     print("\nGenerated Submodules:\n", submodules)
-    return jsonify({"message": "Query successful", "submodules": values_list, "response": True}), 200
+    return jsonify({"message": "Query successful", "submodules": submodules, "response": True}), 200
 
 
+@users.route('/update-submodules', methods=['POST'])
+def update_submodules():
+    updated_submodules = request.get_json()
+    session['submodules'] = updated_submodules
+    return jsonify({'message': 'Submodules updated successfully'}), 200
+    
 @users.route('/query2/multimodal-rag-content', methods=['GET'])
 async def multimodal_rag_content():
     # user_id = session.get("user_id", None)
@@ -177,6 +190,7 @@ async def multimodal_rag_content():
         text_vectorstore_path = session.get("text_vectorstore_path")
         image_vectorstore_path = session.get("image_vectorstore_path")
         input_type = session.get('input_type')
+        includeImages=session.get('includeImages')
         multimodal_rag = MultiModalRAG(
             documents_directory_path=document_paths,
             course_name=title,
@@ -189,7 +203,8 @@ async def multimodal_rag_content():
             image_similarity_threshold=0.1,
             input_type=input_type,
             text_vectorstore_path=text_vectorstore_path,
-            image_vectorstore_path=image_vectorstore_path
+            image_vectorstore_path=image_vectorstore_path,
+            includeImages=includeImages
         )
 
         content_list, relevant_images_list = await multimodal_rag.execute(CONTENT_GENERATOR, title, submodules=submodules, profile=user_profile, top_k_docs=7)

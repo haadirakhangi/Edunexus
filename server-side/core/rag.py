@@ -34,6 +34,7 @@ class MultiModalRAG:
             image_vectorstore_path=None,
             input_type=None,
             links=None,
+            includeImages=None
         ):
         if documents_directory_path is None:
             raise Exception("Document Directory Path path must be provided")
@@ -63,21 +64,27 @@ class MultiModalRAG:
             self.image_vectorstore = faiss.read_index(image_vectorstore_path)
         else:
             self.image_vectorstore = None
+        
+        self.includeImages = includeImages
 
     async def create_text_and_image_vectorstores(self):
         result_handler = ResultHandler.start()
         try:
-            self.text_vectorstore, self.image_vectorstore = await asyncio.gather(
-                DocumentLoader.create_faiss_vectorstore_for_text(self.documents_directory_path, self.embeddings, self.chunk_size, self.chunk_overlap, self.input_type, self.links),
-                DocumentLoader.create_faiss_vectorstore_for_image(self.documents_directory_path, self.image_directory_path, self.clip_model, self.clip_processor, self.input_type, self.links)
-            )
-            result_handler.tell("Text Vector store created")
-            result_handler.tell("Image Vector store created")
+            if self.includeImages:
+                self.text_vectorstore, self.image_vectorstore = await asyncio.gather(
+                    DocumentLoader.create_faiss_vectorstore_for_text(self.documents_directory_path, self.embeddings, self.chunk_size, self.chunk_overlap, self.input_type, self.links),
+                    DocumentLoader.create_faiss_vectorstore_for_image(self.documents_directory_path, self.image_directory_path, self.clip_model, self.clip_processor, self.input_type, self.links)
+                )
+                result_handler.tell("Text Vector store created")
+                result_handler.tell("Image Vector store created")
+                faiss.write_index(self.image_vectorstore, self.image_vectorstore_path)
+            else:
+                self.text_vectorstore = await DocumentLoader.create_faiss_vectorstore_for_text(self.documents_directory_path, self.embeddings, self.chunk_size, self.chunk_overlap, self.input_type, self.links)
+                result_handler.tell("Text Vector store created")
         finally:
             result_handler.stop()
             
         self.text_vectorstore.save_local(self.text_vectorstore_path)
-        faiss.write_index(self.image_vectorstore, self.image_vectorstore_path)
         return self.text_vectorstore_path, self.image_vectorstore_path
 
     def search_image(self, query_text, image_paths):
@@ -95,10 +102,11 @@ class MultiModalRAG:
     
     async def run(self, content_generator : ContentGenerator, module_name, submodule_split, profile, top_k_docs):
         images_in_directory = []
-        for root, dirs, files in os.walk(self.image_directory_path):
-            for file in files:
-                if file.endswith(('png', 'jpg', 'jpeg')):
-                    images_in_directory.append(os.path.join(root, file))
+        if self.includeImages:
+            for root, dirs, files in os.walk(self.image_directory_path):
+                for file in files:
+                    if file.endswith(('png', 'jpg', 'jpeg')):
+                        images_in_directory.append(os.path.join(root, file))
         submodule_content = []
         submodule_images=[]
         for key, val in submodule_split.items():
