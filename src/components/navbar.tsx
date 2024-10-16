@@ -5,17 +5,12 @@ import {
     Link,
     HStack,
     IconButton,
-    Button,
-    Menu,
-    MenuButton,
-    MenuList,
-    MenuItem,
-    useDisclosure,
     Stack,
+    useDisclosure,
 } from '@chakra-ui/react';
 import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
-import { GithubIcon } from './icons';
-import { Logo } from './icons';
+import { FaHome, FaPencilAlt } from 'react-icons/fa';
+import { Logo } from './icons'; // Keep your existing Logo component
 
 interface NavLinkProps {
     href: string;
@@ -24,26 +19,26 @@ interface NavLinkProps {
 
 const NavLink: React.FC<NavLinkProps> = ({ children, href }) => (
     <Link
-      px={1}
-      py={1}
-      className="roboto-bold"
-      rounded="md"
-      href={href}
-      textDecoration="none"  // No underline by default
-      _hover={{transform: 'scale(1.1)', color: 'black', textDecoration: 'none' }} // No underline and change to black on hover
-      transition="color 0.2 s ease-in-out" // Smooth transition for color change
+        px={2}
+        py={1}
+        className="feature-heading"
+        rounded="md"
+        href={href}
+        textDecoration="none"  // No underline by default
+        _hover={{ transform: 'scale(1.05)', color: 'white', bg: 'purple.700', textDecoration: 'none' }}
+        transition="transform 0.3s ease-in-out"
     >
-      {children}
+        {children}
     </Link>
-  );
-
+);
 
 export const Navbar = () => {
     const { isOpen, onOpen, onClose } = useDisclosure();
 
     return (
-        <Box bg={"purple.300"} position="sticky" borderBottom={'4px'} borderColor={"purple.200"} paddingX={"20"} top={0} zIndex="sticky">
+        <Box bg={"purple.300"} position="sticky" boxShadow={'0px 0 5px 8px rgba(0, 0, 0, 0.3)'} paddingX={"20"} top={0} zIndex="sticky">
             <Flex h={16} alignItems={'center'} justifyContent={'space-between'}>
+                {/* Hamburger Icon for mobile view */}
                 <IconButton
                     size={'md'}
                     icon={isOpen ? <CloseIcon /> : <HamburgerIcon />}
@@ -51,59 +46,42 @@ export const Navbar = () => {
                     display={{ md: 'none' }}
                     onClick={isOpen ? onClose : onOpen}
                 />
+
+                {/* Logo section */}
                 <HStack spacing={8} alignItems={'center'}>
                     <Box display={"flex"} _hover={{ transform: 'scale(1.1)', color: 'black' }} transition="transform 0.2s ease-in-out">
-
                         <Logo />
-                        <Box
-                            mt={2}
-                            className="roboto-regular-italic"
-                            fontSize={'lg'}
-                            color="black"
-                        >
+                        <Box mt={2} className="roboto-regular-italic" fontSize={'lg'} color="black">
                             EduNexus
                         </Box>
                     </Box>
-
-                    <HStack as={'nav'} spacing={2} display={{ base: 'none', md: 'flex' }}>
-                        <NavLink href="/">Home</NavLink>
-                        <NavLink href="/teacher/create">Create</NavLink>
-                    </HStack>
                 </HStack>
-                <Flex alignItems={'center'}>
-                    <Link href="https://github.com/Vedant-K1/EduNexus-Client.git" _hover={{transform: 'scale(1.1)', color: 'black', textDecoration: 'none' }} isExternal mr={4}>
-                        <GithubIcon />
-                    </Link>
-                    <Menu>
-                        <MenuButton
-                            as={Button}
-                            rounded={'full'}
-                            variant={'link'}
-                            cursor={'pointer'}
-                            minW={0}>
-                            {/* Add an icon or avatar here if needed */}
-                        </MenuButton>
-                        <MenuList>
-                            {/* Add any additional dropdown items here if needed */}
-                            <MenuItem>
-                                <Link href="/profile">Profile</Link>
-                            </MenuItem>
-                            <MenuItem>
-                                <Link href="/settings">Settings</Link>
-                            </MenuItem>
-                            <MenuItem>
-                                <Link href="/logout" color="red.500">Logout</Link>
-                            </MenuItem>
-                        </MenuList>
-                    </Menu>
-                </Flex>
+
+                {/* Desktop nav links pushed to the right */}
+                <HStack as={'nav'} spacing={4} display={{ base: 'none', md: 'flex' }} ml="auto">
+                    <NavLink href="/">
+                        <HStack spacing={2}>
+                            <FaHome size={24} />
+                            <span>Home</span>
+                        </HStack>
+                    </NavLink>
+
+                    <NavLink href="/teacher/create">
+                        <HStack spacing={2}>
+                            <FaPencilAlt />
+                            <span>Create</span>
+                        </HStack>
+                    </NavLink>
+                </HStack>
+
             </Flex>
 
+            {/* Mobile menu when open */}
             {isOpen ? (
                 <Box pb={4} display={{ md: 'none' }}>
                     <Stack as={'nav'} spacing={4}>
                         <NavLink href="/">Home</NavLink>
-                        <NavLink href="/create">Create</NavLink>
+                        <NavLink href="/teacher/create">Create</NavLink>
                     </Stack>
                 </Box>
             ) : null}

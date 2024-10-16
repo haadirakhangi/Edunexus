@@ -78,6 +78,8 @@ button:focus-visible {
 
 .feature-heading{
   font-family: 'Rajdhani', sans-serif;
+  font-weight: bold;
+  font-size: larger;
 }
 
 
