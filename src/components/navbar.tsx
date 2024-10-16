@@ -23,9 +23,10 @@ const NavLink: React.FC<NavLinkProps> = ({ children, href }) => (
         py={1}
         className="feature-heading"
         rounded="md"
+        color={"white"}
         href={href}
         textDecoration="none"  // No underline by default
-        _hover={{ transform: 'scale(1.05)', color: 'white', bg: 'purple.700', textDecoration: 'none' }}
+        _hover={{ transform: 'scale(1.1)', color: 'purple.800', bg: 'white', textDecoration: 'none' }}
         transition="transform 0.3s ease-in-out"
     >
         {children}
@@ -36,7 +37,7 @@ export const Navbar = () => {
     const { isOpen, onOpen, onClose } = useDisclosure();
 
     return (
-        <Box bg={"purple.300"} position="sticky" boxShadow={'0px 0 5px 8px rgba(0, 0, 0, 0.3)'} paddingX={"20"} top={0} zIndex="sticky">
+        <Box bg={"purple.700"} position="sticky" boxShadow={'0 5px 6px rgba(0, 0, 0, 0.4)'} paddingX={"20"} top={0} zIndex="sticky">
             <Flex h={16} alignItems={'center'} justifyContent={'space-between'}>
                 {/* Hamburger Icon for mobile view */}
                 <IconButton
@@ -50,8 +51,8 @@ export const Navbar = () => {
                 {/* Logo section */}
                 <HStack spacing={8} alignItems={'center'}>
                     <Box display={"flex"} _hover={{ transform: 'scale(1.1)', color: 'black' }} transition="transform 0.2s ease-in-out">
-                        <Logo />
-                        <Box mt={2} className="roboto-regular-italic" fontSize={'lg'} color="black">
+                        <Logo color='white'/>
+                        <Box mt={2} className="roboto-regular-italic" fontSize={'lg'} color="white">
                             EduNexus
                         </Box>
                     </Box>

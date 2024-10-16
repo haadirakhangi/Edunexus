@@ -16,6 +16,7 @@ import {
   Select,
   Checkbox,
   useToast,
+  useColorModeValue,
   FormErrorMessage
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
@@ -26,7 +27,6 @@ import { SubmoduleModal } from './submoduleModal';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import '../index.css';
 
 // Validation schema using Yup
 const schema = yup.object().shape({
@@ -41,7 +41,7 @@ const Create = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [includeImages, setIncludeImages] = useState<boolean>(true);
+  const [includeImages, setIncludeImages] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [submodules, setSubmodules] = useState<Record<string, string>>({});
@@ -152,10 +152,10 @@ const Create = () => {
           </Flex>
         </>
       ) : (
-        <Box bg={"#F8F6F4"} minHeight={'100vh'} minWidth={'100vw'}>
+        <Box bg="purple.300" minHeight={'100vh'} minWidth={'100vw'}>
           <Navbar />
           <Box width={'full'} display="flex" alignItems="center" justifyContent="center" p={10}>
-            <Box maxWidth="5xl" bg={'#DFDFDF'} width="100%" p={10} borderWidth={1} borderRadius="xl" boxShadow="lg">
+            <Box maxWidth="5xl" bg="white" width="100%" p={10} borderWidth={1} borderRadius="xl" boxShadow="lg">
               <Center>
                 <Text className='main-heading' fontSize={"5xl"} mb={6}>
                   <b>Generate Course</b>
@@ -255,6 +255,7 @@ const Create = () => {
                       <FormErrorMessage>{errors.websitesReference?.message}</FormErrorMessage>
                     </FormControl>
 
+                    
                     <FormControl display="flex" alignItems="center" mt={4}>
                       <Checkbox
                         isChecked={includeImages}
@@ -264,14 +265,16 @@ const Create = () => {
                         variant={"solid"}
                         onChange={(e) => setIncludeImages(e.target.checked)}
                         colorScheme="purple"
+                        className='feature-heading' 
+                        letterSpacing={2}
                       >
-                        Include Images
+                        <b>Include Images</b>
                       </Checkbox>
                     </FormControl>
                   </VStack>
                 </Flex>
-                <Button colorScheme="purple" mt={8} type="submit" width="full">
-                  Create Baseline Course
+                <Button colorScheme="purple" _hover={{bg:useColorModeValue('purple.600', 'purple.800'), color: useColorModeValue('white', 'white') }} variant="outline" type="submit" width="full" mt={4}>
+                  Generate Base Course
                 </Button>
               </form>
             </Box>
