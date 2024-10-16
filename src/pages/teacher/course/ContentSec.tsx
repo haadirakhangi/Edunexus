@@ -82,11 +82,15 @@ const ContentSec: React.FC<ContentSecProps> = ({
       // Insert the relevant images as markdown links at the appropriate positions
       if (imageInserted < imagesForSubmodule.length && idx === 3) {
         const imageLink = imagesForSubmodule[imageInserted];
+        
+        // Check if the image is a URL (http or https)
+        const isURL = imageLink.startsWith('http://') || imageLink.startsWith('https://');
+        
         renderedContent.push(
           <Box display="flex" justifyContent="center" alignItems="center" mx={4} key={`img-link-${imageInserted}`}>
-            <a href={`data:image/png;base64,${imageLink}`} target="_blank" rel="noopener noreferrer">
+            <a href={isURL ? imageLink : `data:image/png;base64,${imageLink}`} target="_blank" rel="noopener noreferrer">
               <Image
-                src={`data:image/png;base64,${imageLink}`}
+                src={isURL ? imageLink : `data:image/png;base64,${imageLink}`}
                 alt={`Relevant Image ${imageInserted + 1}`}
                 objectFit="cover"
                 boxSize={{ base: '100px', md: '300px', lg: '500px' }}
@@ -97,14 +101,17 @@ const ContentSec: React.FC<ContentSecProps> = ({
         imageInserted++;
       }
 
-      // Similar insertion for the second image
       if (imageInserted < imagesForSubmodule.length && idx === 6) {
         const imageLink = imagesForSubmodule[imageInserted];
+        
+        // Check if the image is a URL (http or https)
+        const isURL = imageLink.startsWith('http://') || imageLink.startsWith('https://');
+        
         renderedContent.push(
           <Box display="flex" justifyContent="center" alignItems="center" mx={4} key={`img-link-${imageInserted}`}>
-            <a href={`data:image/png;base64,${imageLink}`} target="_blank" rel="noopener noreferrer">
+            <a href={isURL ? imageLink : `data:image/png;base64,${imageLink}`} target="_blank" rel="noopener noreferrer">
               <Image
-                src={`data:image/png;base64,${imageLink}`}
+                src={isURL ? imageLink : `data:image/png;base64,${imageLink}`}
                 alt={`Relevant Image ${imageInserted + 1}`}
                 objectFit="cover"
                 boxSize={{ base: '100px', md: '300px', lg: '500px' }}
@@ -114,6 +121,8 @@ const ContentSec: React.FC<ContentSecProps> = ({
         );
         imageInserted++;
       }
+      
+      
 
       const imageMatch = line.match(imagePattern);
       if (imageMatch) {

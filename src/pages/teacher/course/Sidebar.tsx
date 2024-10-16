@@ -93,7 +93,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         padding={1}
                         my={2}
                         _focus={{ outline: 'none', boxShadow: 'none' }}
-                        width={["80px", "100px", "90px"]}
+                        width={["80px", "100px", "70px"]}
                         borderRadius="md"
                         onClick={() => toggleTab(0)}
                     >
@@ -108,7 +108,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         padding={1}
                         my={2}
                         _focus={{ outline: 'none', boxShadow: 'none' }}
-                        width={["80px", "100px", "90px"]}
+                        width={["80px", "100px", "70px"]}
                         borderRadius="md"
                         onClick={() => toggleTab(1)}
                     >
@@ -123,22 +123,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         padding={1}
                         my={2}
                         _focus={{ outline: 'none', boxShadow: 'none' }}
-                        width={["80px", "100px", "90px"]}
-                        borderRadius="md"
-                        onClick={() => toggleTab(2)}
-                    >
-                        <Flex direction="column" align="center">
-                            <AiOutlineAudio style={{ marginBottom: '4px', fontSize: '24px' }} />
-                            <Text fontSize="sm">Voice Cloning</Text>
-                        </Flex>
-                    </Tab>
-                    <Tab
-                        _hover={{ transform: 'scale(1.05)', backgroundColor: 'gray.100', border: 'none' }}
-                        _selected={{ bg: 'purple.500', color: 'white' }}
-                        padding={1}
-                        my={2}
-                        _focus={{ outline: 'none', boxShadow: 'none' }}
-                        width={["80px", "100px", "90px"]}
+                        width={["80px", "100px", "70px"]}
                         borderRadius="md"
                         onClick={() => toggleTab(3)}
                     >
@@ -150,7 +135,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </TabList>
 
                 {activeTabIndex !== null && (
-                    <TabPanels ml={0.5} mt={2} bg={'#DFDFDF'} height={'100vh'} borderRadius={20}>
+                    <TabPanels mt={2} bg={'#DFDFDF'} height={'100vh'} borderRadius={20} boxShadow={'10px 0 15px -5px rgba(0, 0, 0, 0.3)'}>
                         <Collapse in={activeTabIndex === 0} animate="slide" animateOpacity={true}>
                             <TabPanel width={["80px", "200px", "350px"]}>
                                 <Heading as="h3" size="md" textAlign="center" mb={4}>
