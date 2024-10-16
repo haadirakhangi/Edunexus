@@ -10,29 +10,57 @@ import {
   FormControl,
   FormLabel,
   IconButton,
+  Center,
   Text,
   Tooltip,
+  Select,
   Checkbox,
   useToast,
+  FormErrorMessage
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Navbar } from '../../components/navbar';
 import { SubmoduleModal } from './submoduleModal';
-import "../index.css"
+import { useForm, useFieldArray } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import '../index.css';
 
-export default function Create() {
+// Validation schema using Yup
+const schema = yup.object().shape({
+  courseName: yup.string().required('Course name is required'),
+  courseStyle: yup.string().required('Course style is required'),
+  courseType: yup.string().required('Course type is required'),
+  links: yup.array().of(yup.string().url('Invalid URL')),
+  websitesReference: yup.string().required('Website references are required'),
+});
+
+const Create = () => {
   const navigate = useNavigate();
   const toast = useToast();
-  const [courseName, setCourseName] = useState<string>('');
-  const [courseStyle, setCourseStyle] = useState<string>('');
   const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [links, setLinks] = useState<string[]>(['']);
   const [includeImages, setIncludeImages] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [submodules, setSubmodules] = useState<Record<string, string>>({});
+
+  const { register, handleSubmit, control, formState: { errors } } = useForm({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      courseName: '',
+      courseStyle: '',
+      courseType: '',
+      links: [''],
+      websitesReference: '',
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'links',
+  });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -40,32 +68,18 @@ export default function Create() {
     }
   };
 
-  const handleLinkChange = (index: number, value: string) => {
-    const newLinks = [...links];
-    newLinks[index] = value;
-    setLinks(newLinks);
-  };
-
-  const addLink = () => {
-    setLinks([...links, '']);
-  };
-
-  const deleteLink = (index: number) => {
-    const newLinks = links.filter((_, i) => i !== index);
-    setLinks(newLinks);
-  };
-
-  const handleSubmit = async () => {
+  const onSubmit = async (data: { [key: string]: any }) => {
     const formData = new FormData();
-    formData.append('title', courseName);
-    formData.append('description', courseStyle);
+    formData.append('title', data.courseName);
+    formData.append('description', data.courseStyle);
+    formData.append('courseType', data.courseType);
+    formData.append('links', data.links.join(','));
+    formData.append('websitesReference', data.websitesReference);
+    formData.append('includeImages', includeImages.toString());
 
     if (pdfFile) {
       formData.append('files[]', pdfFile);
     }
-
-    formData.append('links', links.join(','));
-    formData.append('includeImages', includeImages.toString());
 
     setLoading(true);
 
@@ -76,10 +90,9 @@ export default function Create() {
         },
       });
 
-      console.log(response.data);
       if (response.data.submodules) {
         setSubmodules(response.data.submodules);
-        setIsModalOpen(true); // Open modal after successful response
+        setIsModalOpen(true);
       } else {
         toast({
           title: 'Failed to create course',
@@ -89,7 +102,6 @@ export default function Create() {
         });
       }
     } catch (error) {
-      console.error('Error creating course:', error);
       toast({
         title: 'An error occurred',
         status: 'error',
@@ -101,11 +113,8 @@ export default function Create() {
     }
   };
 
-
   const handleModalSubmit = async (updatedSubmodules: Record<string, string>) => {
-
     try {
-      // Send the updated submodules via Axios
       const response = await axios.post('/api/update-submodules', updatedSubmodules);
 
       if (response.status === 200) {
@@ -120,9 +129,6 @@ export default function Create() {
         throw new Error('Failed to update submodules.');
       }
     } catch (error) {
-      console.error('Error updating submodules:', error);
-
-      // Show an error toast
       toast({
         title: 'Failed to update submodules.',
         description: 'An error occurred while updating submodules.',
@@ -132,7 +138,6 @@ export default function Create() {
       });
     }
   };
-
 
   return (
     <>
@@ -148,99 +153,127 @@ export default function Create() {
         </>
       ) : (
         <Box bg={"#F8F6F4"} minHeight={'100vh'} minWidth={'100vw'}>
-          <Navbar></Navbar>
+          <Navbar />
           <Box width={'full'} display="flex" alignItems="center" justifyContent="center" p={10}>
-            <Box maxWidth="lg" bg={'#DFDFDF'} width="100%" p={10} borderWidth={1} borderRadius="xl" boxShadow="lg">
-              <VStack spacing={6} align="stretch">
-                <Text size="2xl" align="center" style={{ fontFamily: 'Comfortaa', fontWeight: 400 }}>
-                  <b>Create Course</b>
+            <Box maxWidth="5xl" bg={'#DFDFDF'} width="100%" p={10} borderWidth={1} borderRadius="xl" boxShadow="lg">
+              <Center>
+                <Text className='main-heading' fontSize={"5xl"} mb={6}>
+                  <b>Generate Course</b>
                 </Text>
-
-                <FormControl isRequired>
-                  <FormLabel className='roboto-regular'>Course Name:</FormLabel>
-                  <Input
-                    placeholder="Enter the course name"
-                    value={courseName}
-                    borderColor={'purple.600'}
-                    _hover={{ borderColor: "purple.600" }}
-                    onChange={(e) => setCourseName(e.target.value)}
-                  />
-                </FormControl>
-
-                <FormControl isRequired>
-                  <FormLabel className='roboto-regular'>Course Style:</FormLabel>
-                  <Input
-                    placeholder="Describe the course style"
-                    value={courseStyle}
-                    borderColor={'purple.600'}
-                    _hover={{ borderColor: "purple.600" }}
-                    onChange={(e) => setCourseStyle(e.target.value)}
-                  />
-                </FormControl>
-
-                <FormControl>
-                  <FormLabel className='roboto-regular'>Upload Course Related PDFs</FormLabel>
-                  <Input
-                    type="file"
-                    borderColor={'purple.600'}
-                    p={1}
-                    multiple={true}
-                    _hover={{ borderColor: "purple.600" }}
-                    accept=".pdf"
-                    onChange={handleFileChange}
-                  />
-                </FormControl>
-
-                <Box>
-                  <FormLabel className='roboto-regular'>Links</FormLabel>
-                  {links.map((link, index) => (
-                    <Box key={index} display="flex" alignItems="center" mb={2}>
+              </Center>
+              <form onSubmit={handleSubmit(onSubmit)}>
+                <Flex direction={['column', 'row']} justify="space-between" gap={6}>
+                  {/* Left Section */}
+                  <VStack width={['full', '45%']} spacing={6} align="stretch">
+                    <FormControl isInvalid={!!errors.courseName} isRequired>
+                      <FormLabel className='feature-heading' letterSpacing={2}><b>Course Name</b></FormLabel>
                       <Input
-                        placeholder={`Enter link ${index + 1}`}
-                        value={link}
+                        placeholder="Enter the course name"
+                        {...register('courseName')}
                         borderColor={'purple.600'}
                         _hover={{ borderColor: "purple.600" }}
-                        onChange={(e) => handleLinkChange(index, e.target.value)}
                       />
-                      <Tooltip label="Delete Link">
-                        <IconButton
-                          icon={<DeleteIcon />}
-                          colorScheme="red"
-                          size="sm"
-                          ml={2}
-                          aria-label="Delete Link"
-                          onClick={() => deleteLink(index)}
-                        />
+                      <FormErrorMessage>{errors.courseName?.message}</FormErrorMessage>
+                    </FormControl>
+
+                    <FormControl isInvalid={!!errors.courseStyle} isRequired>
+                      <FormLabel className='feature-heading' letterSpacing={2}><b>Course Description</b></FormLabel>
+                      <Input
+                        placeholder="Describe the course"
+                        {...register('courseStyle')}
+                        borderColor={'purple.600'}
+                        _hover={{ borderColor: "purple.600" }}
+                      />
+                      <FormErrorMessage>{errors.courseStyle?.message}</FormErrorMessage>
+                    </FormControl>
+
+                    <FormControl isInvalid={!!errors.courseType} isRequired>
+                      <FormLabel className='feature-heading' letterSpacing={2}><b>Course Type</b></FormLabel>
+                      <Select
+                        placeholder="Select course type"
+                        {...register('courseType')}
+                        borderColor={'purple.600'}
+                        _hover={{ borderColor: "purple.600" }}
+                      >
+                        <option value="theoretical">Theoretical</option>
+                        <option value="mathematical">Mathematical</option>
+                        <option value="practical">Practical</option>
+                      </Select>
+                      <FormErrorMessage>{errors.courseType?.message}</FormErrorMessage>
+                    </FormControl>
+                  </VStack>
+
+                  {/* Right Section */}
+                  <VStack width={['full', '45%']} spacing={6} align="stretch">
+                    <FormControl>
+                      <FormLabel className='feature-heading' letterSpacing={2}><b>Upload Course Related PDFs</b></FormLabel>
+                      <Input
+                        type="file"
+                        borderColor={'purple.600'}
+                        p={1}
+                        multiple={true}
+                        _hover={{ borderColor: "purple.600" }}
+                        accept=".pdf"
+                        onChange={handleFileChange}
+                      />
+                    </FormControl>
+
+                    <FormControl>
+                      <FormLabel className='feature-heading' letterSpacing={2}><b>Links</b></FormLabel>
+                      {fields.map((field, index) => (
+                        <Box key={field.id} display="flex" alignItems="center" mb={2}>
+                          <Input
+                            placeholder={`Enter link ${index + 1}`}
+                            {...register(`links.${index}` as const)}
+                            borderColor={'purple.600'}
+                            _hover={{ borderColor: "purple.600" }}
+                          />
+                          <Tooltip label="Delete Link">
+                            <IconButton
+                              icon={<DeleteIcon />}
+                              colorScheme="red"
+                              size="sm"
+                              ml={2}
+                              aria-label="Delete Link"
+                              onClick={() => remove(index)}
+                            />
+                          </Tooltip>
+                        </Box>
+                      ))}
+                      <Tooltip label="Add new Link">
+                        <IconButton icon={<AddIcon />} onClick={() => append('')} aria-label="Add Link" />
                       </Tooltip>
-                    </Box>
-                  ))}
-                  <Tooltip label="Add new Link">
-                    <IconButton
-                      icon={<AddIcon />}
-                      onClick={addLink}
-                      aria-label="Add Link"
-                    />
-                  </Tooltip>
-                </Box>
+                    </FormControl>
+                    <FormControl isInvalid={!!errors.websitesReference} isRequired>
+                      <FormLabel className='feature-heading' letterSpacing={2}><b>Website References</b></FormLabel>
+                      <Input
+                        placeholder="Add website references (e.g., research papers, articles)"
+                        {...register('websitesReference')}
+                        borderColor={'purple.600'}
+                        _hover={{ borderColor: "purple.600" }}
+                      />
+                      <FormErrorMessage>{errors.websitesReference?.message}</FormErrorMessage>
+                    </FormControl>
 
-                <FormControl display="flex" alignItems="center">
-                  <Checkbox
-                    isChecked={includeImages}
-                    size={'lg'}
-                    borderColor={"purple.700"}
-                    _focus={{ outline: 'none', boxShadow: 'none' }}
-                    variant={"solid"}
-                    onChange={(e) => setIncludeImages(e.target.checked)}
-                    colorScheme="purple"
-                  >
-                    Include Images
-                  </Checkbox>
-                </FormControl>
-
-                <Button colorScheme="purple" _focus={{ outline: 'none', boxShadow: 'none' }} className='roboto-regular' onClick={handleSubmit}>
+                    <FormControl display="flex" alignItems="center" mt={4}>
+                      <Checkbox
+                        isChecked={includeImages}
+                        size={'lg'}
+                        borderColor={"purple.700"}
+                        _focus={{ outline: 'none', boxShadow: 'none' }}
+                        variant={"solid"}
+                        onChange={(e) => setIncludeImages(e.target.checked)}
+                        colorScheme="purple"
+                      >
+                        Include Images
+                      </Checkbox>
+                    </FormControl>
+                  </VStack>
+                </Flex>
+                <Button colorScheme="purple" mt={8} type="submit" width="full">
                   Create Baseline Course
                 </Button>
-              </VStack>
+              </form>
             </Box>
           </Box>
         </Box>
@@ -254,3 +287,5 @@ export default function Create() {
     </>
   );
 }
+
+export default Create;
