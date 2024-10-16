@@ -10,6 +10,7 @@ import {
   FormControl,
   FormLabel,
   IconButton,
+  Text,
   Tooltip,
   Checkbox,
   useToast,
@@ -19,7 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Navbar } from '../../components/navbar';
 import { SubmoduleModal } from './submoduleModal';
-
+import "../index.css"
 
 export default function Create() {
   const navigate = useNavigate();
@@ -101,36 +102,36 @@ export default function Create() {
   };
 
 
-const handleModalSubmit = async (updatedSubmodules: Record<string, string>) => {
+  const handleModalSubmit = async (updatedSubmodules: Record<string, string>) => {
 
-  try {
-    // Send the updated submodules via Axios
-    const response = await axios.post('/api/update-submodules', updatedSubmodules);
+    try {
+      // Send the updated submodules via Axios
+      const response = await axios.post('/api/update-submodules', updatedSubmodules);
 
-    if (response.status === 200) {
+      if (response.status === 200) {
+        toast({
+          title: 'Submodules updated successfully!',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+        navigate('/teacher/course');
+      } else {
+        throw new Error('Failed to update submodules.');
+      }
+    } catch (error) {
+      console.error('Error updating submodules:', error);
+
+      // Show an error toast
       toast({
-        title: 'Submodules updated successfully!',
-        status: 'success',
+        title: 'Failed to update submodules.',
+        description: 'An error occurred while updating submodules.',
+        status: 'error',
         duration: 3000,
         isClosable: true,
       });
-      navigate('/teacher/course');
-    } else {
-      throw new Error('Failed to update submodules.');
     }
-  } catch (error) {
-    console.error('Error updating submodules:', error);
-    
-    // Show an error toast
-    toast({
-      title: 'Failed to update submodules.',
-      description: 'An error occurred while updating submodules.',
-      status: 'error',
-      duration: 3000,
-      isClosable: true,
-    });
-  }
-};
+  };
 
 
   return (
@@ -151,9 +152,9 @@ const handleModalSubmit = async (updatedSubmodules: Record<string, string>) => {
           <Box width={'full'} display="flex" alignItems="center" justifyContent="center" p={10}>
             <Box maxWidth="lg" bg={'#DFDFDF'} width="100%" p={10} borderWidth={1} borderRadius="xl" boxShadow="lg">
               <VStack spacing={6} align="stretch">
-                <Heading size="lg" className='roboto-bold'>
-                  Create Course
-                </Heading>
+                <Text size="2xl" align="center" style={{ fontFamily: 'Comfortaa', fontWeight: 400 }}>
+                  <b>Create Course</b>
+                </Text>
 
                 <FormControl isRequired>
                   <FormLabel className='roboto-regular'>Course Name:</FormLabel>
