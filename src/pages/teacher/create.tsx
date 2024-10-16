@@ -152,12 +152,12 @@ const Create = () => {
           </Flex>
         </>
       ) : (
-        <Box bg="purple.300" minHeight={'100vh'} minWidth={'100vw'}>
+        <Box bg="purple.200" minHeight={'100vh'} minWidth={'100vw'}>
           <Navbar />
           <Box width={'full'} display="flex" alignItems="center" justifyContent="center" p={10}>
             <Box maxWidth="5xl" bg="white" width="100%" p={10} borderWidth={1} borderRadius="xl" boxShadow="lg">
               <Center>
-                <Text className='main-heading' fontSize={"5xl"} mb={6}>
+                <Text className='main-heading' fontSize={"5xl"} mb={6} color={"purple.600"}>
                   <b>Generate Course</b>
                 </Text>
               </Center>

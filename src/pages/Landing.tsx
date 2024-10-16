@@ -3,7 +3,7 @@ import { Navbar } from '../components/navbar';
 
 export default function LandingPage() {
   return (
-    <Box bg={"purple.300"} minHeight={'100vh'}> {/* Change to minHeight for better responsiveness */}
+    <Box bg={"purple.200"} minHeight={'100vh'}> {/* Change to minHeight for better responsiveness */}
       <Navbar />
       <VStack spacing={4} align="center" py={5} px={4}> {/* Add padding for smaller screens */}
         <Box textAlign="center" mt={3}>
