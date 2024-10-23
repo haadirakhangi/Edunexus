@@ -32,6 +32,9 @@ from core.recommendation_generator import RecommendationGenerator
 from core.rag import MultiModalRAG
 from server.utils import ServerUtils, AssistantUtils
 import json
+import typing_extensions as typing
+import google.generativeai as genai
+
 
 users = Blueprint(name='users', import_name=__name__)
 
@@ -54,6 +57,11 @@ USER_DOCS_PATH = os.path.join('server', 'user_docs')
 AVAILABLE_TOOLS = {
     'get_context_from_page': AssistantUtils.get_page_context
 }
+
+model = genai.GenerativeModel("gemini-1.5-flash")
+class Lecture(typing.TypedDict):
+    Lesson_Name: str
+    description: str
 
 @users.route('/query2/multimodal-rag-submodules', methods=['POST'])
 async def multimodal_rag_submodules():
@@ -229,3 +237,41 @@ async def multimodal_rag_content():
         content_list = content_one + content_two + content_three
         final_content = ServerUtils.json_list_to_markdown(content_list)
         return jsonify({"message": "Query successful", "relevant_images": relevant_images_list, "content": final_content, "response": True}), 200
+    
+
+@users.route('/generate_lectures', methods=['POST'])
+def generate_lectures():
+    # Parse the input data from the request
+    data = request.json
+    course_name = data.get('course_name')
+    submodule = data.get('submodule')
+    num = data.get('num')
+
+    # Check for missing inputs
+    if not all([course_name, submodule, num]):
+        return jsonify({"error": "Missing input data"}), 400
+
+    # Create the prompt for the generative model
+    prompt2 = """You are a lecture scheduler. Your job is to divide the submodules into lectures, each lecture would be of an hour each. You need to plan on what should be covered in each lecture.
+Name of the course: %(course_name)s
+The sub-modules are:
+%(submodules)s
+
+List %(num)s number of lecture names with a brief description of each lecture. The description would consist of a flow on how the teacher should teach that lecture.
+
+"""
+
+    # Generate the content using the AI model
+    try:
+        result = model.generate_content(
+            prompt2 % locals(),
+            generation_config=genai.GenerationConfig(
+                response_mime_type="application/json", response_schema=list[Lecture]
+            ),
+        )
+        # Return the generated lectures as JSON
+        return jsonify(result.text), 200
+
+    except Exception as e:
+        # Handle errors from the AI model or request processing
+        return jsonify({"error": str(e)}), 500
