@@ -9,7 +9,7 @@ import {
     useDisclosure,
 } from '@chakra-ui/react';
 import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
-import { FaHome, FaPencilAlt, FaSignInAlt } from 'react-icons/fa';
+import { FaHome, FaPencilAlt, FaSignInAlt, FaUserPlus } from 'react-icons/fa';
 import { Logo } from './icons'; // Keep your existing Logo component
 
 interface NavLinkProps {
@@ -73,6 +73,13 @@ export const Navbar = () => {
                         <HStack spacing={2}>
                             <FaPencilAlt />
                             <span>Create</span>
+                        </HStack>
+                    </NavLink>
+
+                    <NavLink href="/register">
+                        <HStack spacing={2}>
+                            <FaUserPlus />
+                            <span>Sign Up</span>
                         </HStack>
                     </NavLink>
 

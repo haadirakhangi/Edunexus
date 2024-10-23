@@ -33,7 +33,7 @@ export default function LandingPage() {
               </Button>
               </Link>
               <Link href='/login'>
-              <Button colorScheme="purple" _hover={{ bg: "purple.800", boxShadow: '0 0 15px purple' }} size="lg" width={['150px', '200px']} variant="solid" mr={5}>
+              <Button colorScheme="purple" _hover={{bg:"purple.800", transform: 'scale(1.05)'}} size="lg" width={['150px', '200px']} variant="solid" mr={5}>
                 Get Started
               </Button>
               </Link>
