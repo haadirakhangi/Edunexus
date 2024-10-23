@@ -1,4 +1,4 @@
-import { Box, Flex, Heading, Text, Button, Image, VStack, HStack } from '@chakra-ui/react';
+import { Box, Flex, Heading, Text, Button, Image, VStack, HStack, Link } from '@chakra-ui/react';
 import { Navbar } from '../components/navbar';
 
 export default function LandingPage() {
@@ -27,12 +27,16 @@ export default function LandingPage() {
               Our platform harnesses the power of AI to transform education, offering intelligent tools that enhance both teaching and learning experiences. From real-time content updates for educators to personalized learning pathways and AI-driven mock interviews for students, we bridge the gap between academia and career readiness. With features like skill gap analysis, automated note-taking, and dynamic labs, we provide a seamless, adaptive learning environment designed to equip students with the knowledge and skills they need to succeed in an ever-evolving world.
             </Text>
             <HStack spacing={2} mt={5} justifyContent={['center', 'flex-start']}> {/* Center buttons on small screens */}
+              <Link href='/register'>
               <Button colorScheme="purple" _hover={{bg:"purple.800", transform: 'scale(1.05)'}} size="lg" width={['150px', '200px']} variant="solid" mr={5}>
                 Sign In
               </Button>
-              <Button colorScheme="purple" _hover={{bg:"purple.800", transform: 'scale(1.05)'}} size="lg" width={['150px', '200px']} variant="solid">
-                Register
+              </Link>
+              <Link href='/login'>
+              <Button colorScheme="purple" _hover={{ bg: "purple.800", boxShadow: '0 0 15px purple' }} size="lg" width={['150px', '200px']} variant="solid" mr={5}>
+                Get Started
               </Button>
+              </Link>
             </HStack>
           </Box>
           <Box flexShrink={0} mt={[8, 0]}> {/* Add margin on top for smaller screens */}

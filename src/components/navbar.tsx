@@ -9,7 +9,7 @@ import {
     useDisclosure,
 } from '@chakra-ui/react';
 import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
-import { FaHome, FaPencilAlt } from 'react-icons/fa';
+import { FaHome, FaPencilAlt, FaSignInAlt } from 'react-icons/fa';
 import { Logo } from './icons'; // Keep your existing Logo component
 
 interface NavLinkProps {
@@ -49,14 +49,16 @@ export const Navbar = () => {
                 />
 
                 {/* Logo section */}
-                <HStack spacing={8} alignItems={'center'}>
-                    <Box display={"flex"} _hover={{ transform: 'scale(1.1)', color: 'black' }} transition="transform 0.2s ease-in-out">
-                        <Logo color='white'/>
-                        <Box mt={2} className="roboto-regular-italic" fontSize={'lg'} color="white">
-                            EduNexus
+                <Link textDecoration="none" _hover={{ color: 'black'}} href='/'>
+                    <HStack spacing={8} alignItems={'center'}>
+                        <Box display={"flex"}  >
+                            <Logo color='white' />
+                            <Box mt={2} className="roboto-regular-italic" fontSize={'lg'} color="white">
+                                EduNexus
+                            </Box>
                         </Box>
-                    </Box>
-                </HStack>
+                    </HStack>
+                </Link>
 
                 {/* Desktop nav links pushed to the right */}
                 <HStack as={'nav'} spacing={4} display={{ base: 'none', md: 'flex' }} ml="auto">
@@ -73,6 +75,13 @@ export const Navbar = () => {
                             <span>Create</span>
                         </HStack>
                     </NavLink>
+
+                    <NavLink href="/login">
+                        <HStack spacing={2}>
+                            <FaSignInAlt />
+                            <span>Login</span>
+                        </HStack>
+                    </NavLink>
                 </HStack>
 
             </Flex>
@@ -83,6 +92,7 @@ export const Navbar = () => {
                     <Stack as={'nav'} spacing={4}>
                         <NavLink href="/">Home</NavLink>
                         <NavLink href="/teacher/create">Create</NavLink>
+                        <NavLink href="/login">Login</NavLink>
                     </Stack>
                 </Box>
             ) : null}
