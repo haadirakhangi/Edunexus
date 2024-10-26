@@ -238,40 +238,47 @@ async def multimodal_rag_content():
         final_content = ServerUtils.json_list_to_markdown(content_list)
         return jsonify({"message": "Query successful", "relevant_images": relevant_images_list, "content": final_content, "response": True}), 200
     
+    
+    
+from flask import Flask, request, jsonify
+from core.generate_lectures import create_rag_pipeline, search_documents, generate_prompt, generate_lectures_from_prompt
 
 @users.route('/generate_lectures', methods=['POST'])
 def generate_lectures():
-    # Parse the input data from the request
+    # Parse input data from the request
     data = request.json
-    course_name = data.get('course_name')
-    submodule = data.get('submodule')
     num = data.get('num')
+    course_name = data.get('course_name')
+    pdf_path = data.get('pdf_path')
 
-    # Check for missing inputs
-    if not all([course_name, submodule, num]):
-        return jsonify({"error": "Missing input data"}), 400
+    # Check for missing input
+    if not num or not course_name or not pdf_path:
+        return jsonify({"error": "Missing required input: 'num', 'course_name', or 'pdf_path'"}), 400
 
-    # Create the prompt for the generative model
-    prompt2 = """You are a lecture scheduler. Your job is to divide the submodules into lectures, each lecture would be of an hour each. You need to plan on what should be covered in each lecture.
-Name of the course: %(course_name)s
-The sub-modules are:
-%(submodules)s
-
-List %(num)s number of lecture names with a brief description of each lecture. The description would consist of a flow on how the teacher should teach that lecture.
-
-"""
-
-    # Generate the content using the AI model
+    # Create the RAG pipeline using the provided PDF path
     try:
-        result = model.generate_content(
-            prompt2 % locals(),
-            generation_config=genai.GenerationConfig(
-                response_mime_type="application/json", response_schema=list[Lecture]
-            ),
-        )
-        # Return the generated lectures as JSON
-        return jsonify(result.text), 200
+        vectorstore, retriever = create_rag_pipeline(pdf_path)
+    except Exception as e:
+        return jsonify({"error": f"Failed to create RAG pipeline: {str(e)}"}), 500
+
+    # Retrieve relevant documents based on the course name
+    try:
+        relevant_docs = search_documents(course_name, retriever)
+    except Exception as e:
+        return jsonify({"error": f"Failed to search documents: {str(e)}"}), 500
+
+    # Extract the text from the relevant documents for the prompt
+    relevant_text = "\n".join([doc.page_content for doc in relevant_docs])
+
+    # Generate the prompt
+    prompt = generate_prompt(course_name, relevant_text, num)
+
+    # Generate the lectures using the prompt
+    try:
+        result = generate_lectures_from_prompt(prompt)
+        # Return the generated lectures as a JSON response
+        return jsonify(result), 200
 
     except Exception as e:
-        # Handle errors from the AI model or request processing
-        return jsonify({"error": str(e)}), 500
+        # Handle errors during AI model inference or request processing
+        return jsonify({"error": f"Failed to generate lectures: {str(e)}"}), 500
