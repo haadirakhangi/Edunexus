@@ -1,5 +1,5 @@
 from models.data_loader import DocumentLoader
-from models.data_utils import DocumentUtils,WebUtils
+from models.data_utils import DocumentUtils, WebUtils
 from api.serper_client import SerperProvider
 from core.content_generator import ContentGenerator
 from langchain_community.vectorstores.faiss import FAISS
@@ -8,7 +8,6 @@ import os
 import asyncio
 from pykka import ThreadingActor
 from concurrent.futures import ThreadPoolExecutor
-
 from pykka import ThreadingActor
 
 class ResultHandler(ThreadingActor):
@@ -17,6 +16,40 @@ class ResultHandler(ThreadingActor):
             print("Received result:", message)
         else:
             print(f"Warning: Unexpected message type received: {type(message)}")
+
+class SimpleRAG:
+    def __init__(
+            self,
+            course_name=None,
+            syllabus_directory_path=None,
+            embeddings=None,
+            chunk_size=1000,
+            chunk_overlap=200,
+            text_vectorstore_path=None,
+    ):
+        if syllabus_directory_path is None:
+            raise Exception("Syllabus pdf path must be provided")
+        self.syllabus_directory_path = syllabus_directory_path
+        self.embeddings = embeddings
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
+        self.current_dir = os.path.dirname(__file__)
+        self.text_vectorstore_path = os.path.join(self.current_dir, 'syllabus-vectorstore', course_name)
+        if text_vectorstore_path is not None:
+            self.text_vectorstore = FAISS.load_local(text_vectorstore_path, embeddings=embeddings, allow_dangerous_deserialization=True)
+        else:
+            self.text_vectorstore = None
+        
+    async def create_text_vectorstore(self):
+        self.text_vectorstore = await DocumentLoader.create_faiss_vectorstore_for_text(documents_directory=self.syllabus_directory_path, embeddings=self.embeddings, chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap, input_type='pdf', links=[])
+        self.text_vectorstore.save_local(self.text_vectorstore_path)
+        return self.text_vectorstore_path
+    
+    async def search_similar_text(self, query, k=5):
+        relevant_docs = self.text_vectorstore.similarity_search(query, k=k)
+        rel_docs = [doc.page_content for doc in relevant_docs]
+        context = '\n'.join(rel_docs)
+        return context
 
 class MultiModalRAG:
     def __init__(
@@ -34,8 +67,8 @@ class MultiModalRAG:
             image_vectorstore_path=None,
             input_type=None,
             links=None,
-            includeImages=None
-        ):
+            include_images=None
+    ):
         if documents_directory_path is None:
             raise Exception("Document Directory Path path must be provided")
         self.documents_directory_path = documents_directory_path
@@ -65,12 +98,12 @@ class MultiModalRAG:
         else:
             self.image_vectorstore = None
         
-        self.includeImages = includeImages
+        self.include_images = include_images
 
     async def create_text_and_image_vectorstores(self):
         result_handler = ResultHandler.start()
         try:
-            if self.includeImages:
+            if self.include_images:
                 self.text_vectorstore, self.image_vectorstore = await asyncio.gather(
                     DocumentLoader.create_faiss_vectorstore_for_text(self.documents_directory_path, self.embeddings, self.chunk_size, self.chunk_overlap, self.input_type, self.links),
                     DocumentLoader.create_faiss_vectorstore_for_image(self.documents_directory_path, self.image_directory_path, self.clip_model, self.clip_processor, self.input_type, self.links)
@@ -102,7 +135,7 @@ class MultiModalRAG:
     
     async def run(self, content_generator : ContentGenerator, module_name, submodule_split, profile, top_k_docs):
         images_in_directory = []
-        if self.includeImages:
+        if self.include_images:
             for root, dirs, files in os.walk(self.image_directory_path):
                 for file in files:
                     if file.endswith(('png', 'jpg', 'jpeg')):

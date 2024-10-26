@@ -31,4 +31,3 @@ PyMuPDF
 Pillow
 pykka
 flask[async]
-python-magic-bin
