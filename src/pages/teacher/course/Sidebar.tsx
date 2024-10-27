@@ -15,63 +15,66 @@ import {
     Image,
     Collapse,
 } from '@chakra-ui/react';
-import { AiOutlineFileText, AiOutlinePicture, AiOutlineAudio, AiOutlineExperiment } from 'react-icons/ai';
+import { AiOutlineFileText, AiOutlinePicture } from 'react-icons/ai';
 
 interface SidebarProps {
-    contentData: { [submodule: string]: string }[]; // List of dictionaries, each with one submodule
-    setSelectedSubmodule: (submodule: string) => void; // Function to set selected submodule
+    contentData: { [submodule: string]: string }[];
+    setSelectedSubmodule: (submodule: string) => void;
     isLoading: boolean;
     setCurrentIndex: (index: number) => void;
     relevant_images: (string[])[];
-    onInsertImage: (imageUrl: string) => void;
+    uploadedImages: string[];
+    onInsertImage: (imageUrl: string, index: number) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-    contentData = [], // Default to an empty array if undefined
+    contentData = [],
     setSelectedSubmodule,
     isLoading,
     setCurrentIndex,
     relevant_images,
+    uploadedImages,
     onInsertImage,
 }) => {
-    const [activeTabIndex, setActiveTabIndex] = useState<number | null>(null); // Controls which tab is open
-    const [activeContentIndex, setActiveContentIndex] = useState<number>(0); // Controls which topic is selected
-
-    const submoduleKeys = contentData.map(submodule => Object.keys(submodule)[0]); // Get the submodule names
+    const [activeTabIndex, setActiveTabIndex] = useState<number | null>(null);
+    const [activeContentIndex, setActiveContentIndex] = useState<number>(0);
+    const submoduleKeys = contentData.map(submodule => Object.keys(submodule)[0]);
 
     const changeCon = (index: number) => {
-        setActiveContentIndex(index); // Update when clicking inside the topics list
+        setActiveContentIndex(index);
     };
 
     const categorizeImages = (images: string[]) => {
-        const textbookImages = [];
-        const googleImages = [];
-
+        const textbookImages = new Set<string>();
+        const googleImages = new Set<string>();
         images.forEach((image) => {
             if (image.startsWith('https://')) {
-                googleImages.push(image); // If it's an HTTPS link, go to Google tab
+                googleImages.add(image);
             } else {
-                textbookImages.push(image); // Else go to Textbook/Links tab
+                textbookImages.add(image);
             }
         });
-
-        return { textbookImages, googleImages };
+        return { textbookImages: Array.from(textbookImages), googleImages: Array.from(googleImages) };
     };
 
-    const allTextbookImages: string[] = [];
-    const allGoogleImages: string[] = [];
+    const allTextbookImagesSet = new Set<string>();
+    const allGoogleImagesSet = new Set<string>();
 
     relevant_images.forEach((images) => {
         const { textbookImages, googleImages } = categorizeImages(images);
-        allTextbookImages.push(...textbookImages);
-        allGoogleImages.push(...googleImages);
+        textbookImages.forEach(image => allTextbookImagesSet.add(image));
+        googleImages.forEach(image => allGoogleImagesSet.add(image));
     });
+
+
+    const allTextbookImages = Array.from(allTextbookImagesSet);
+    const allGoogleImages = Array.from(allGoogleImagesSet);
 
 
     useEffect(() => {
         localStorage.setItem('active_content_index', activeContentIndex.toString());
-        setSelectedSubmodule(submoduleKeys[activeContentIndex]); // Set selected submodule by key
-        setCurrentIndex(activeContentIndex); // Set current index
+        setSelectedSubmodule(submoduleKeys[activeContentIndex]);
+        setCurrentIndex(activeContentIndex);
     }, [activeContentIndex, submoduleKeys, setSelectedSubmodule, setCurrentIndex]);
 
     if (isLoading) {
@@ -87,7 +90,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <Tabs
                 orientation="vertical"
                 variant="unstyled"
-                index={activeTabIndex ?? -1} // Show no tab panel if activeTabIndex is null
+                index={activeTabIndex ?? -1}
             >
                 <TabList bg={'#D1D1D1'} height={"100vh"} p={"2"} borderTopRightRadius={20} borderBottomRightRadius={20}>
                     <Tab
@@ -120,26 +123,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                             <Text fontSize="sm">Images Section</Text>
                         </Flex>
                     </Tab>
-                    <Tab
-                        _hover={{ transform: 'scale(1.05)', backgroundColor: 'gray.100', border: 'none' }}
-                        _selected={{ bg: 'purple.500', color: 'white' }}
-                        padding={1}
-                        my={2}
-                        _focus={{ outline: 'none', boxShadow: 'none' }}
-                        width={["80px", "100px", "70px"]}
-                        borderRadius="md"
-                        onClick={() => toggleTab(3)}
-                    >
-                        <Flex direction="column" align="center">
-                            <AiOutlineExperiment style={{ marginBottom: '4px', fontSize: '24px' }} />
-                            <Text fontSize="sm">Dynamic Labs</Text>
-                        </Flex>
-                    </Tab>
                 </TabList>
 
                 {activeTabIndex !== null && (
                     <TabPanels mt={2} bg={'#DFDFDF'} height={'100vh'} borderRadius={20} boxShadow={'10px 0 15px -5px rgba(0, 0, 0, 0.3)'}>
-                        <Collapse in={activeTabIndex === 0} animate="slide" animateOpacity={true}>
+                        <Collapse in={activeTabIndex === 0} transition={{ enter: { duration: 0.1 }, exit: { duration: 0.1 } }}>
                             <TabPanel width={["80px", "200px", "350px"]}>
                                 <Heading as="h3" size="md" textAlign="center" mb={4}>
                                     Lessons
@@ -150,7 +138,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                             key={index}
                                             variant="ghost"
                                             p={"25"}
-                                            onClick={() => changeCon(index)} // Update content when submodule is clicked
+                                            onClick={() => changeCon(index)}
                                             justifyContent="flex-start"
                                             borderColor={'purple.300'}
                                             borderWidth={3}
@@ -174,7 +162,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             </TabPanel>
                         </Collapse>
 
-                        <Collapse in={activeTabIndex === 1}>
+                        <Collapse in={activeTabIndex === 1} transition={{ enter: { duration: 0.1 }, exit: { duration: 0.1 } }}>
                             <TabPanel width={["80px", "200px", "350px"]}>
                                 <Heading as="h3" size="md" textAlign="center" mb={2}>
                                     Image Section
@@ -189,30 +177,87 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     <TabPanels>
                                         <TabPanel>
                                             <Box height={"600px"} overflowY="auto">
-                                                <SimpleGrid columns={[2, 2, 3]} spacing={4}>
-                                                    {allTextbookImages.map((image, index) => (
-                                                        <Box key={index} p={2} borderWidth={1} borderRadius="md">
-                                                            <Image src={`data:image/png;base64,${image}`} onClick={() => onInsertImage(`data:image/png;base64,${image}`,index)} alt={`Textbook Link ${index}`} style={{ width: '100%', height: 'auto' }} />
-                                                        </Box>
-                                                    ))}
-                                                </SimpleGrid>
+                                                {allTextbookImages.length === 0 ? (
+                                                    <Box textAlign="center" p={4}>
+                                                        No images available.
+                                                    </Box>
+                                                ) : (
+                                                    <SimpleGrid columns={[2, 2, 2]}>
+                                                        {allTextbookImages.map((image, index) => (
+                                                            <Box
+                                                                key={index}
+                                                                p={2}
+                                                                transition="transform 0.2s ease-in-out"
+                                                                _hover={{ transform: 'scale(1.3)' }}
+                                                            >
+                                                                <Image
+                                                                    src={`data:image/png;base64,${image}`}
+                                                                    onClick={() => onInsertImage(`data:image/png;base64,${image}`, index)}
+                                                                    alt={`Textbook Link ${index}`}
+                                                                    style={{ width: '100%', height: 'auto' }}
+                                                                />
+                                                            </Box>
+                                                        ))}
+                                                    </SimpleGrid>
+                                                )}
                                             </Box>
                                         </TabPanel>
 
                                         <TabPanel>
-                                            <Box maxHeight="400px" overflowY="auto">
-                                                <SimpleGrid columns={[2, 2, 3]} spacing={4}>
-                                                    {allGoogleImages.map((image, index) => (
-                                                        <Box key={index} p={2} borderWidth={1} borderRadius="md">
-                                                            <Image src={image} alt={`Google Link ${index}`} style={{ width: '100%', height: 'auto' }} />
-                                                        </Box>
-                                                    ))}
-                                                </SimpleGrid>
+                                            <Box maxHeight="600px" overflowY="auto">
+                                                {allGoogleImages.length === 0 ? (
+                                                    <Box textAlign="center" p={4}>
+                                                        No images available.
+                                                    </Box>
+                                                ) : (
+                                                    <SimpleGrid columns={[2, 2, 2]}>
+                                                        {allGoogleImages.map((image, index) => (
+                                                            <Box
+                                                                key={index}
+                                                                p={2}
+                                                                transition="transform 0.2s ease-in-out"
+                                                                _hover={{ transform: 'scale(1.3)' }}
+                                                            >
+                                                                <Image
+                                                                    src={image}
+                                                                    onClick={() => onInsertImage(image, index)}
+                                                                    alt={`Google Link ${index}`}
+                                                                    style={{ width: '100%', height: 'auto' }}
+                                                                />
+                                                            </Box>
+                                                        ))}
+                                                    </SimpleGrid>
+                                                )}
                                             </Box>
                                         </TabPanel>
 
+
                                         <TabPanel>
-                                            <Text textAlign="center">No uploaded images yet.</Text>
+                                            <Box height={"600px"} overflowY="auto">
+                                                {uploadedImages.length === 0 ? (
+                                                    <Box textAlign="center" p={4}>
+                                                        No images available.
+                                                    </Box>
+                                                ) : (
+                                                    <SimpleGrid columns={[2, 2, 2]}>
+                                                        {uploadedImages.map((image, index) => (
+                                                            <Box
+                                                                key={index}
+                                                                p={2}
+                                                                transition="transform 0.2s ease-in-out"
+                                                                _hover={{ transform: 'scale(1.3)' }}
+                                                            >
+                                                                <Image
+                                                                    src={image}
+                                                                    // onClick={() => onInsertImage(`data:image/png;base64,${image}`, index)}
+                                                                    alt={`Uploaded Link ${index}`}
+                                                                    style={{ width: '100%', height: 'auto' }}
+                                                                />
+                                                            </Box>
+                                                        ))}
+                                                    </SimpleGrid>
+                                                )}
+                                            </Box>
                                         </TabPanel>
                                     </TabPanels>
                                 </Tabs>
@@ -220,21 +265,6 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                         </Collapse>
 
-                        <Collapse in={activeTabIndex === 2}>
-                            <TabPanel width={["80px", "200px", "350px"]}>
-                                <Heading as="h3" size="md" textAlign="center" mb={2}>
-                                    Voice Cloning Section
-                                </Heading>
-                            </TabPanel>
-                        </Collapse>
-
-                        <Collapse in={activeTabIndex === 3}>
-                            <TabPanel width={["80px", "200px", "350px"]}>
-                                <Heading as="h3" size="md" textAlign="center" mb={2}>
-                                    Dynamic Lab Section
-                                </Heading>
-                            </TabPanel>
-                        </Collapse>
                     </TabPanels>
                 )}
             </Tabs>

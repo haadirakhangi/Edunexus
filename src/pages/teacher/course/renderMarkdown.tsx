@@ -1,10 +1,8 @@
-// renderMarkdown.tsx
-
 import { Box, Heading, Image } from '@chakra-ui/react';
 
-export const renderMarkdown = (content: string) => {
+export const renderMarkdown = (content: string): JSX.Element[] => {
     const lines = content.split('\n');
-    const renderedContent = [];
+    const renderedContent: JSX.Element[] = [];
     const imagePattern = /!\[(.*?)\]\((.*?)\)/;
 
     lines.forEach((line, idx) => {
@@ -29,22 +27,38 @@ export const renderMarkdown = (content: string) => {
                 </Box>
             );
         } else if (line.startsWith('## ')) {
-            renderedContent.push(<Heading size={'md'} key={idx} fontWeight="bold">{line.slice(3)}</Heading>);
+            renderedContent.push(
+                <Heading size={'md'} key={idx} fontWeight="bold">
+                    {line.slice(3)}
+                </Heading>
+            );
         } else if (line.startsWith('# ')) {
-            renderedContent.push(<Heading size={'lg'} key={idx}>{line.slice(2)}</Heading>);
+            renderedContent.push(
+                <Heading size={'lg'} key={idx}>
+                    {line.slice(2)}
+                </Heading>
+            );
         } else if (line.startsWith('### ')) {
-            renderedContent.push(<Heading size={"sm"} key={idx} fontWeight="bold">{line.slice(4)}</Heading>);
+            renderedContent.push(
+                <Heading size={"sm"} key={idx} fontWeight="bold">
+                    {line.slice(4)}
+                </Heading>
+            );
         } else if (line.startsWith('* ') || line.startsWith('- ')) {
             const boldPattern = /\*\*(.*?)\*\*/g;
             const formattedLine = line.slice(2).replace(boldPattern, (match, p1) => `<strong>${p1}</strong>`);
-            renderedContent.push(<li key={idx} style={{ marginLeft: '20px', listStyleType: 'disc' }} dangerouslySetInnerHTML={{ __html: formattedLine }} />);
+            renderedContent.push(
+                <li key={idx} style={{ marginLeft: '20px', listStyleType: 'disc' }} dangerouslySetInnerHTML={{ __html: formattedLine }} />
+            );
         } else {
             const boldPattern = /\*\*(.*?)\*\*/g;
             const formattedLine = line.replace(boldPattern, (match, p1) => `<strong>${p1}</strong>`);
             if (line.trim() === '') {
                 renderedContent.push(<br key={idx} />);
             } else {
-                renderedContent.push(<p key={idx} dangerouslySetInnerHTML={{ __html: formattedLine.replace(/\n/g, '<br />') }} />);
+                renderedContent.push(
+                    <p key={idx} dangerouslySetInnerHTML={{ __html: formattedLine.replace(/\n/g, '<br />') }} />
+                );
             }
         }
     });

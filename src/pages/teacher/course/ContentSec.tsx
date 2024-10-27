@@ -1,25 +1,25 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Box,Input, Tabs, TabList, TabPanels, Tab, TabPanel, Textarea } from '@chakra-ui/react';
+import { useState, useEffect, useCallback } from 'react';
+import { Box, Input, Tabs, TabList, TabPanels, Tab, TabPanel, Textarea } from '@chakra-ui/react';
 import { debounce } from 'lodash';
-import { handleImageUpload, base64ToFile, insertImageAtIndex } from "./utils";
+import { insertImageAtCursor } from "./utils";
 import { renderMarkdown } from './renderMarkdown';
 
 interface ContentSecProps {
-  contentData: { [submodule: string]: string }[]; // List of dictionaries
-  selectedSubmodule: string; // Currently selected submodule
-  onUpdateContent: (updatedContent: { [submodule: string]: string }[]) => void; // Handler for updating contentData
-  relevant_images: (string[])[]; // List of lists containing either base64 or image links for each submodule
+  contentData: { [submodule: string]: string }[];
+  selectedSubmodule: string;
+  onUpdateContent: (updatedContent: { [submodule: string]: string }[]) => void;
+  uploadedImages: string[];
+  setUploadedImages: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 const ContentSec: React.FC<ContentSecProps> = ({
   contentData,
   selectedSubmodule,
   onUpdateContent,
-  relevant_images,
+  uploadedImages,
+  setUploadedImages,
 }) => {
   const [markdownContent, setMarkdownContent] = useState<string>('');
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const hasCalledInitialImages = useRef(false);
 
   useEffect(() => {
     const selected = contentData.find((item) => selectedSubmodule in item);
@@ -28,63 +28,48 @@ const ContentSec: React.FC<ContentSecProps> = ({
     }
   }, [selectedSubmodule, contentData]);
 
-  // This useEffect will only call initalImges once after markdownContent has been set
-  useEffect(() => {
-    if (markdownContent && !hasCalledInitialImages.current) {
-      initalImges(markdownContent);
-      hasCalledInitialImages.current = true;
-    }
-  }, [markdownContent]);
 
-  // Debounced function to update content
   const debouncedUpdate = useCallback(
     debounce((updatedContent) => {
       onUpdateContent(updatedContent);
-    }, 300), // Adjust the delay as needed
+    }, 300),
     [onUpdateContent]
   );
-
-  const initalImges = (content: string) => {
-    const index = contentData.findIndex((item) => selectedSubmodule in item);
-    const imagesForSubmodule = relevant_images[index]?.slice(0, 2) || [];
-    let updatedContent = content; // Start with the original content
-
-    imagesForSubmodule.forEach((imageLink, i) => {
-      const isURL = imageLink.startsWith('http://') || imageLink.startsWith('https://');
-
-      if (!isURL) {
-        // Prepend the data URI prefix for Base64
-        imageLink = `data:image/png;base64,${imageLink}`;
-
-        // Convert Base64 to File object
-        const file = base64ToFile(imageLink, `image-${i + 1}.png`);
-        const fileUrl = URL.createObjectURL(file);
-
-        // Insert image at specific line index
-        const insertionIndex = i === 0 ? 3 : 6; // Insert first image at line 3 and second at line 6
-        updatedContent = insertImageAtIndex(updatedContent, fileUrl, file.name, insertionIndex);
-      }
-    });
-
-    // Update markdown content state with all images inserted
-    setMarkdownContent(updatedContent);
-  };
-
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
     setMarkdownContent(newContent);
-
-    // Update contentData with the modified markdown content for the selected submodule
     const updatedContent = contentData.map((item) =>
       selectedSubmodule in item
         ? { ...item, [selectedSubmodule]: newContent }
         : item
     );
-
-    // Call the debounced update function
     debouncedUpdate(updatedContent);
   };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      const newImages: string[] = [];
+      let updatedContent = markdownContent;
+      files.forEach((file) => {
+        const imageUrl = URL.createObjectURL(file);
+        newImages.push(imageUrl);
+        updatedContent = insertImageAtCursor(updatedContent, imageUrl, file.name);
+      });
+      setMarkdownContent(updatedContent);
+      const uniqueImages = new Set([...uploadedImages, ...newImages]);
+      setUploadedImages(Array.from(uniqueImages));
+      const updatedContentData = contentData.map((item) =>
+        selectedSubmodule in item
+          ? { ...item, [selectedSubmodule]: updatedContent }
+          : item
+      );
+      debouncedUpdate(updatedContentData);
+      e.target.value = '';
+    }
+  };
+  
 
   return (
     <Box p={8} width={'full'} height={'100vh'} display="flex">
@@ -136,17 +121,16 @@ const ContentSec: React.FC<ContentSecProps> = ({
               style={{ whiteSpace: 'pre-wrap' }}
             />
             <Box width={'50%'} mt={2}>
-            <Input
-              type="file"
-              borderColor={'purple.600'}
-              p={1}
-              multiple={true}
-              _hover={{ borderColor: "purple.600" }}
-              accept="image/*"
-              onChange={(e) => handleImageUpload(e, markdownContent, setMarkdownContent, setUploadedImages)}
-            />
+              <Input
+                type="file"
+                borderColor={'purple.600'}
+                p={1}
+                multiple={true}
+                _hover={{ borderColor: "purple.600" }}
+                accept="image/*"
+                onChange={handleImageUpload}
+              />
             </Box>
-            
           </TabPanel>
 
           <TabPanel>
