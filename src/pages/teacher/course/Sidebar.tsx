@@ -12,6 +12,7 @@ import {
     SimpleGrid,
     Flex,
     Text,
+    Image,
     Collapse,
 } from '@chakra-ui/react';
 import { AiOutlineFileText, AiOutlinePicture, AiOutlineAudio, AiOutlineExperiment } from 'react-icons/ai';
@@ -22,6 +23,7 @@ interface SidebarProps {
     isLoading: boolean;
     setCurrentIndex: (index: number) => void;
     relevant_images: (string[])[];
+    onInsertImage: (imageUrl: string) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -30,6 +32,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     isLoading,
     setCurrentIndex,
     relevant_images,
+    onInsertImage,
 }) => {
     const [activeTabIndex, setActiveTabIndex] = useState<number | null>(null); // Controls which tab is open
     const [activeContentIndex, setActiveContentIndex] = useState<number>(0); // Controls which topic is selected
@@ -189,7 +192,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                                 <SimpleGrid columns={[2, 2, 3]} spacing={4}>
                                                     {allTextbookImages.map((image, index) => (
                                                         <Box key={index} p={2} borderWidth={1} borderRadius="md">
-                                                            <img src={`data:image/png;base64,${image}`} alt={`Textbook Link ${index}`} style={{ width: '100%', height: 'auto' }} />
+                                                            <Image src={`data:image/png;base64,${image}`} onClick={() => onInsertImage(`data:image/png;base64,${image}`,index)} alt={`Textbook Link ${index}`} style={{ width: '100%', height: 'auto' }} />
                                                         </Box>
                                                     ))}
                                                 </SimpleGrid>
@@ -201,7 +204,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                                 <SimpleGrid columns={[2, 2, 3]} spacing={4}>
                                                     {allGoogleImages.map((image, index) => (
                                                         <Box key={index} p={2} borderWidth={1} borderRadius="md">
-                                                            <img src={image} alt={`Google Link ${index}`} style={{ width: '100%', height: 'auto' }} />
+                                                            <Image src={image} alt={`Google Link ${index}`} style={{ width: '100%', height: 'auto' }} />
                                                         </Box>
                                                     ))}
                                                 </SimpleGrid>

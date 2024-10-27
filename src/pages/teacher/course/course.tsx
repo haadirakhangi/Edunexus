@@ -11,7 +11,7 @@ import {
 import Sidebar from './Sidebar';
 import ContentSec from './ContentSec';
 import { Navbar } from '../../../components/navbar';
-
+import { base64ToFile } from './utils';
 interface ContentDataItem {
     [submodule: string]: string; // Each item is a dictionary where submodule is the key and markdown content is the value
 }
@@ -269,6 +269,24 @@ const PerContent: React.FC = () => {
         ]
     ]
 
+    const insertImageAtCursor = (imageUrl: string, i: number) => {
+        const file = base64ToFile(imageUrl, `image-${i + 1}.png`);
+        const fileUrl = URL.createObjectURL(file);
+        setData((prevData) => {
+            return prevData.map((item) => {
+                // Update the selected submodule content
+                if (selectedSubmodule in item) {
+                    const textarea = document.getElementById("markdown-textarea") as HTMLTextAreaElement;
+                    const { selectionStart, selectionEnd } = textarea;
+
+                    const newContent = `${item[selectedSubmodule].slice(0, selectionStart)}![Image](${fileUrl})${item[selectedSubmodule].slice(selectionEnd)}`;
+                    return { ...item, [selectedSubmodule]: newContent };
+                }
+                return item; // Return unchanged item
+            });
+        });
+    };
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -324,6 +342,7 @@ const PerContent: React.FC = () => {
                     isLoading={isLoading}
                     setCurrentIndex={setCurrentIndex} // Update index if needed
                     relevant_images={images}
+                    onInsertImage={insertImageAtCursor}
                 />
 
 

@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Box, Image, Heading, Tabs, TabList, TabPanels, Tab, TabPanel, Textarea } from '@chakra-ui/react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Box,Input, Tabs, TabList, TabPanels, Tab, TabPanel, Textarea } from '@chakra-ui/react';
 import { debounce } from 'lodash';
+import { handleImageUpload, base64ToFile, insertImageAtIndex } from "./utils";
+import { renderMarkdown } from './renderMarkdown';
 
 interface ContentSecProps {
   contentData: { [submodule: string]: string }[]; // List of dictionaries
@@ -17,6 +19,7 @@ const ContentSec: React.FC<ContentSecProps> = ({
 }) => {
   const [markdownContent, setMarkdownContent] = useState<string>('');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const hasCalledInitialImages = useRef(false);
 
   useEffect(() => {
     const selected = contentData.find((item) => selectedSubmodule in item);
@@ -25,25 +28,13 @@ const ContentSec: React.FC<ContentSecProps> = ({
     }
   }, [selectedSubmodule, contentData]);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      const files = Array.from(event.target.files);
-      files.forEach((file) => {
-        const imageUrl = URL.createObjectURL(file);
-        setUploadedImages((prev) => [...prev, imageUrl]);
-
-        // Insert image markdown at the cursor position
-        const newMarkdownContent = insertImageAtCursor(markdownContent, imageUrl, file.name);
-        setMarkdownContent(newMarkdownContent);
-      });
+  // This useEffect will only call initalImges once after markdownContent has been set
+  useEffect(() => {
+    if (markdownContent && !hasCalledInitialImages.current) {
+      initalImges(markdownContent);
+      hasCalledInitialImages.current = true;
     }
-  };
-
-  const insertImageAtCursor = (content: string, imageUrl: string, imageName: string) => {
-    const newImageMarkdown = `\n![${imageName}](${imageUrl})\n`;
-    const cursorIndex = document.getElementById('markdown-textarea')?.selectionStart || 0;
-    return content.slice(0, cursorIndex) + newImageMarkdown + content.slice(cursorIndex);
-  };
+  }, [markdownContent]);
 
   // Debounced function to update content
   const debouncedUpdate = useCallback(
@@ -52,6 +43,33 @@ const ContentSec: React.FC<ContentSecProps> = ({
     }, 300), // Adjust the delay as needed
     [onUpdateContent]
   );
+
+  const initalImges = (content: string) => {
+    const index = contentData.findIndex((item) => selectedSubmodule in item);
+    const imagesForSubmodule = relevant_images[index]?.slice(0, 2) || [];
+    let updatedContent = content; // Start with the original content
+
+    imagesForSubmodule.forEach((imageLink, i) => {
+      const isURL = imageLink.startsWith('http://') || imageLink.startsWith('https://');
+
+      if (!isURL) {
+        // Prepend the data URI prefix for Base64
+        imageLink = `data:image/png;base64,${imageLink}`;
+
+        // Convert Base64 to File object
+        const file = base64ToFile(imageLink, `image-${i + 1}.png`);
+        const fileUrl = URL.createObjectURL(file);
+
+        // Insert image at specific line index
+        const insertionIndex = i === 0 ? 3 : 6; // Insert first image at line 3 and second at line 6
+        updatedContent = insertImageAtIndex(updatedContent, fileUrl, file.name, insertionIndex);
+      }
+    });
+
+    // Update markdown content state with all images inserted
+    setMarkdownContent(updatedContent);
+  };
+
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
@@ -66,106 +84,6 @@ const ContentSec: React.FC<ContentSecProps> = ({
 
     // Call the debounced update function
     debouncedUpdate(updatedContent);
-  };
-
-  const renderMarkdown = (content: string) => {
-    const lines = content.split('\n');
-    const renderedContent = [];
-    const imagePattern = /!\[(.*?)\]\((.*?)\)/;
-
-    const index = contentData.findIndex((item) => selectedSubmodule in item);
-    const imagesForSubmodule = relevant_images[index]?.slice(0, 2) || [];
-
-    let imageInserted = 0;
-
-    lines.forEach((line, idx) => {
-      // Insert the relevant images as markdown links at the appropriate positions
-      if (imageInserted < imagesForSubmodule.length && idx === 3) {
-        const imageLink = imagesForSubmodule[imageInserted];
-        
-        // Check if the image is a URL (http or https)
-        const isURL = imageLink.startsWith('http://') || imageLink.startsWith('https://');
-        
-        renderedContent.push(
-          <Box display="flex" justifyContent="center" alignItems="center" mx={4} key={`img-link-${imageInserted}`}>
-            <a href={isURL ? imageLink : `data:image/png;base64,${imageLink}`} target="_blank" rel="noopener noreferrer">
-              <Image
-                src={isURL ? imageLink : `data:image/png;base64,${imageLink}`}
-                alt={`Relevant Image ${imageInserted + 1}`}
-                objectFit="cover"
-                boxSize={{ base: '100px', md: '300px', lg: '500px' }}
-              />
-            </a>
-          </Box>
-        );
-        imageInserted++;
-      }
-
-      if (imageInserted < imagesForSubmodule.length && idx === 6) {
-        const imageLink = imagesForSubmodule[imageInserted];
-        
-        // Check if the image is a URL (http or https)
-        const isURL = imageLink.startsWith('http://') || imageLink.startsWith('https://');
-        
-        renderedContent.push(
-          <Box display="flex" justifyContent="center" alignItems="center" mx={4} key={`img-link-${imageInserted}`}>
-            <a href={isURL ? imageLink : `data:image/png;base64,${imageLink}`} target="_blank" rel="noopener noreferrer">
-              <Image
-                src={isURL ? imageLink : `data:image/png;base64,${imageLink}`}
-                alt={`Relevant Image ${imageInserted + 1}`}
-                objectFit="cover"
-                boxSize={{ base: '100px', md: '300px', lg: '500px' }}
-              />
-            </a>
-          </Box>
-        );
-        imageInserted++;
-      }
-      
-      
-
-      const imageMatch = line.match(imagePattern);
-      if (imageMatch) {
-        const altText = imageMatch[1];
-        const imageUrl = imageMatch[2];
-        renderedContent.push(
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            mx={4}
-            key={`rendered-img-${idx}`}
-          >
-            <Image
-              src={imageUrl}
-              alt={altText}
-              objectFit="cover"
-              boxSize={{ base: '100px', md: '300px', lg: '500px' }}
-            />
-          </Box>
-        );
-      } else if (line.startsWith('## ')) {
-        renderedContent.push(<Heading size={'md'} key={idx} fontWeight="bold">{line.slice(3)}</Heading>);
-      } else if (line.startsWith('# ')) {
-        renderedContent.push(<Heading size={'lg'} key={idx}>{line.slice(2)}</Heading>);
-      } else if (line.startsWith('### ')) {
-        renderedContent.push(<Heading size={"sm"} key={idx} fontWeight="bold">{line.slice(4)}</Heading>);
-      } else if (line.startsWith('* ') || line.startsWith('- ')) {
-        const boldPattern = /\*\*(.*?)\*\*/g;
-        const formattedLine = line.slice(2).replace(boldPattern, (match, p1) => `<strong>${p1}</strong>`);
-        renderedContent.push(<li key={idx} style={{ marginLeft: '20px', listStyleType: 'disc' }} dangerouslySetInnerHTML={{ __html: formattedLine }} />);
-      } else {
-        const boldPattern = /\*\*(.*?)\*\*/g;
-        const formattedLine = line.replace(boldPattern, (match, p1) => `<strong>${p1}</strong>`);
-        if (line.trim() === '') {
-          renderedContent.push(<br key={idx} />);
-        } else {
-          renderedContent.push(<p key={idx} dangerouslySetInnerHTML={{ __html: formattedLine.replace(/\n/g, '<br />') }} />);
-        }
-      }
-    });
-
-    return renderedContent;
   };
 
   return (
@@ -214,10 +132,21 @@ const ContentSec: React.FC<ContentSecProps> = ({
               onChange={handleContentChange}
               placeholder="Write your Markdown content here..."
               size="2xl"
-              rows={20}
+              rows={18}
               style={{ whiteSpace: 'pre-wrap' }}
             />
-            <input type="file" accept="image/*" multiple onChange={handleImageUpload} />
+            <Box width={'50%'} mt={2}>
+            <Input
+              type="file"
+              borderColor={'purple.600'}
+              p={1}
+              multiple={true}
+              _hover={{ borderColor: "purple.600" }}
+              accept="image/*"
+              onChange={(e) => handleImageUpload(e, markdownContent, setMarkdownContent, setUploadedImages)}
+            />
+            </Box>
+            
           </TabPanel>
 
           <TabPanel>

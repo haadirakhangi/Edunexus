@@ -73,7 +73,7 @@ const Create = () => {
     formData.append('title', data.courseName);
     formData.append('description', data.courseStyle);
     formData.append('courseType', data.courseType);
-    formData.append('links', data.links.join(','));
+    formData.append('links', JSON.stringify(data.links));
     formData.append('websitesReference', data.websitesReference);
     formData.append('includeImages', includeImages.toString());
 
