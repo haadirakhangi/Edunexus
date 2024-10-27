@@ -29,9 +29,13 @@ from core.quiz_generator import QuizGenerator
 from core.pdf_generator import PdfGenerator
 from core.evaluator import Evaluator
 from core.recommendation_generator import RecommendationGenerator
-from core.rag import MultiModalRAG
+from core.rag import MultiModalRAG, SimpleRAG
+from core.lesson_planner import LessonPlanner
 from server.utils import ServerUtils, AssistantUtils
 import json
+import typing_extensions as typing
+import google.generativeai as genai
+
 
 users = Blueprint(name='users', import_name=__name__)
 
@@ -48,12 +52,18 @@ SUB_MODULE_GENERATOR = SubModuleGenerator()
 CONTENT_GENERATOR = ContentGenerator()
 PDF_GENERATOR = PdfGenerator()
 QUIZ_GENERATOR = QuizGenerator()
+LESSON_PLANNER = LessonPlanner()
 RECOMMENDATION_GENERATOR = RecommendationGenerator()
 EVALUATOR = Evaluator()
 USER_DOCS_PATH = os.path.join('server', 'user_docs')
 AVAILABLE_TOOLS = {
     'get_context_from_page': AssistantUtils.get_page_context
 }
+
+model = genai.GenerativeModel("gemini-1.5-flash")
+class Lecture(typing.TypedDict):
+    Lesson_Name: str
+    description: str
 
 @users.route('/query2/multimodal-rag-submodules', methods=['POST'])
 async def multimodal_rag_submodules():
@@ -71,11 +81,11 @@ async def multimodal_rag_submodules():
     else:
         files = request.files.getlist('files[]')
     title = request.form['title']
-    includeImages = request.form['includeImages']
-    if includeImages=="true":
-        includeImages=True
+    include_images = request.form['includeImages']
+    if include_images=="true":
+        include_images=True
     else:
-        includeImages=False
+        include_images=False
     if title=="":
         raise Exception("Title must be provided")
     description = request.form['description']
@@ -108,7 +118,7 @@ async def multimodal_rag_submodules():
             clip_tokenizer=CLIP_TOKENIZER,
             input_type="pdf_and_link",
             links=links_list,
-            includeImages=includeImages
+            include_images=include_images
         )
     elif len(files)>0:
         session['input_type']='pdf'
@@ -121,7 +131,7 @@ async def multimodal_rag_submodules():
             clip_processor=CLIP_PROCESSOR,
             clip_tokenizer=CLIP_TOKENIZER,
             input_type="pdf",
-            includeImages=includeImages
+            include_images=include_images
         )
     elif len(links_list)>0:
         session['input_type']='link'
@@ -135,7 +145,7 @@ async def multimodal_rag_submodules():
             clip_tokenizer=CLIP_TOKENIZER,
             input_type="link",
             links=links_list,
-            includeImages=includeImages
+            include_images=include_images
         )
     else:
         print("\nInput: None\n")
@@ -161,7 +171,7 @@ async def multimodal_rag_submodules():
     session['submodules'] = submodules
     session['document_directory_path'] = uploads_path 
     session['is_multimodal_rag'] = True
-    session['includeImages']=includeImages
+    session['include_images']=include_images
     print("\nGenerated Submodules:\n", submodules)
     return jsonify({"message": "Query successful", "submodules": submodules, "response": True}), 200
 
@@ -191,7 +201,7 @@ async def multimodal_rag_content():
         text_vectorstore_path = session.get("text_vectorstore_path")
         image_vectorstore_path = session.get("image_vectorstore_path")
         input_type = session.get('input_type')
-        includeImages=session.get('includeImages')
+        include_images=session.get('include_images')
         multimodal_rag = MultiModalRAG(
             documents_directory_path=document_paths,
             course_name=title,
@@ -205,7 +215,7 @@ async def multimodal_rag_content():
             input_type=input_type,
             text_vectorstore_path=text_vectorstore_path,
             image_vectorstore_path=image_vectorstore_path,
-            includeImages=includeImages
+            include_images=include_images
         )
 
         content_list, relevant_images_list = await multimodal_rag.execute(CONTENT_GENERATOR, title, submodules=submodules, profile=user_profile, top_k_docs=7)
@@ -230,3 +240,27 @@ async def multimodal_rag_content():
         content_list = content_one + content_two + content_three
         final_content = ServerUtils.json_list_to_markdown(content_list)
         return jsonify({"message": "Query successful", "relevant_images": relevant_images_list, "content": final_content, "response": True}), 200
+
+@users.route('/generate-lesson-plan', methods=['POST'])
+async def generate_lesson_plan():
+    num_lectures = request.form.get('num_lectures')
+    course_name = request.form.get('course_name')
+    file = request.files.get('syllabus')
+    current_dir = os.path.dirname(__file__)
+    uploads_path = os.path.join(current_dir, 'uploaded-documents', 'syllabus')
+    if not os.path.exists(uploads_path):
+        os.makedirs(uploads_path)
+    if file:
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(uploads_path, filename))
+
+    simple_rag = SimpleRAG(
+        course_name=course_name,
+        syllabus_directory_path=uploads_path,
+        embeddings=EMBEDDINGS,
+    )
+    await simple_rag.create_text_vectorstore()
+    relevant_text = await simple_rag.search_similar_text(query=course_name, k=10)
+    output = LESSON_PLANNER.generate_lesson_plan(course_name=course_name, relevant_docs=relevant_text, num_lectures=num_lectures)
+    print("LESSON PLANS\n", output)
+    return jsonify({"lessons": output})
