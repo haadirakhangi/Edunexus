@@ -153,7 +153,6 @@ async def multimodal_rag_submodules():
         session['user_profile'] = description
         session['submodules'] = submodules
         session['is_multimodal_rag'] = False
-        print("\nGenerated Submodules:\n", submodules)
         return jsonify({"message": "Query successful", "submodules": submodules, "response": True}), 200
 
     text_vectorstore_path, image_vectorstore_path = await multimodal_rag.create_text_and_image_vectorstores()
@@ -171,7 +170,6 @@ async def multimodal_rag_submodules():
     session['document_directory_path'] = uploads_path 
     session['is_multimodal_rag'] = True
     session['include_images']=include_images
-    print("\nGenerated Submodules:\n", submodules)
     return jsonify({"message": "Query successful", "submodules": submodules, "response": True}), 200
 
 

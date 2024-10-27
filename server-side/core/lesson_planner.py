@@ -1,9 +1,4 @@
 from api.gemini_client import GeminiProvider
-import typing_extensions as typing
-
-class Lecture(typing.TypedDict):
-    lesson_name: str
-    description: str
 
 class LessonPlanner:
     def __init__(self):
