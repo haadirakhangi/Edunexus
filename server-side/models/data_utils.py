@@ -8,6 +8,8 @@ import asyncio
 import httpx
 from bs4 import BeautifulSoup
 from pathlib import Path
+from urllib.parse import urlparse
+import re
 
 class DocumentUtils:
     @staticmethod
@@ -68,6 +70,16 @@ class DocumentUtils:
         
 class WebUtils:
     @staticmethod
+    def sanitize_filename(url):
+        # Extract the path from the URL
+        parsed_url = urlparse(url)
+        path = parsed_url.path
+        
+        # Remove query parameters and replace invalid characters with underscores
+        sanitized_filename = re.sub(r'[<>:"/\\|?*]', '_', Path(path).name)
+        return sanitized_filename
+
+    @staticmethod
     async def download_image(url, filepath, client):
         try:
             response = await client.get(url)
@@ -92,7 +104,11 @@ class WebUtils:
                 try:
                     img_url = response.url.join(img_url)
                     valid_img_url = httpx.URL(img_url)
-                    img_filename = download_dir / Path(str(valid_img_url)).name
+                    
+                    # Sanitize the filename to remove invalid characters
+                    sanitized_filename = WebUtils.sanitize_filename(str(valid_img_url))
+                    img_filename = download_dir / sanitized_filename
+
                     download_tasks.append(
                         WebUtils.download_image(valid_img_url, img_filename, client)
                     )

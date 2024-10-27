@@ -29,7 +29,7 @@ class MultiModalRAG:
             clip_tokenizer=None,
             chunk_size=1000,
             chunk_overlap=200,
-            image_similarity_threshold=0.5,
+            image_similarity_threshold=0.22,
             text_vectorstore_path=None,
             image_vectorstore_path=None,
             input_type=None,

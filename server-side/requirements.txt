@@ -26,7 +26,7 @@ faiss-cpu
 pypdf
 google-generativeai
 langchain-community
-scrapfly-sdk
+beautifulsoup4
 PyMuPDF
 Pillow
 pykka

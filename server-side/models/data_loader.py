@@ -1,5 +1,5 @@
 import faiss
-from langchain_community.document_loaders import PyPDFDirectoryLoader, ScrapflyLoader
+from langchain_community.document_loaders import PyPDFDirectoryLoader,WebBaseLoader
 from langchain_community.document_loaders.merge import MergedDataLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
@@ -26,34 +26,30 @@ class DocumentLoader:
         if input_type=="pdf":
             loader = PyPDFDirectoryLoader(documents_directory)
         elif input_type=="link":
-            loader = ScrapflyLoader(
+            loader = WebBaseLoader(
                 links,
-                api_key=SCRAPFLY_API_KEY,  
                 continue_on_failure=True,
-                scrape_config=scrapfly_scrape_config,
-                scrape_format="markdown",  # The scrape result format, either `markdown`(default) or `text`
             )
         elif input_type=="pdf_and_link":
-            scrapfly_loader = ScrapflyLoader(
+            web_loader = loader = WebBaseLoader(
                 links,
-                api_key=SCRAPFLY_API_KEY, 
                 continue_on_failure=True,
-                scrape_config=scrapfly_scrape_config,
-                scrape_format="markdown",  # The scrape result format, either `markdown`(default) or `text`
             )
             pdf_loader = PyPDFDirectoryLoader(documents_directory)
-            loader = MergedDataLoader(loaders=[scrapfly_loader, pdf_loader])
+            loader = MergedDataLoader(loaders=[web_loader, pdf_loader])
         documents = loader.load()
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size, chunk_overlap=chunk_overlap, length_function=len
         )
         docs = text_splitter.split_documents(documents)
-        texts = [doc.page_content.replace('\t', ' ') for doc in docs]
+        texts = [doc.page_content.replace('\n', '') for doc in docs]
         source_language = ServerUtils.detect_source_language(texts[0])
+        source_language = "english"
         if source_language != 'english':
             print(f"\nDocument is {source_language}. Translating to English\n")
             trans_texts = GoogleTranslator(source=source_language, target='en').translate_batch(texts)
         else:
+            print("Document language is English. No translation required.")
             trans_texts = texts
         vectorstore = FAISS.from_texts(trans_texts, embeddings)
         print("\nFAISS Vector database for text created.\n")

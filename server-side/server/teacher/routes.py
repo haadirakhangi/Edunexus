@@ -90,6 +90,7 @@ async def multimodal_rag_submodules():
             filename = secure_filename(file.filename)
             file.save(os.path.join(uploads_path, filename))
     links = request.form.get('links')
+    print("LINKS are these",links)
     links_list = []
     if links:
         links_list = json.loads(links)
