@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { WebVoiceProcessor } from '@picovoice/web-voice-processor';
 import { PorcupineWorker, BuiltInKeyword } from '@picovoice/porcupine-web';
-import porcupine_params from "./porcupine_params.js";
-import alexa_wasm from "./alexa_wasm.js";
+import { modelParams } from '../assets/pico/porcupine_params';
+import { keyword_params } from '../assets/pico/hey_nex_wasm';
 
-const PorcupineTest: React.FC = () => {
+
+const PorcupineTest: React.FC = () => {  
   const [isListening, setIsListening] = useState(false);
   const ACCESS_KEY = 'k2/vH1u/xdOwDZZh9aFev+jC55I3GFFFbVIr+F3wIs5rWnqw2NaGaQ==';
-  const porcupineKeywords = [{ base64: alexa_wasm, label: "WORD HAS BEEN DETECTED",}]
-  const porcupineModel = { base64: porcupine_params}
+  const porcupineKeywords = [{ base64: keyword_params, label: "WORD HAS BEEN DETECTED",}]
+  const porcupineModel = { base64: modelParams, customWritePath: 'custom_model', forceWrite: true, version: 1,}
 
   useEffect(() => {
     const initPorcupine = async () => {

@@ -16,7 +16,6 @@
     "@emotion/styled": "^11.13.0",
     "@hookform/resolvers": "^3.9.0",
     "@picovoice/porcupine-react": "^3.0.3",
-    "@picovoice/porcupine-web": "^3.0.3",
     "@picovoice/web-voice-processor": "^4.0.9",
     "axios": "^1.7.7",
     "framer-motion": "^11.11.1",
