@@ -260,6 +260,5 @@ async def generate_lesson_plan():
     )
     await simple_rag.create_text_vectorstore()
     relevant_text = await simple_rag.search_similar_text(query=course_name, k=10)
-    output = LESSON_PLANNER.generate_lesson_plan(course_name=course_name, relevant_docs=relevant_text, num_lectures=num_lectures)
-    print("LESSON PLANS\n", output)
+    output = LESSON_PLANNER.generate_lesson_plan(course_name=course_name, context=relevant_text, num_lectures=num_lectures)
     return jsonify({"lessons": output})

@@ -9,14 +9,7 @@ class LessonPlanner:
     def __init__(self):
         self.gemini_client = GeminiProvider()
 
-    def generate_lesson_plan(self, course_name, relevant_docs, num_lectures):
-        prompt = f"""You are a lesson planner. Your job is to divide the submodules into lectures, each lecture would be of an hour each. You need to plan on what should be covered in each lecture.
-        Name of the course: {course_name}
-        The relevant docs might contain useless stuff, you need to filter out only the submodules that are relevant to {course_name}.
-        The relevant docs are given below:
-        {relevant_docs}
-
-        List {num_lectures} lecture names with a brief description of each lecture. The description would consist of a flow on how the teacher should teach that lecture.
-        """
-        result = self.gemini_client.generate_json_response(prompt=prompt, response_schema=list[Lecture])
+    def generate_lesson_plan(self, course_name, context, num_lectures):
+        prompt = f"""Given the syllabus context for {course_name} and the total number of lectures {num_lectures}, you are to act as an expert lesson planner. Your task is to divide the syllabus into hour-long lectures, focusing on relevant content only. Exclude any unrelated material, such as textbook names, lab experiments, or content from other subjects from the context. Use the following context:\n- **Context** (This contains the full syllabus text, including relevant and irrelevant material): \n```{context}```. \n\n Structure the output as a list of JSON objects, where the key of each JSON object is the name of the lesson and the corresponding values are a concise overview of the lecture content. Generate {num_lectures} such lecture names along with a brief description of each lecture."""
+        result = self.gemini_client.generate_json_response(prompt=prompt)
         return result
