@@ -6,6 +6,7 @@ import CreatePage from "./pages/teacher/create";
 import Testing from "./pages/testing";
 import Login from "./pages/Login"
 import SignUp from "./pages/SignUp"
+// import Pico from "./pages/Pico"
 function App() {
   return (
     <Routes>
@@ -15,6 +16,7 @@ function App() {
       <Route element={<Testing />} path="/testing" />
       <Route element={<Login />} path="/login" />
       <Route element={<SignUp />} path="/register" />
+      {/* <Route element={<Pico />} path="/pico" /> */}
     </Routes>
   );
 }
