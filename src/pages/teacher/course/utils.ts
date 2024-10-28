@@ -1,11 +1,3 @@
-export const insertImageAtCursor = (content: string, imageUrl: string, imageName: string): string => {
-    const newImageMarkdown = `\n![${imageName}](${imageUrl})\n`;
-    const textarea = document.getElementById('markdown-textarea') as HTMLTextAreaElement | null;
-    const cursorIndex = textarea?.selectionStart || 0;
-    return content.slice(0, cursorIndex) + newImageMarkdown + content.slice(cursorIndex);
-};
-
-
 export const insertImageAtIndex = (content: string, imageUrl: string, imageName: string, lineIndex: number): string => {
     // const isURL = imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
     const newImageMarkdown = `\n![${imageName}](${imageUrl})\n`;

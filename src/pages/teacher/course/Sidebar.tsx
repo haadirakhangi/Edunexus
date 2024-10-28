@@ -15,7 +15,7 @@ import {
     Image,
     Collapse,
 } from '@chakra-ui/react';
-import { AiOutlineFileText, AiOutlinePicture } from 'react-icons/ai';
+import { AiOutlineFileText, AiOutlinePicture, AiOutlineCloudUpload, AiOutlineSave } from 'react-icons/ai';
 
 interface SidebarProps {
     contentData: { [submodule: string]: string }[];
@@ -25,6 +25,8 @@ interface SidebarProps {
     relevant_images: (string[])[];
     uploadedImages: string[];
     onInsertImage: (imageUrl: string, index: number) => void;
+    setUploadedImages: React.Dispatch<React.SetStateAction<string[]>>;
+    handleSaveLesson: () => Promise<void>;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -35,6 +37,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     relevant_images,
     uploadedImages,
     onInsertImage,
+    setUploadedImages,
+    handleSaveLesson,
 }) => {
     const [activeTabIndex, setActiveTabIndex] = useState<number | null>(null);
     const [activeContentIndex, setActiveContentIndex] = useState<number>(0);
@@ -42,6 +46,23 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     const changeCon = (index: number) => {
         setActiveContentIndex(index);
+    };
+
+    const handleDrop = (event: React.DragEvent<HTMLDivElement> | null, file?: File) => {
+        if (event) {
+            event.preventDefault();
+            const files = Array.from(event.dataTransfer.files);
+            files.forEach(file => handleDrop(null, file));
+            return;
+        }
+
+        if (file) {
+            const imageUrl = URL.createObjectURL(file);
+            const uniqueIdentifier = `${file.name}-${file.size}`;
+            if (!uploadedImages.some(url => url === uniqueIdentifier)) {
+                setUploadedImages(prevImages => [...prevImages, imageUrl]);
+            }
+        }
     };
 
     const categorizeImages = (images: string[]) => {
@@ -123,6 +144,36 @@ const Sidebar: React.FC<SidebarProps> = ({
                             <Text fontSize="sm">Images Section</Text>
                         </Flex>
                     </Tab>
+                    <Tab
+                        _hover={{ transform: 'scale(1.05)', backgroundColor: 'gray.100', border: 'none' }}
+                        _selected={{ bg: 'purple.500', color: 'white' }}
+                        padding={1}
+                        my={2}
+                        _focus={{ outline: 'none', boxShadow: 'none' }}
+                        width={["80px", "100px", "70px"]}
+                        borderRadius="md"
+                        onClick={() => toggleTab(2)}
+                    >
+                        <Flex direction="column" align="center">
+                            <AiOutlineCloudUpload style={{ marginBottom: '4px', fontSize: '24px' }} />
+                            <Text fontSize="sm">Uploaded</Text>
+                        </Flex>
+                    </Tab>
+                    <Tab
+                        _hover={{ transform: 'scale(1.05)', backgroundColor: 'gray.100', border: 'none' }}
+                        _selected={{ bg: 'purple.500', color: 'white' }}
+                        padding={1}
+                        my={2}
+                        _focus={{ outline: 'none', boxShadow: 'none' }}
+                        width={["80px", "100px", "70px"]}
+                        borderRadius="md"
+                        onClick={() => handleSaveLesson()}
+                    >
+                        <Flex direction="column" align="center">
+                            <AiOutlineSave style={{ marginBottom: '4px', fontSize: '24px' }} />
+                            <Text fontSize="sm">Save</Text>
+                        </Flex>
+                    </Tab>
                 </TabList>
 
                 {activeTabIndex !== null && (
@@ -167,11 +218,23 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 <Heading as="h3" size="md" textAlign="center" mb={2}>
                                     Image Section
                                 </Heading>
-                                <Tabs variant="soft-rounded" colorScheme="purple">
+                                <Tabs variant="enclosed" colorScheme="purple" width={"100%"}>
                                     <TabList>
-                                        <Tab>Textbook/Links</Tab>
-                                        <Tab>Google</Tab>
-                                        <Tab>Uploaded</Tab>
+                                        <Tab
+                                            marginRight={'12'}
+                                            border={'none'}
+                                            _hover={{ transform: 'scale(1.05)', cursor: 'pointer' }}
+                                            transition="transform 0.2s ease"
+                                        >
+                                            <b>Textbook/Links</b>
+                                        </Tab>
+                                        <Tab
+                                            border={"none"}
+                                            _hover={{ transform: 'scale(1.05)', cursor: 'pointer' }}
+                                            transition="transform 0.2s ease"
+                                        >
+                                            <b>Google</b>
+                                        </Tab>
                                     </TabList>
 
                                     <TabPanels>
@@ -230,44 +293,50 @@ const Sidebar: React.FC<SidebarProps> = ({
                                                 )}
                                             </Box>
                                         </TabPanel>
-
-
-                                        <TabPanel>
-                                            <Box height={"600px"} overflowY="auto">
-                                                {uploadedImages.length === 0 ? (
-                                                    <Box textAlign="center" p={4}>
-                                                        No images available.
-                                                    </Box>
-                                                ) : (
-                                                    <SimpleGrid columns={[2, 2, 2]}>
-                                                        {uploadedImages.map((image, index) => (
-                                                            <Box
-                                                                key={index}
-                                                                p={2}
-                                                                transition="transform 0.2s ease-in-out"
-                                                                _hover={{ transform: 'scale(1.3)' }}
-                                                            >
-                                                                <Image
-                                                                    src={image}
-                                                                    // onClick={() => onInsertImage(`data:image/png;base64,${image}`, index)}
-                                                                    alt={`Uploaded Link ${index}`}
-                                                                    style={{ width: '100%', height: 'auto' }}
-                                                                />
-                                                            </Box>
-                                                        ))}
-                                                    </SimpleGrid>
-                                                )}
-                                            </Box>
-                                        </TabPanel>
                                     </TabPanels>
                                 </Tabs>
                             </TabPanel>
 
                         </Collapse>
 
+                        <Collapse in={activeTabIndex === 2} transition={{ enter: { duration: 0.1 }, exit: { duration: 0.1 } }}>
+                            <TabPanel width={["80px", "200px", "350px"]}>
+                                <Heading as="h3" size="md" textAlign="center" mb={4}>
+                                    Uploaded Images
+                                </Heading>
+                                <Box height={"600px"} onDrop={handleDrop}
+                                    onDragOver={(e) => e.preventDefault()} overflowY="auto">
+                                    {uploadedImages.length === 0 ? (
+                                        <Box textAlign="center" p={4}>
+                                            No images available.
+                                        </Box>
+                                    ) : (
+                                        <SimpleGrid columns={[2, 2, 2]}>
+                                            {uploadedImages.map((image, index) => (
+                                                <Box
+                                                    key={index}
+                                                    p={2}
+                                                    transition="transform 0.2s ease-in-out"
+                                                    _hover={{ transform: 'scale(1.3)' }}
+                                                >
+                                                    <Image
+                                                        src={image}
+                                                        onClick={() => onInsertImage(image, index)}
+                                                        alt={`Uploaded Link ${index}`}
+                                                        style={{ width: '100%', height: 'auto' }}
+                                                    />
+                                                </Box>
+                                            ))}
+                                        </SimpleGrid>
+                                    )}
+                                </Box>
+                            </TabPanel>
+                        </Collapse>
+
                     </TabPanels>
                 )}
             </Tabs>
+
         </Box>
     );
 };

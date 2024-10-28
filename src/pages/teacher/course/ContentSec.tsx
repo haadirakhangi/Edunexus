@@ -1,23 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Box, Input, Tabs, TabList, TabPanels, Tab, TabPanel, Textarea } from '@chakra-ui/react';
+import { Box,Tabs, TabList, TabPanels, Tab, TabPanel, Textarea } from '@chakra-ui/react';
 import { debounce } from 'lodash';
-import { insertImageAtCursor } from "./utils";
 import { renderMarkdown } from './renderMarkdown';
 
 interface ContentSecProps {
   contentData: { [submodule: string]: string }[];
   selectedSubmodule: string;
   onUpdateContent: (updatedContent: { [submodule: string]: string }[]) => void;
-  uploadedImages: string[];
-  setUploadedImages: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 const ContentSec: React.FC<ContentSecProps> = ({
   contentData,
   selectedSubmodule,
   onUpdateContent,
-  uploadedImages,
-  setUploadedImages,
 }) => {
   const [markdownContent, setMarkdownContent] = useState<string>('');
 
@@ -46,30 +41,6 @@ const ContentSec: React.FC<ContentSecProps> = ({
     );
     debouncedUpdate(updatedContent);
   };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      const newImages: string[] = [];
-      let updatedContent = markdownContent;
-      files.forEach((file) => {
-        const imageUrl = URL.createObjectURL(file);
-        newImages.push(imageUrl);
-        updatedContent = insertImageAtCursor(updatedContent, imageUrl, file.name);
-      });
-      setMarkdownContent(updatedContent);
-      const uniqueImages = new Set([...uploadedImages, ...newImages]);
-      setUploadedImages(Array.from(uniqueImages));
-      const updatedContentData = contentData.map((item) =>
-        selectedSubmodule in item
-          ? { ...item, [selectedSubmodule]: updatedContent }
-          : item
-      );
-      debouncedUpdate(updatedContentData);
-      e.target.value = '';
-    }
-  };
-  
 
   return (
     <Box p={8} width={'full'} height={'100vh'} display="flex">
@@ -117,20 +88,9 @@ const ContentSec: React.FC<ContentSecProps> = ({
               onChange={handleContentChange}
               placeholder="Write your Markdown content here..."
               size="2xl"
-              rows={18}
+              rows={22}
               style={{ whiteSpace: 'pre-wrap' }}
             />
-            <Box width={'50%'} mt={2}>
-              <Input
-                type="file"
-                borderColor={'purple.600'}
-                p={1}
-                multiple={true}
-                _hover={{ borderColor: "purple.600" }}
-                accept="image/*"
-                onChange={handleImageUpload}
-              />
-            </Box>
           </TabPanel>
 
           <TabPanel>
