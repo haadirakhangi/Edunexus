@@ -9,7 +9,7 @@ from sqlalchemy import desc
 from deep_translator import GoogleTranslator
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from flask import request, session, jsonify, send_file, Blueprint
-from models.database_model import User, Topic, Module, CompletedModule, Query, OngoingModule, Transaction
+from models.student_schema import User, Topic, Module, CompletedModule, Query, OngoingModule, Transaction
 from concurrent.futures import ThreadPoolExecutor
 from flask_cors import cross_origin
 from werkzeug.utils import secure_filename

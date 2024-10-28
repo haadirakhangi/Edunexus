@@ -7,67 +7,21 @@ from server import db, bcrypt
 from datetime import datetime
 from gtts import gTTS
 from sqlalchemy import desc
-from deep_translator import GoogleTranslator
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from flask import request, session, jsonify, send_file, Blueprint
-from models.student_schema import User, Topic, Module, CompletedModule, Query, OngoingModule, Transaction
-from models.teacher_schema import Teacher,Lesson,Course,LabManual
+from models.teacher_schema import Teacher, Lesson, Course, LabManual
 from concurrent.futures import ThreadPoolExecutor
 from flask_cors import cross_origin
 from werkzeug.utils import secure_filename
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceBgeEmbeddings
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import PyPDFLoader, ScrapflyLoader
-from langchain_community.document_loaders.merge import MergedDataLoader
-import torch
-from transformers import AutoImageProcessor, AutoModel, AutoTokenizer
-from api.gemini_client import GeminiProvider
 from api.serper_client import SerperProvider
-from core.submodule_generator import SubModuleGenerator
-from core.content_generator import ContentGenerator
-from core.module_generator import ModuleGenerator
-from core.quiz_generator import QuizGenerator
-from core.pdf_generator import PdfGenerator
-from core.evaluator import Evaluator
-from core.recommendation_generator import RecommendationGenerator
 from core.rag import MultiModalRAG, SimpleRAG
-from core.lesson_planner import LessonPlanner
-from server.utils import ServerUtils, AssistantUtils
+from server.constants import *
+from server.utils import ServerUtils
 import json
-import typing_extensions as typing
-import google.generativeai as genai
-
 
 teachers = Blueprint(name='teachers', import_name=__name__)
 
-DEVICE_TYPE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-IMAGE_EMBEDDING_MODEL_NAME = "openai/clip-vit-base-patch16"
-CLIP_MODEL = AutoModel.from_pretrained(IMAGE_EMBEDDING_MODEL_NAME).to(DEVICE_TYPE)
-CLIP_PROCESSOR = AutoImageProcessor.from_pretrained(IMAGE_EMBEDDING_MODEL_NAME)
-CLIP_TOKENIZER = AutoTokenizer.from_pretrained(IMAGE_EMBEDDING_MODEL_NAME)
-EMBEDDINGS = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
-GEMINI_CLIENT = GeminiProvider()
-TOOLS = [AssistantUtils.get_page_context]
-MODULE_GENERATOR = ModuleGenerator()
-SUB_MODULE_GENERATOR = SubModuleGenerator()
-CONTENT_GENERATOR = ContentGenerator()
-PDF_GENERATOR = PdfGenerator()
-QUIZ_GENERATOR = QuizGenerator()
-LESSON_PLANNER = LessonPlanner()
-RECOMMENDATION_GENERATOR = RecommendationGenerator()
-EVALUATOR = Evaluator()
-USER_DOCS_PATH = os.path.join('server', 'user_docs')
-AVAILABLE_TOOLS = {
-    'get_context_from_page': AssistantUtils.get_page_context
-}
-
-model = genai.GenerativeModel("gemini-1.5-flash")
-class Lecture(typing.TypedDict):
-    Lesson_Name: str
-    description: str
-
-@teachers.route('/teacher/register', methods=['POST'])
+@teachers.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
     first_name = data.get('first_name')
@@ -104,7 +58,7 @@ def register():
     return jsonify({"message": "Registration successful!"}), 201
 
 
-@teachers.route('/teacher/login', methods=['POST'])
+@teachers.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
     email = data.get('email')
@@ -121,7 +75,7 @@ def login():
     return jsonify({"message": "Login successful!", "teacher_id": teacher.id}), 200
 
 
-@teachers.route('/teacher/add-course', methods=['POST'])
+@teachers.route('/add-course', methods=['POST'])
 def add_course():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:
@@ -149,7 +103,7 @@ def add_course():
     return jsonify({"message": "Course added successfully!", "course_id": new_course.id, "course_code": new_course.course_code}), 200
 
 
-@teachers.route('/teacher/add-lab-manual', methods=['POST'])
+@teachers.route('/add-lab-manual', methods=['POST'])
 def add_lab_manual():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:
@@ -173,7 +127,7 @@ def add_lab_manual():
     return jsonify({"message": "Lab manual added successfully!", "lab_manual_id": new_lab_manual.id}), 201
 
 
-@teachers.route('/teacher/get-lab-manuals', methods=['GET'])
+@teachers.route('/get-lab-manuals', methods=['GET'])
 def get_lab_manuals():
     course_id = request.args.get('course_id')
     
@@ -187,7 +141,7 @@ def get_lab_manuals():
     return jsonify({"lab_manuals": manuals}), 200
 
 
-@teachers.route('/teacher/add-lesson', methods=['POST'])
+@teachers.route('/add-lesson', methods=['POST'])
 def add_lesson():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:
@@ -217,7 +171,7 @@ def add_lesson():
     return jsonify({"message": "Lesson added successfully!", "lesson_id": new_lesson.id}), 201
 
 
-@teachers.route('/teacher/get-courses', methods=['GET'])
+@teachers.route('/get-courses', methods=['GET'])
 def get_courses():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:
@@ -232,7 +186,7 @@ def get_courses():
     return jsonify({"courses": course_list}), 200
 
 
-@teachers.route('/teacher/multimodal-rag-submodules', methods=['POST'])
+@teachers.route('/multimodal-rag-submodules', methods=['POST'])
 async def multimodal_rag_submodules():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:
@@ -338,13 +292,13 @@ async def multimodal_rag_submodules():
     return jsonify({"message": "Query successful", "submodules": submodules, "response": True}), 200
 
 
-@teachers.route('/teacher/update-submodules', methods=['POST'])
+@teachers.route('/update-submodules', methods=['POST'])
 def update_submodules():
     updated_submodules = request.get_json()
     session['submodules'] = updated_submodules
     return jsonify({'message': 'Submodules updated successfully'}), 200
     
-@teachers.route('/teacher/multimodal-rag-content', methods=['GET'])
+@teachers.route('/multimodal-rag-content', methods=['GET'])
 async def multimodal_rag_content():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:
@@ -399,7 +353,7 @@ async def multimodal_rag_content():
         final_content = ServerUtils.json_list_to_markdown(content_list)
         return jsonify({"message": "Query successful", "relevant_images": relevant_images_list, "content": final_content, "response": True}), 200
 
-@teachers.route('/teacher/generate-lesson', methods=['POST'])
+@teachers.route('/generate-lesson', methods=['POST'])
 async def generate_lesson():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:

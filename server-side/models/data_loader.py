@@ -15,14 +15,6 @@ class DocumentLoader:
     @staticmethod
     async def create_faiss_vectorstore_for_text(documents_directory, embeddings, chunk_size, chunk_overlap, input_type, links):
         print("\nCreating FAISS Vector database for text...\n")
-        scrapfly_scrape_config = {
-            "asp": True,  # Bypass scraping blocking and antibot solutions, like Cloudflare
-            "render_js": True,  # Enable JavaScript rendering with a cloud headless browser
-            "proxy_pool": "public_residential_pool",  # Select a proxy pool (datacenter or residential)
-            "country": "us",  # Select a proxy location
-            "auto_scroll": True,  # Auto scroll the page
-            "js": "",  # Execute custom JavaScript code by the headless browser
-        }
         if input_type=="pdf":
             loader = PyPDFDirectoryLoader(documents_directory)
         elif input_type=="link":
