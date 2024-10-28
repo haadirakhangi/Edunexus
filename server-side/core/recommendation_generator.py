@@ -1,5 +1,5 @@
 from api.gemini_client import GeminiProvider
-from models.database_model import Module
+from models.student_schema import Module
 import pandas as pd
 import numpy as np
 from sentence_transformers import SentenceTransformer

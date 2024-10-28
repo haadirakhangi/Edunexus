@@ -2,7 +2,7 @@ import os
 from gtts import gTTS
 from deep_translator import GoogleTranslator
 from server.teacher.routes import session
-from models.database_model import Module
+from models.student_schema import Module
 from lingua import LanguageDetectorBuilder
 
 

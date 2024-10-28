@@ -9,7 +9,8 @@ from sqlalchemy import desc
 from deep_translator import GoogleTranslator
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from flask import request, session, jsonify, send_file, Blueprint
-from models.database_model import User, Topic, Module, CompletedModule, Query, OngoingModule, Transaction
+from models.student_schema import User, Topic, Module, CompletedModule, Query, OngoingModule, Transaction
+from models.teacher_schema import Teacher,Lesson,Course,LabManual
 from concurrent.futures import ThreadPoolExecutor
 from flask_cors import cross_origin
 from werkzeug.utils import secure_filename
@@ -37,7 +38,7 @@ import typing_extensions as typing
 import google.generativeai as genai
 
 
-users = Blueprint(name='users', import_name=__name__)
+teachers = Blueprint(name='teachers', import_name=__name__)
 
 DEVICE_TYPE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 IMAGE_EMBEDDING_MODEL_NAME = "openai/clip-vit-base-patch16"
@@ -65,17 +66,179 @@ class Lecture(typing.TypedDict):
     Lesson_Name: str
     description: str
 
-@users.route('/query2/multimodal-rag-submodules', methods=['POST'])
-async def multimodal_rag_submodules():
-    # user_id = session.get('user_id')
+@teachers.route('/teacher/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    first_name = data.get('first_name')
+    last_name = data.get('last_name')
+    email = data.get('email')
+    password = data.get('password')
+    college_name = data.get('college_name')
+    department = data.get('department')
+    experience = data.get('experience')
+    phone_number = data.get('phone_number')
+    qualification = data.get('qualification')
+    subjects = data.get('subjects', [])
 
-    # if user_id is None:
-    #     return jsonify({"message": "User not logged in", "response":False}), 401
+    if not first_name or not last_name or not email or not password:
+        return jsonify({"message": "First name, last name, email, and password are required."}), 400
+
+    if Teacher.query.filter_by(email=email).first():
+        return jsonify({"message": "Email already registered."}), 400
+
+    new_teacher = Teacher(
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        college_name=college_name,
+        department=department,
+        experience=experience,
+        phone_number=phone_number,
+        qualification=qualification,
+        subjects=subjects
+    )
+    new_teacher.set_password(password)
+    db.session.add(new_teacher)
+    db.session.commit()
+    return jsonify({"message": "Registration successful!"}), 201
+
+
+@teachers.route('/teacher/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    if not email or not password:
+        return jsonify({"message": "Email and password are required."}), 400
+
+    teacher = Teacher.query.filter_by(email=email).first()
+
+    if teacher is None or not teacher.check_password(password):
+        return jsonify({"message": "Invalid email or password."}), 401
+
+    session['teacher_id'] = teacher.id
+    return jsonify({"message": "Login successful!", "teacher_id": teacher.id}), 200
+
+
+@teachers.route('/teacher/add-course', methods=['POST'])
+def add_course():
+    teacher_id = session.get('teacher_id')
+    if teacher_id is None:
+        return jsonify({"message": "Teacher not logged in.", "response": False}), 401
+
+    data = request.get_json()
+    course_name = data.get('course_name')
+    num_of_lectures = data.get('num_of_lectures')
+    lessons_data = data.get('lessons_data', {})  # Optional, defaults to empty dict
+    course_code = data.get('course_code')
+
+    if not course_name or not num_of_lectures or not course_code:
+        return jsonify({"message": "Course name, number of lectures, and course code are required."}), 400
+
+    new_course = Course(
+        course_name=course_name,
+        num_of_lectures=num_of_lectures,
+        teacher_id=teacher_id,
+        lessons_data=lessons_data,
+        course_code=course_code
+    )
+
+    db.session.add(new_course)
+    db.session.commit()
+    return jsonify({"message": "Course added successfully!", "course_id": new_course.id}), 201
+
+
+@teachers.route('/teacher/add-lab-manual', methods=['POST'])
+def add_lab_manual():
+    teacher_id = session.get('teacher_id')
+    if teacher_id is None:
+        return jsonify({"message": "Teacher not logged in.", "response": False}), 401
+
+    data = request.get_json()
+    course_id = data.get('course_id')
+    markdown_content = data.get('markdown_content')
+
+    if not course_id or not markdown_content:
+        return jsonify({"message": "Course ID and markdown content are required."}), 400
+
+    new_lab_manual = LabManual(
+        course_id=course_id,
+        teacher_id=teacher_id,
+        markdown_content=markdown_content
+    )
+
+    db.session.add(new_lab_manual)
+    db.session.commit()
+    return jsonify({"message": "Lab manual added successfully!", "lab_manual_id": new_lab_manual.id}), 201
+
+
+@teachers.route('/teacher/get-lab-manuals', methods=['GET'])
+def get_lab_manuals():
+    course_id = request.args.get('course_id')
     
-    # user = User.query.get(user_id)
-    # if user is None:
-    #     return jsonify({"message": "User not found", "response":False}), 404
+    if not course_id:
+        return jsonify({"message": "Course ID is required."}), 400
 
+    lab_manuals = LabManual.query.filter_by(course_id=course_id).all()
+    if not lab_manuals:
+        return jsonify({"message": "No lab manuals found for this course."}), 404
+    manuals = [{"id": lm.id, "markdown_content": lm.markdown_content} for lm in lab_manuals]
+    return jsonify({"lab_manuals": manuals}), 200
+
+
+@teachers.route('/teacher/add-lesson', methods=['POST'])
+def add_lesson():
+    teacher_id = session.get('teacher_id')
+    if teacher_id is None:
+        return jsonify({"message": "Teacher not logged in.", "response": False}), 401
+
+    data = request.get_json()
+    title = data.get('title')
+    lesson_code = data.get('lesson_code')
+    markdown_content = data.get('markdown_content', '')
+    relevant_images = data.get('relevant_images', None)
+    uploaded_images = data.get('uploaded_images', None)
+    course_id = data.get('course_id')
+
+    if not title or not lesson_code or not course_id:
+        return jsonify({"message": "Title, lesson code, and course ID are required."}), 400
+
+    new_lesson = Lesson(
+        title=title,
+        lesson_code=lesson_code,
+        markdown_content=markdown_content,
+        relevant_images=relevant_images,
+        uploaded_images=uploaded_images,
+        teacher_id=teacher_id,
+        course_id=course_id
+    )
+
+    db.session.add(new_lesson)
+    db.session.commit()
+    return jsonify({"message": "Lesson added successfully!", "lesson_id": new_lesson.id}), 201
+
+
+@teachers.route('/teacher/get-courses', methods=['GET'])
+def get_courses():
+    teacher_id = session.get('teacher_id')
+    if teacher_id is None:
+        return jsonify({"message": "Teacher not logged in.", "response": False}), 401
+
+    courses = Course.query.filter_by(teacher_id=teacher_id).all()
+    if not courses:
+        return jsonify({"message": "No courses found for this teacher."}), 404
+
+    course_list = [{"id": course.id, "course_name": course.course_name, "num_of_lectures": course.num_of_lectures, "course_code": course.course_code} for course in courses]
+    
+    return jsonify({"courses": course_list}), 200
+
+
+@teachers.route('/teacher/multimodal-rag-submodules', methods=['POST'])
+async def multimodal_rag_submodules():
+    teacher_id = session.get('teacher_id')
+    if teacher_id is None:
+        return jsonify({"message": "Teacher not logged in", "response": False}), 401
+    
     if 'files[]' not in request.files:
         files = []
     else:
@@ -176,21 +339,17 @@ async def multimodal_rag_submodules():
     return jsonify({"message": "Query successful", "submodules": submodules, "response": True}), 200
 
 
-@users.route('/update-submodules', methods=['POST'])
+@teachers.route('/teacher/update-submodules', methods=['POST'])
 def update_submodules():
     updated_submodules = request.get_json()
     session['submodules'] = updated_submodules
     return jsonify({'message': 'Submodules updated successfully'}), 200
     
-@users.route('/query2/multimodal-rag-content', methods=['GET'])
+@teachers.route('/teacher/multimodal-rag-content', methods=['GET'])
 async def multimodal_rag_content():
-    # user_id = session.get("user_id", None)
-    # if user_id is None:
-    #     return jsonify({"message": "User not logged in", "response": False}), 401
-    
-    # user = User.query.get(user_id)
-    # if user is None:
-    #     return jsonify({"message": "User not found", "response": False}), 404
+    teacher_id = session.get('teacher_id')
+    if teacher_id is None:
+        return jsonify({"message": "Teacher not logged in", "response": False}), 401
     
     is_multimodal_rag = session.get("is_multimodal_rag")
     if is_multimodal_rag:
@@ -241,8 +400,12 @@ async def multimodal_rag_content():
         final_content = ServerUtils.json_list_to_markdown(content_list)
         return jsonify({"message": "Query successful", "relevant_images": relevant_images_list, "content": final_content, "response": True}), 200
 
-@users.route('/generate-lesson-plan', methods=['POST'])
+@teachers.route('/teacher/generate-lesson-plan', methods=['POST'])
 async def generate_lesson_plan():
+    teacher_id = session.get('teacher_id')
+    if teacher_id is None:
+        return jsonify({"message": "Teacher not logged in", "response": False}), 401
+
     num_lectures = request.form.get('num_lectures')
     course_name = request.form.get('course_name')
     file = request.files.get('syllabus')
