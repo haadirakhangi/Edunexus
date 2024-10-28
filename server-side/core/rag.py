@@ -34,7 +34,9 @@ class SimpleRAG:
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         self.current_dir = os.path.dirname(__file__)
-        self.text_vectorstore_path = os.path.join(self.current_dir, 'syllabus-vectorstore', course_name)
+        self.faiss_vectorstore_directory = os.path.join(self.current_dir, 'syllabus-vectorstore')
+        os.makedirs(self.faiss_vectorstore_directory, exist_ok=True)
+        self.text_vectorstore_path = os.path.join(self.faiss_vectorstore_directory, course_name)
         if text_vectorstore_path is not None:
             self.text_vectorstore = FAISS.load_local(text_vectorstore_path, embeddings=embeddings, allow_dangerous_deserialization=True)
         else:
@@ -85,9 +87,11 @@ class MultiModalRAG:
         self.links = links
 
         self.current_dir = os.path.dirname(__file__)
+        self.faiss_vectorstore_directory = os.path.join(self.current_dir, 'faiss-vectorstore')
+        os.makedirs(self.faiss_vectorstore_directory, exist_ok=True)
         self.image_directory_path = os.path.join(self.current_dir, 'extracted-images', course_name)
-        self.text_vectorstore_path = os.path.join(self.current_dir, 'faiss-vectorstore', 'text-faiss-index')
-        self.image_vectorstore_path = os.path.join(self.current_dir, 'faiss-vectorstore', 'image-faiss-index')
+        self.text_vectorstore_path = os.path.join(self.faiss_vectorstore_directory, 'text-faiss-index')
+        self.image_vectorstore_path = os.path.join(self.faiss_vectorstore_directory, 'image-faiss-index')
         if text_vectorstore_path is not None:
             self.text_vectorstore = FAISS.load_local(text_vectorstore_path, embeddings=embeddings, allow_dangerous_deserialization=True)
         else:

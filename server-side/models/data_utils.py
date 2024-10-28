@@ -8,15 +8,40 @@ import asyncio
 import httpx
 from bs4 import BeautifulSoup
 from pathlib import Path
+<<<<<<< HEAD
 from urllib.parse import urlparse
 import re
+=======
+import time
+>>>>>>> 6e727048f78dfd313e33bcb922bf28da6e9a1882
 
 class DocumentUtils:
+
+    @staticmethod
+    async def extract_images_from_pdf(pdf_document, pdf_output_directory):
+        def extract_images():
+            for page_index in range(len(pdf_document)):
+                page = pdf_document.load_page(page_index)
+                image_list = page.get_images(full=True)
+
+                for image_index, img in enumerate(image_list, start=1):
+                    xref = img[0]
+                    base_image = pdf_document.extract_image(xref)
+                    image_ext = base_image["ext"]
+                    image_bytes = base_image["image"]
+                    image_path = f"{pdf_output_directory}/image_{page_index + 1}_{image_index}.{image_ext}"
+                    image = Image.open(io.BytesIO(image_bytes))
+                    image.save(image_path)
+        await asyncio.to_thread(extract_images)
+
+
     @staticmethod
     async def extract_images_from_directory(documents_directory, output_directory_path):
+        start = time.time()
         if not os.path.exists(output_directory_path):
             os.makedirs(output_directory_path)
 
+        extract_task = []
         for filename in os.listdir(documents_directory):
             file_path = os.path.join(documents_directory, filename)
             
@@ -26,23 +51,47 @@ class DocumentUtils:
                 pdf_output_directory = os.path.join(output_directory_path, os.path.splitext(os.path.basename(file_path))[0])
                 if not os.path.exists(pdf_output_directory):
                     os.makedirs(pdf_output_directory)
-
-                for page_index in range(len(pdf_document)):
-                    page = pdf_document.load_page(page_index)
-                    image_list = page.get_images(full=True)
-
-                    for image_index, img in enumerate(image_list, start=1):
-                        xref = img[0]
-                        base_image = pdf_document.extract_image(xref)
-                        image_bytes = base_image["image"]
-                        image_ext = base_image["ext"]
-                        image_path = f"{pdf_output_directory}/image_{page_index + 1}_{image_index}.{image_ext}"
-                        image = Image.open(io.BytesIO(image_bytes))
-                        image.save(image_path)
-                    
+                extract_task.append(DocumentUtils.extract_images_from_pdf(pdf_document, pdf_output_directory))
             else:
                 raise Exception("Only PDF format is supported.")
+        await asyncio.gather(*extract_task)
         print(f"Images extracted from all documents in {documents_directory} and saved to {output_directory_path}")
+        end = time.time()
+        print("\n\nTIME TAKEN TO EXTRACT IMAGES ASYNC:", end-start)
+
+    # @staticmethod
+    # async def extract_images_from_directory(documents_directory, output_directory_path):
+    #     start = time.time()
+    #     if not os.path.exists(output_directory_path):
+    #         os.makedirs(output_directory_path)
+
+    #     for filename in os.listdir(documents_directory):
+    #         file_path = os.path.join(documents_directory, filename)
+            
+    #         if filename.endswith(".pdf"):
+    #             pdf_document = fitz.open(file_path)
+        
+    #             pdf_output_directory = os.path.join(output_directory_path, os.path.splitext(os.path.basename(file_path))[0])
+    #             if not os.path.exists(pdf_output_directory):
+    #                 os.makedirs(pdf_output_directory)
+
+    #             for page_index in range(len(pdf_document)):
+    #                 page = pdf_document.load_page(page_index)
+    #                 image_list = page.get_images(full=True)
+
+    #                 for image_index, img in enumerate(image_list, start=1):
+    #                     xref = img[0]
+    #                     base_image = pdf_document.extract_image(xref)
+    #                     image_bytes = base_image["image"]
+    #                     image_ext = base_image["ext"]
+    #                     image_path = f"{pdf_output_directory}/image_{page_index + 1}_{image_index}.{image_ext}"
+    #                     image = Image.open(io.BytesIO(image_bytes))
+    #                     image.save(image_path)
+    #         else:
+    #             raise Exception("Only PDF format is supported.")
+    #     print(f"Images extracted from all documents in {documents_directory} and saved to {output_directory_path}")
+    #     end = time.time()
+    #     print("\n\nTIME TAKEN TO EXTRACT IMAGES SYNC:", end-start)
 
     @staticmethod
     def embed_image_with_clip(image_path, clip_model, clip_processor, device_type="cpu"):
@@ -128,7 +177,7 @@ class WebUtils:
                     valid_url = httpx.URL(url)
                 except (httpx.InvalidURL, ValueError):
                     print(f"Invalid URL: {url}. Skipping.")
-                    continue  # Skip invalid URLs
+                    continue
 
                 url_download_dir = download_dir / Path(valid_url.host)
                 url_download_dir.mkdir(parents=True, exist_ok=True)
