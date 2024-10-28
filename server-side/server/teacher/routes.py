@@ -1,5 +1,6 @@
 import os
 import string
+import random
 import secrets
 from io import BytesIO
 from server import db, bcrypt
@@ -129,12 +130,12 @@ def add_course():
     data = request.get_json()
     course_name = data.get('course_name')
     num_of_lectures = data.get('num_of_lectures')
-    lessons_data = data.get('lessons_data', {})  # Optional, defaults to empty dict
-    course_code = data.get('course_code')
+    lessons_data = data.get('lessons_data', {})
 
-    if not course_name or not num_of_lectures or not course_code:
-        return jsonify({"message": "Course name, number of lectures, and course code are required."}), 400
+    if not course_name or not num_of_lectures:
+        return jsonify({"message": "Course name and number of lectures are required."}), 400
 
+    course_code = ServerUtils.generate_course_code()
     new_course = Course(
         course_name=course_name,
         num_of_lectures=num_of_lectures,
@@ -145,7 +146,7 @@ def add_course():
 
     db.session.add(new_course)
     db.session.commit()
-    return jsonify({"message": "Course added successfully!", "course_id": new_course.id}), 201
+    return jsonify({"message": "Course added successfully!", "course_id": new_course.id, "course_code": new_course.course_code}), 200
 
 
 @teachers.route('/teacher/add-lab-manual', methods=['POST'])
@@ -194,18 +195,16 @@ def add_lesson():
 
     data = request.get_json()
     title = data.get('title')
-    lesson_code = data.get('lesson_code')
     markdown_content = data.get('markdown_content', '')
     relevant_images = data.get('relevant_images', None)
     uploaded_images = data.get('uploaded_images', None)
     course_id = data.get('course_id')
 
-    if not title or not lesson_code or not course_id:
-        return jsonify({"message": "Title, lesson code, and course ID are required."}), 400
+    if not title or not course_id:
+        return jsonify({"message": "Title and course ID are required."}), 400
 
     new_lesson = Lesson(
         title=title,
-        lesson_code=lesson_code,
         markdown_content=markdown_content,
         relevant_images=relevant_images,
         uploaded_images=uploaded_images,
@@ -400,8 +399,8 @@ async def multimodal_rag_content():
         final_content = ServerUtils.json_list_to_markdown(content_list)
         return jsonify({"message": "Query successful", "relevant_images": relevant_images_list, "content": final_content, "response": True}), 200
 
-@teachers.route('/teacher/generate-lesson-plan', methods=['POST'])
-async def generate_lesson_plan():
+@teachers.route('/teacher/generate-lesson', methods=['POST'])
+async def generate_lesson():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in", "response": False}), 401
@@ -424,6 +423,6 @@ async def generate_lesson_plan():
     )
     await simple_rag.create_text_vectorstore()
     relevant_text = await simple_rag.search_similar_text(query=course_name, k=10)
-    output = LESSON_PLANNER.generate_lesson_plan(course_name=course_name, relevant_docs=relevant_text, num_lectures=num_lectures)
+    output = LESSON_PLANNER.generate_lesson_plan(course_name=course_name, context=relevant_text, num_lectures=num_lectures)
     print("LESSON PLANS\n", output)
     return jsonify({"lessons": output})

@@ -8,12 +8,9 @@ import asyncio
 import httpx
 from bs4 import BeautifulSoup
 from pathlib import Path
-<<<<<<< HEAD
 from urllib.parse import urlparse
 import re
-=======
 import time
->>>>>>> 6e727048f78dfd313e33bcb922bf28da6e9a1882
 
 class DocumentUtils:
 

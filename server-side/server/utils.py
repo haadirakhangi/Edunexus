@@ -3,7 +3,10 @@ from gtts import gTTS
 from deep_translator import GoogleTranslator
 from server.teacher.routes import session
 from models.student_schema import Module
+from models.teacher_schema import Course as TeacherCourse
 from lingua import LanguageDetectorBuilder
+import random
+import string
 
 
 LANG_DETECTOR = LanguageDetectorBuilder.from_all_languages().with_preloaded_language_models().build()
@@ -135,6 +138,13 @@ class ServerUtils:
                                 markdown += f"{value}\n"
             final_content.append({content["subject_name"]: markdown})
         return final_content
+    
+    @staticmethod
+    def generate_course_code(length=6):
+        while True:
+            course_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+            if not TeacherCourse.query.filter_by(course_code=course_code).first():
+                return course_code
     
 class AssistantUtils:
     @staticmethod
