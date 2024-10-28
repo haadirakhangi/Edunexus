@@ -58,7 +58,7 @@ const Form1 = ({ register, errors }: { register: any; errors: any }) => {
   return (
     <>
       <Text w="80vh" fontSize={'50px'} className='feature-heading' color={useColorModeValue('purple.600', 'purple.500')} textAlign={"center"} fontWeight="normal" mb="2%">
-        <b>User Credentials</b>
+        <b>Student Credentials</b>
       </Text>
       <Flex>
         <FormControl isInvalid={!!errors.firstName} mr="5%">
@@ -280,7 +280,7 @@ const Signup = () => {
 
       // Append college ID file
       formData.append('collegeId', collegeIdFile);
-      const response = await axios.post('/api/register', formData, {
+      const response = await axios.post('/api/student/register', formData, {
         withCredentials: true, headers: {
           'Content-Type': 'multipart/form-data',
         }

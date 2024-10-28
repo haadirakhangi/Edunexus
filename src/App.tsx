@@ -1,22 +1,31 @@
-import { Route, Routes } from "react-router-dom";
-
+import { Route, Routes, Navigate } from "react-router-dom";
 import HomePage from "./pages/Landing";
 import CoursePage from "./pages/teacher/course/course";
 import CreatePage from "./pages/teacher/create";
 import Testing from "./pages/testing";
 import Login from "./pages/Login"
-import SignUp from "./pages/SignUp"
+import Register from "./pages/Register"
 import Pico from "./pages/Pico"
+import Home from "./pages/student/Home";
+import Explore from "./pages/student/Explore"
+import CourseOverview from "./pages/student/CourseOverview"
+import Content from "./pages/student/Content";
+
 function App() {
   return (
     <Routes>
+      <Route path="*" element={<Navigate to="/" />} />
       <Route element={<HomePage />} path="/" />
       <Route element={<CreatePage />} path="/teacher/create" />
       <Route element={<CoursePage />} path="/teacher/course" />
       <Route element={<Testing />} path="/testing" />
       <Route element={<Login />} path="/login" />
-      <Route element={<SignUp />} path="/register" />
+      <Route element={<Register />} path="/register" />
       <Route element={<Pico />} path="/pico" />
+      <Route element={<Home />} path="/student/home" />
+      <Route element={<Explore />} path="/student/explore" />
+      <Route element={<CourseOverview />} path="/student/course-overview" />
+      <Route element={<Content />} path="/student/content" />
     </Routes>
   );
 }

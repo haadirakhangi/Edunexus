@@ -17,8 +17,7 @@ import {
   import { useState, useEffect } from 'react';
   import { useSessionCheck } from "./home/useSessionCheck";
   import { NavLink } from 'react-router-dom';
-  
-  
+  import ChatWidget from '../../components/ChatWidget';
   
   function Home() {
     useSessionCheck();
@@ -26,7 +25,7 @@ import {
     const [inProp, setInProp] = useState(false);
     const [recommendCourses, setRecommendedCourses] = useState([]);
     const [ongoingCourses, setOngoingCourses] = useState([]);
-    // const [completedCourses, setCompletedCourses] = useState([]);
+    const [completedCourses, setCompletedCourses] = useState([]);
     const [loading, setLoading] = useState(true);
   
     const handleTabsChange = (index: number) => {
@@ -45,30 +44,27 @@ import {
     }, [tabIndex]);
   
     useEffect(() => {
-      // Make an Axios request to fetch data when the component mounts
-      axios.get('/api/user_dashboard')
+      axios.get('/api/student/user_dashboard')
         .then(response => {
           const data = response.data;
-          // Assuming the response structure matches your needs
           console.log("recommend", data.recommended_topics)
           console.log("ongoing", data.user_ongoing_modules)
           console.log("completed", data.user_completed_module)
           setRecommendedCourses(data.recommended_topics);
           setOngoingCourses(data.user_ongoing_modules);
-        //   setCompletedCourses(data.user_completed_module);
+          setCompletedCourses(data.user_completed_module);
         })
         .catch(error => {
           console.error(error);
         })
         .finally(() => {
-          setLoading(false); // Set loading to false once the data is fetched (success or error)
+          setLoading(false);
         });
     }, []);
   
     const [trophies, setTrophies] = useState([
       { name: "Beginner", description: "Completed 1 course", earned: true },
       { name: "Intermediate", description: "Completed 5 courses", earned: false },
-      // Add more trophies as needed
     ]);
   
   
@@ -83,20 +79,20 @@ import {
       },
     ];
   
-    const completedCourses = [
-      {
-        moduleTopic: "Data Preprocessing with Python",
-        moduleSummary: "Data Preprocessing with Python involves cleaning and transforming raw data to make it suitable for analysis. This crucial step includes handling missing values, normalizing features, and encoding categorical variables, ensuring data quality and reliability for subsequent analysis.",
-        quiz: [null, null, {
-          accuracy: 8,
-          completeness: 7,
-          clarity: 9,
-          relevance: 8,
-          understanding: 9,
-          feedback: "Your answers demonstrate a strong understanding of data preprocessing concepts. However, there is room for improvement in providing more detailed explanations and examples in certain areas. Keep up the good work!"
-        }],
-      },
-    ];
+    // const completedCourses = [
+    //   {
+    //     moduleTopic: "Data Preprocessing with Python",
+    //     moduleSummary: "Data Preprocessing with Python involves cleaning and transforming raw data to make it suitable for analysis. This crucial step includes handling missing values, normalizing features, and encoding categorical variables, ensuring data quality and reliability for subsequent analysis.",
+    //     quiz: [null, null, {
+    //       accuracy: 8,
+    //       completeness: 7,
+    //       clarity: 9,
+    //       relevance: 8,
+    //       understanding: 9,
+    //       feedback: "Your answers demonstrate a strong understanding of data preprocessing concepts. However, there is room for improvement in providing more detailed explanations and examples in certain areas. Keep up the good work!"
+    //     }],
+    //   },
+    // ];
   
     const recommendedCourses =
       { 'Machine Learning': 'This course covers the fundamentals of machine learning and its applications in various fields such as data science and artificial intelligence.', 'Big Data Analytics': 'This course focuses on analyzing large datasets using various tools and techniques to extract meaningful insights and make data-driven decisions.', 'Data Mining': 'This course explores techniques for discovering patterns and trends in large datasets, which is essential in the field of data science and machine learning.', 'Artificial Intelligence': 'This course delves into the principles and applications of artificial intelligence, including topics such as neural networks, natural language processing, and computer vision.', 'Statistical Analysis': 'This course provides a comprehensive overview of statistical methods for analyzing data, which is crucial in the field of data science and machine learning.', 'Deep Learning': 'This course covers advanced topics in machine learning, including deep neural networks, convolutional neural networks, and recurrent neural networks.', 'Predictive Modeling': 'This course focuses on developing predictive models using statistical and machine learning techniques to forecast future outcomes based on historical data.', 'Data Visualization': 'This course explores the principles and tools for creating visual representations of data, which is essential for communicating findings in data science and machine learning.', 'Python for Data Science': 'This course teaches the fundamentals of programming in Python and its applications in data science, including data manipulation, visualization, and machine learning.', 'SQL for Data Science': 'This course covers the fundamentals of SQL and its applications in data manipulation, querying databases, and extracting insights for data science purposes.' }
@@ -113,23 +109,10 @@ import {
             <Text mt={4}>Generating Content...</Text>
           </Box>
         )}
-        {/* <Box bg="purple.700" color="white" p={4} mb={4}>
-          <Heading size="md" mb={2}>Your Trophies</Heading>
-          <SimpleGrid columns={[1, 2, 3]} spacing={4}>
-            {trophies.map((trophy, index) => (
-              <Box key={index} p={4} bg={trophy.earned ? "green.400" : "gray.400"} borderRadius="md">
-                <Badge variant="solid" colorScheme={trophy.earned ? "green" : "gray"}>
-                  {trophy.name}
-                </Badge>
-                <Text mt={2}>{trophy.description}</Text>
-              </Box>
-            ))}
-          </SimpleGrid>
-        </Box> */}
         {!loading && (
           <Tabs my={4} mx={5} isFitted variant='enclosed' index={tabIndex} onChange={handleTabsChange}>
             <TabList borderBottom='0'>
-              <Tab _selected={{ bgColor: 'purple.500', color: 'white' }}>Recommended Courses</Tab>
+              <Tab _selected={{ bgColor: 'purple.600', color: 'white' }}>Recommended Courses</Tab>
               <Tab _selected={{ bgColor: 'purple.500', color: 'white' }}>In Progress</Tab>
               <Tab _selected={{ bgColor: 'purple.500', color: 'white' }}>Completed</Tab>
               <Tab _selected={{ bgColor: 'purple.500', color: 'white' }}>Dashboard</Tab>
@@ -197,6 +180,7 @@ import {
             </TabPanels>
           </Tabs>
         )}
+        <ChatWidget />
       </div>
     );
   }

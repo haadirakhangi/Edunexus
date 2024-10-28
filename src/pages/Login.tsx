@@ -38,7 +38,7 @@ const Login = () => {
    
    const onSubmit = async (data: { [key: string]: any }) => {
     try {
-      const response = await axios.post('/api/login', data, { withCredentials: true });
+      const response = await axios.post('/api/student/login', data, { withCredentials: true });
   
       if (response.data.response) {
         sessionStorage.setItem('authenticated', 'true');
@@ -51,7 +51,7 @@ const Login = () => {
         });
   
         // Redirect to home page
-        navigate('/home');
+        navigate('/student/home');
       } else {
         // Display toast if login is unsuccessful
         toast({
