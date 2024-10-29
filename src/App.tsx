@@ -9,8 +9,8 @@ import Pico from "./pages/Pico"
 import Home from "./pages/student/Home";
 import Explore from "./pages/student/Explore"
 import CourseOverview from "./pages/student/CourseOverview"
-import Content from "./pages/student/Content";
-
+import Content from "./pages/student/content/Content";
+import "./pages/student/content/i18n"
 function App() {
   return (
     <Routes>

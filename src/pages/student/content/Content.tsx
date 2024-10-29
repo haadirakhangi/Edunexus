@@ -1,16 +1,16 @@
 import { Box, Heading, useToast, Spinner, useColorModeValue, Flex, Text, VStack, Link, List, ListItem, Button, Image, Center } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {Navbar} from "../../components/navbar"
+import {Navbar} from "../../../components/navbar"
 import axios from 'axios';
 import { FaDownload } from "react-icons/fa";
 import { FaFilePdf } from "react-icons/fa6";
-import Quiz from './content/Quiz';
-import VoiceQuiz from './content/VoiceQuiz';
-import { useSessionCheck } from "./home/useSessionCheck";
-import ChatWidget from '../../components/ChatWidget';
+import Quiz from './Quiz';
+import VoiceQuiz from './VoiceQuiz';
+import { useSessionCheck } from "../home/useSessionCheck";
+import ChatWidget from '../../../components/ChatWidget';
 import { useTranslation } from "react-i18next";
-import Slideshow from './course_overview/Slideshow';
+import Slideshow from '../course_overview/Slideshow';
 
 interface Subsection {
   title: string;
