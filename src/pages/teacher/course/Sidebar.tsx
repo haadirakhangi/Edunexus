@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useForm } from 'react-hook-form';
 import {
     Box,
     Button,
     Heading,
+    Input,
     VStack,
     Tab,
     TabList,
@@ -14,7 +16,11 @@ import {
     Text,
     Image,
     Collapse,
+    Spinner,
+    useToast,
 } from '@chakra-ui/react';
+import axios from 'axios';
+import { FaRegClone } from 'react-icons/fa';
 import { AiOutlineFileText, AiOutlinePicture, AiOutlineCloudUpload, AiOutlineSave } from 'react-icons/ai';
 
 interface SidebarProps {
@@ -41,11 +47,38 @@ const Sidebar: React.FC<SidebarProps> = ({
     handleSaveLesson,
 }) => {
     const [activeTabIndex, setActiveTabIndex] = useState<number | null>(null);
+    const { register, handleSubmit, reset } = useForm<{ prompt: string }>();
     const [activeContentIndex, setActiveContentIndex] = useState<number>(0);
     const submoduleKeys = contentData.map(submodule => Object.keys(submodule)[0]);
+    const [imageGenerationList, setImageGenerationList] = useState<string[]>([]);
+    const [imageloading, setImageLoading] = useState<boolean>(false);
+    const toast = useToast();
 
     const changeCon = (index: number) => {
         setActiveContentIndex(index);
+    };
+
+    const handleImageGeneration = async (data: { prompt: string }) => {
+        const ngrokUrl = 'https://0b1b-35-194-161-111.ngrok-free.app';
+        setImageLoading(true);
+        try {
+            const response = await axios.post(`${ngrokUrl}/generate-image`, { prompt: data.prompt });
+            const newImage = `data:image/png;base64,${response.data.image}`;
+            setImageGenerationList(prevList => [...prevList, newImage]);
+            toast({
+                title: "Image Generated",
+                description: "Your image has been generated successfully.",
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+            });
+            reset();
+        } catch (error) {
+            console.error('Error generating image:', error);
+            alert('Failed to generate image. Please try again.');
+        } finally {
+            setImageLoading(false);
+        }
     };
 
     const handleDrop = (event: React.DragEvent<HTMLDivElement> | null, file?: File) => {
@@ -214,14 +247,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                         </Collapse>
 
                         <Collapse in={activeTabIndex === 1} transition={{ enter: { duration: 0.1 }, exit: { duration: 0.1 } }}>
-                            <TabPanel width={["80px", "200px", "350px"]}>
+                            <TabPanel width={["80px", "200px", "350px"]} p={"10px"}>
                                 <Heading as="h3" size="md" textAlign="center" mb={2}>
                                     Image Section
                                 </Heading>
-                                <Tabs variant="enclosed" colorScheme="purple" width={"100%"}>
+                                <Tabs variant="enclosed" colorScheme="purple">
                                     <TabList>
                                         <Tab
-                                            marginRight={'12'}
                                             border={'none'}
                                             _hover={{ transform: 'scale(1.05)', cursor: 'pointer' }}
                                             transition="transform 0.2s ease"
@@ -234,6 +266,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                                             transition="transform 0.2s ease"
                                         >
                                             <b>Google</b>
+                                        </Tab>
+                                        <Tab
+                                            border={'none'}
+                                            _hover={{ transform: 'scale(1.05)', cursor: 'pointer' }}
+                                            transition="transform 0.2s ease"
+                                        >
+                                            <b>Image Generation</b>
                                         </Tab>
                                     </TabList>
 
@@ -291,6 +330,45 @@ const Sidebar: React.FC<SidebarProps> = ({
                                                         ))}
                                                     </SimpleGrid>
                                                 )}
+                                            </Box>
+                                        </TabPanel>
+
+                                        <TabPanel>
+                                            <Box mb={4}>
+                                                <Flex align="center" mb={4} gap={2}>
+                                                    <form onSubmit={handleSubmit(handleImageGeneration)} style={{ display: 'flex', alignItems: 'center' }}>
+                                                        <Input
+                                                            placeholder="Enter image description..."
+                                                            {...register('prompt')}
+                                                            mr={2}
+                                                            width="250px"
+                                                        />
+                                                        <Button colorScheme="purple" type="submit" disabled={imageloading}>
+                                                            {imageloading ? <Spinner size="sm" /> : <FaRegClone />}
+                                                        </Button>
+                                                    </form>
+                                                </Flex>
+
+                                                <Box minHeight={"600px"} maxHeight="600px" overflowY="auto">
+                                                    {imageGenerationList.length === 0 ? (
+                                                        <Box textAlign="center" p={4}>
+                                                            No generated images yet.
+                                                        </Box>
+                                                    ) : (
+                                                        <SimpleGrid columns={[2, 2, 2]}>
+                                                            {imageGenerationList.map((image, index) => (
+                                                                <Box key={index} p={2} _hover={{ transform: 'scale(1.3)' }}>
+                                                                    <Image
+                                                                        src={image}
+                                                                        onClick={() => onInsertImage(image, index)}
+                                                                        alt={`Generated Image ${index}`}
+                                                                        style={{ width: '100%', height: 'auto' }}
+                                                                    />
+                                                                </Box>
+                                                            ))}
+                                                        </SimpleGrid>
+                                                    )}
+                                                </Box>
                                             </Box>
                                         </TabPanel>
                                     </TabPanels>
