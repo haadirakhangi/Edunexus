@@ -1,5 +1,5 @@
 from server import create_app
-from models.database_model import Module
+from models.student_schema import Module
 import os
 import csv
 app = create_app()

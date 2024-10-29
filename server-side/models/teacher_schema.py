@@ -1,9 +1,5 @@
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.sqlite import JSON
-from flask_bcrypt import Bcrypt
-
-db = SQLAlchemy()
-bcrypt = Bcrypt()
+from server import db, bcrypt
 
 class Teacher(db.Model):
     __tablename__ = 'teachers'
