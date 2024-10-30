@@ -16,32 +16,27 @@ class GeminiProvider:
         else:
             self.chat = None
 
-    def generate_json_response(self, prompt, response_schema=None,markdown=False):
+    def generate_json_response(self, prompt, response_schema=None, markdown=False):
         while True:
             try:
                 if markdown:
                     generation_config=genai.GenerationConfig()
-                    print("Markdown in generate json response")
-                    completion = self.gemini_client.generate_content(
+                elif response_schema is None:
+                    generation_config = genai.GenerationConfig(
+                        response_mime_type="application/json"
+                    )
+                else:
+                    generation_config=genai.GenerationConfig(
+                        response_mime_type="application/json",
+                        response_schema = response_schema
+                    )
+
+                completion = self.gemini_client.generate_content(
                     prompt,
                     generation_config=generation_config,
-                    )
-                    # output = ast.literal_eval(completion.text)
-                    return completion.text
-                else:
-                    if response_schema is None:
-                        generation_config = genai.GenerationConfig(
-                            response_mime_type="application/json"
-                        )
-                    else:
-                        generation_config=genai.GenerationConfig(
-                            response_mime_type="application/json",
-                            response_schema = response_schema
-                        )
-                completion = self.gemini_client.generate_content(
-                        prompt,
-                        generation_config=generation_config,
                 )
+                if markdown:
+                    return completion.text
                 output = ast.literal_eval(completion.text)
                 return output
             except Exception as e:

@@ -1,6 +1,5 @@
 from api.gemini_client import GeminiProvider
 import pypandoc
-from io import BytesIO
 import os
 from datetime import datetime
 
@@ -10,10 +9,7 @@ class LabManualGenerator:
     def __init__(self):
         self.gemini_client = GeminiProvider()
         
-
-        
     def get_lab_manual_description(components):
-        # Original lab_manual_components dictionary with descriptions
         lab_manual_components = {
             "Title": "The name of the experiment, providing a concise and descriptive label for the lab.",
             "Aim": "A brief statement describing the objective or purpose of the experiment.",
@@ -31,15 +27,13 @@ class LabManualGenerator:
             "Appendix": "Additional information, such as supplementary data, extra calculations, or detailed explanations that support the experiment."
             }
 
-        # Extract the descriptions for the specified components
         result = {component: lab_manual_components.get(component, "DESCRIPTION NOT AVAILABLE") for component in components}
 
-        # Convert the resulting dictionary to a string
         # result_string = str(result)
         return result
 
 
-    def generate_lab_manual(self,aim,teacher_name,course_name,components,include_videos=False):
+    def generate_lab_manual(self, aim, teacher_name, course_name, components, include_videos=False):
         today_date = datetime.now().date()
         prompt = f"""Given the aim for {course_name} and the components of the lab manual to be generated, you are to act as a lab assistant. Your task is to create lab manuals for students studying {course_name}. Generate the content of each component so it becomes a lab manual.
         The components of the lab manual are {components}.
@@ -64,7 +58,7 @@ class LabManualGenerator:
             extra_args.extend(['--reference-doc', reference_docx])
         
         current_dir = os.path.dirname(__file__)
-        output_dir = os.path.join(current_dir, "Documents")
+        output_dir = os.path.join(current_dir, "lab-manuals")
         os.makedirs(output_dir, exist_ok=True)
         
         doc=f"{course_name}_{exp_num}.docx"

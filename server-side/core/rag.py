@@ -1,6 +1,7 @@
 from models.data_loader import DocumentLoader
 from models.data_utils import DocumentUtils, WebUtils
 from api.serper_client import SerperProvider
+from api.tavily_client import TavilyProvider
 from core.content_generator import ContentGenerator
 from langchain_community.vectorstores.faiss import FAISS
 import faiss
@@ -82,7 +83,7 @@ class MultiModalRAG:
         self.clip_tokenizer = clip_tokenizer
         self.image_similarity_threshold = image_similarity_threshold
         if input_type not in ["pdf", "link", "pdf_and_link", "pdf_and_web"]:
-            raise Exception("input_type should be pdf, link or pdf_and_link")
+            raise Exception("input_type should be pdf, link, pdf_and_link or pdf_and_web")
         self.input_type = input_type
         self.links = links
 
@@ -137,7 +138,11 @@ class MultiModalRAG:
         top_k_docs = self.text_vectorstore.similarity_search(query_text, k=k)
         return top_k_docs
     
-    async def run(self, content_generator : ContentGenerator, module_name, submodule_split, profile, top_k_docs):
+    async def asearch_text(self, query_text, k):
+        top_k_docs = self.text_vectorstore.asimilarity_search(query_text, k=k)
+        return top_k_docs
+    
+    async def run(self, content_generator : ContentGenerator, module_name : str, submodule_split : dict, profile : str, top_k_docs : int):
         images_in_directory = []
         if self.include_images:
             for root, dirs, files in os.walk(self.image_directory_path):
@@ -160,7 +165,6 @@ class MultiModalRAG:
                     image_explanation = await content_generator.generate_explanation_from_images(top_images[:2], val)
                     output = await content_generator.generate_content_from_textbook_and_images(module_name, val, profile, context, image_explanation)
                 else:
-                    relevant_docs = self.search_text(val, top_k_docs)
                     rel_docs = [doc.page_content for doc in relevant_docs]
                     context = '\n'.join(rel_docs)
                     result_handler = ResultHandler.start()
@@ -191,18 +195,83 @@ class MultiModalRAG:
             submodule_images.append(relevant_images)
         return submodule_content, submodule_images
     
-    async def execute(self, content_generator, module_name, submodules, profile, top_k_docs=5):
+    async def run_with_web(self, content_generator : ContentGenerator, tavily_client: TavilyProvider, module_name : str, submodule_split : dict, profile : str, top_k_docs : int):
+        images_in_directory = []
+        if self.include_images:
+            for root, dirs, files in os.walk(self.image_directory_path):
+                for file in files:
+                    if file.endswith(('png', 'jpg', 'jpeg')):
+                        images_in_directory.append(os.path.join(root, file))
+        submodule_content = []
+        submodule_images=[]
+        for key, val in submodule_split.items():
+            if len(images_in_directory) >= 5:
+                with ThreadPoolExecutor() as executor:
+                    future_docs = executor.submit(self.search_text, val, top_k_docs)
+                    future_images = executor.submit(self.search_image, val, images_in_directory)
+                    future_web_context = executor.submit(tavily_client.search_context, val)
+                relevant_docs = future_docs.result()
+                top_images = future_images.result()
+                web_context = future_web_context.result()
+                relevant_images = [DocumentUtils.image_to_base64(image_path) for image_path in top_images]
+                if len(top_images) >= 2:
+                    rel_docs = [doc.page_content for doc in relevant_docs]
+                    context = '\n'.join(rel_docs)
+                    image_explanation = await content_generator.generate_explanation_from_images(top_images[:2], val)
+                    output = await content_generator.generate_content_from_textbook_and_images_with_web(module_name, val, profile, context, image_explanation, web_context)
+                else:
+                    rel_docs = [doc.page_content for doc in relevant_docs]
+                    context = '\n'.join(rel_docs)
+                    result_handler = ResultHandler.start()
+                    try:
+                        relevant_images, output = await asyncio.gather(
+                            SerperProvider.submodule_image_from_web(val),
+                            content_generator.generate_single_content_from_textbook_with_web(module_name, val, profile, context, web_context)
+                        )
+                        result_handler.tell(relevant_images)
+                        result_handler.tell(output)
+                    finally:
+                        result_handler.stop()
+            else:
+                relevant_docs, web_context = await asyncio.gather(
+                    self.asearch_text(val, top_k_docs),
+                    tavily_client.asearch_context(val)
+                )
+                rel_docs = [doc.page_content for doc in relevant_docs]
+                context = '\n'.join(rel_docs)
+                result_handler = ResultHandler.start()
+                try:
+                    relevant_images, output = await asyncio.gather(
+                        SerperProvider.submodule_image_from_web(val),
+                        content_generator.generate_single_content_from_textbook_with_web(module_name, val, profile, context, web_context)
+                    )
+                    result_handler.tell(relevant_images)
+                    result_handler.tell(output)
+                finally:
+                    result_handler.stop()
+            submodule_content.append(output)
+            submodule_images.append(relevant_images)
+        return submodule_content, submodule_images
+    
+    async def execute(self, content_generator, tavily_client, module_name, submodules:dict, profile, top_k_docs=5, search_web=False):
         keys_list = list(submodules.keys())
         submodules_split_one = {key: submodules[key] for key in keys_list[:2]}
         submodules_split_two = {key: submodules[key] for key in keys_list[2:4]}
         submodules_split_three = {key: submodules[key] for key in keys_list[4:]}
         result_handler = ResultHandler.start()
         try:
-            results = await asyncio.gather(
-                self.run(content_generator=content_generator, module_name=module_name, submodule_split=submodules_split_one, profile=profile, top_k_docs=top_k_docs),
-                self.run(content_generator=content_generator, module_name=module_name, submodule_split=submodules_split_two, profile=profile, top_k_docs=top_k_docs),
-                self.run(content_generator=content_generator, module_name=module_name, submodule_split=submodules_split_three, profile=profile, top_k_docs=top_k_docs),
-            )
+            if search_web:
+                results = await asyncio.gather(
+                    self.run_with_web(content_generator=content_generator, tavily_client=tavily_client, module_name=module_name, submodule_split=submodules_split_one, profile=profile, top_k_docs=top_k_docs),
+                    self.run_with_web(content_generator=content_generator, tavily_client=tavily_client, module_name=module_name, submodule_split=submodules_split_two, profile=profile, top_k_docs=top_k_docs),
+                    self.run_with_web(content_generator=content_generator, tavily_client=tavily_client, module_name=module_name, submodule_split=submodules_split_three, profile=profile, top_k_docs=top_k_docs),
+                )
+            else:
+                results = await asyncio.gather(
+                    self.run(content_generator=content_generator, module_name=module_name, submodule_split=submodules_split_one, profile=profile, top_k_docs=top_k_docs),
+                    self.run(content_generator=content_generator, module_name=module_name, submodule_split=submodules_split_two, profile=profile, top_k_docs=top_k_docs),
+                    self.run(content_generator=content_generator, module_name=module_name, submodule_split=submodules_split_three, profile=profile, top_k_docs=top_k_docs),
+                )
             content_one, images_one = results[0]
             content_two, images_two = results[1]
             content_three, images_three = results[2]

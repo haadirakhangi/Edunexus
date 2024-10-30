@@ -219,7 +219,6 @@ async def multimodal_rag_submodules():
             filename = secure_filename(file.filename)
             file.save(os.path.join(uploads_path, filename))
     links = request.form.get('links')
-    print("LINKS are these",links)
     links_list = []
     if links:
         links_list = json.loads(links)
@@ -233,7 +232,7 @@ async def multimodal_rag_submodules():
 
     if len(files)>0 and len(links_list)>0:
         session['input_type']='pdf_and_link'
-        print("\nInput: File + Links...\n",links_list)
+        print("\nInput: File + Links...\nLinks: ",links_list)
         multimodal_rag = MultiModalRAG(
             course_name=title,
             documents_directory_path=uploads_path,  
@@ -274,7 +273,7 @@ async def multimodal_rag_submodules():
         )
     elif len(links_list)>0:
         session['input_type']='link'
-        print("\nInput: Links only..\n")
+        print("\nInput: Links only..\nLinks: ", links_list)
         multimodal_rag = MultiModalRAG(
             course_name=title,
             documents_directory_path=uploads_path,  
@@ -314,7 +313,7 @@ async def multimodal_rag_submodules():
     VECTORDB_TEXTBOOK = FAISS.load_local(text_vectorstore_path, EMBEDDINGS, allow_dangerous_deserialization=True)
     
     if search_web:
-        submodules = SUB_MODULE_GENERATOR.generate_submodules_from_documents_and_web(module_name=title, course_name=course_name, vectordb=VECTORDB_TEXTBOOK)
+        await submodules = SUB_MODULE_GENERATOR.generate_submodules_from_documents_and_web(module_name=title, course_name=course_name, vectordb=VECTORDB_TEXTBOOK)
     else:
         submodules = SUB_MODULE_GENERATOR.generate_submodules_from_textbook(title, VECTORDB_TEXTBOOK)
         
@@ -366,8 +365,7 @@ async def multimodal_rag_content():
             image_vectorstore_path=image_vectorstore_path,
             include_images=include_images
         )
-
-        content_list, relevant_images_list = await multimodal_rag.execute(CONTENT_GENERATOR, title, submodules=submodules, profile=user_profile, top_k_docs=7)
+        content_list, relevant_images_list = await multimodal_rag.execute(CONTENT_GENERATOR, TAVILY_CLIENT, title, submodules=submodules, profile=user_profile, top_k_docs=7, search_web=search_web)
         final_content = ServerUtils.json_list_to_markdown(content_list)
         return jsonify({"message": "Query successful", "relevant_images": relevant_images_list, "content": final_content, "response": True}), 200
     elif search_web:
@@ -434,10 +432,7 @@ async def generate_lesson():
     await simple_rag.create_text_vectorstore()
     relevant_text = await simple_rag.search_similar_text(query=course_name, k=10)
     output = LESSON_PLANNER.generate_lesson_plan(course_name=course_name, context=relevant_text, num_lectures=num_lectures)
-    print("LESSON PLANS\n", output)
     return jsonify({"lessons": output})
-
-#[TESTING YET TO BE DONE]
 
 @teachers.route('/generate-lab-manual', methods=['POST'])
 def generate_lab_manual():
@@ -465,7 +460,6 @@ def convert_docx():
         exp_num = data.get('exp_num')
         
         doc=LabManualGenerator.convert_markdown_to_docx(markdown,course_name,exp_num)
-        print("DOCCCCC==========================================================\n",doc)
         return send_file(
             doc,
             as_attachment=True,
@@ -473,4 +467,4 @@ def convert_docx():
             mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         )
     except Exception as e:  
-        print(e)
+        print("An error occured while creating document: ",e)

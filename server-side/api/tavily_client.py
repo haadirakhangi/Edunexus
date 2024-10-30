@@ -15,3 +15,7 @@ class TavilyProvider:
     def search_context(self, topic, search_depth="advanced", max_tokens=4000):
         search_results = self.tavily_client.get_search_context(topic, search_depth=search_depth, max_tokens=max_tokens)
         return search_results
+    
+    async def asearch_context(self, topic, search_depth="advanced", max_tokens=4000):
+        search_results = self.tavily_client.get_search_context(topic, search_depth=search_depth, max_tokens=max_tokens)
+        return search_results
