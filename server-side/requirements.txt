@@ -31,3 +31,4 @@ PyMuPDF
 Pillow
 pykka
 flask[async]
+pypandoc-binary
