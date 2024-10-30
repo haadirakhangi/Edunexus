@@ -105,7 +105,7 @@
 .floating-chatbot-button {
   position: fixed;
   bottom: 20px;
-  right: 15px;
+  right: 30px;
   font-size: 25px;
   background-color: #9F7AEA;
   color: #fff;
@@ -135,7 +135,7 @@
   .chatbot-interface {
     position: fixed;
     bottom: 20px;
-    right: 15px;
+    right: 30px;
     width: 62vh;
     height: 80vh;
     padding: 10px;
