@@ -29,6 +29,8 @@ class DocumentLoader:
             )
             pdf_loader = PyPDFDirectoryLoader(documents_directory)
             loader = MergedDataLoader(loaders=[web_loader, pdf_loader])
+        elif input_type=="pdf_and_web":
+            loader = PyPDFDirectoryLoader(documents_directory)
         documents = loader.load()
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size, chunk_overlap=chunk_overlap, length_function=len

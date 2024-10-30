@@ -69,7 +69,7 @@ class MultiModalRAG:
             image_vectorstore_path=None,
             input_type=None,
             links=None,
-            include_images=None
+            include_images=None,
     ):
         if documents_directory_path is None:
             raise Exception("Document Directory Path path must be provided")
@@ -81,7 +81,7 @@ class MultiModalRAG:
         self.clip_processor = clip_processor
         self.clip_tokenizer = clip_tokenizer
         self.image_similarity_threshold = image_similarity_threshold
-        if input_type not in ["pdf", "link", "pdf_and_link"]:
+        if input_type not in ["pdf", "link", "pdf_and_link", "pdf_and_web"]:
             raise Exception("input_type should be pdf, link or pdf_and_link")
         self.input_type = input_type
         self.links = links

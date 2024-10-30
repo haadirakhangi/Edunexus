@@ -197,6 +197,7 @@ async def multimodal_rag_submodules():
     else:
         files = request.files.getlist('files[]')
     title = request.form['title']
+    course_name = request.form['course_name']
     include_images = request.form['includeImages']
     if include_images=="true":
         include_images=True
@@ -221,6 +222,12 @@ async def multimodal_rag_submodules():
     if links:
         links_list = json.loads(links)
         print(f"\nLinks provided: {links_list}\n")
+    search_web = request.form.get("search_web", "false")
+    if search_web=="true":
+        search_web=True
+    else:
+        search_web=False
+    session['search_web'] = search_web
 
     if len(files)>0 and len(links_list)>0:
         session['input_type']='pdf_and_link'
@@ -233,6 +240,20 @@ async def multimodal_rag_submodules():
             clip_processor=CLIP_PROCESSOR,
             clip_tokenizer=CLIP_TOKENIZER,
             input_type="pdf_and_link",
+            links=links_list,
+            include_images=include_images
+        )
+    elif len(files)>0 and search_web:
+        session['input_type']='pdf_and_web'
+        print("\nInput: File + Web Search...\n")
+        multimodal_rag = MultiModalRAG(
+            course_name=title,
+            documents_directory_path=uploads_path,  
+            embeddings=EMBEDDINGS,
+            clip_model=CLIP_MODEL,
+            clip_processor=CLIP_PROCESSOR,
+            clip_tokenizer=CLIP_TOKENIZER,
+            input_type="pdf_and_web",
             links=links_list,
             include_images=include_images
         )
@@ -263,6 +284,16 @@ async def multimodal_rag_submodules():
             links=links_list,
             include_images=include_images
         )
+    elif search_web:
+        session['input_type']='web'
+        print("\nInput: Web Search only...\n")
+        submodules = SUB_MODULE_GENERATOR.generate_submodules_from_web(title, course_name)
+        session['title'] = title
+        session['user_profile'] = submodules
+        session['submodules'] = submodules
+        session['is_multimodal_rag']=False
+        print("\nGenerated Submodules:\n", submodules)
+        return jsonify({"message": "Query successful", "submodules": submodules, "response": True}), 200
     else:
         print("\nInput: None\n")
         submodules = SUB_MODULE_GENERATOR.generate_submodules(title)
@@ -280,7 +311,10 @@ async def multimodal_rag_submodules():
     
     VECTORDB_TEXTBOOK = FAISS.load_local(text_vectorstore_path, EMBEDDINGS, allow_dangerous_deserialization=True)
     
-    submodules = SUB_MODULE_GENERATOR.generate_submodules_from_textbook(title, VECTORDB_TEXTBOOK)
+    if search_web:
+        submodules = SUB_MODULE_GENERATOR.generate_submodules_from_documents_and_web(module_name=title, course_name=course_name, vectordb=VECTORDB_TEXTBOOK)
+    else:
+        submodules = SUB_MODULE_GENERATOR.generate_submodules_from_textbook(title, VECTORDB_TEXTBOOK)
         
     session['title'] = title
     session['user_profile'] = description
@@ -305,6 +339,7 @@ async def multimodal_rag_content():
         return jsonify({"message": "Teacher not logged in", "response": False}), 401
     
     is_multimodal_rag = session.get("is_multimodal_rag")
+    search_web = session.get("search_web")
     if is_multimodal_rag:
         document_paths = session.get("document_directory_path") 
         title = session.get("title")
@@ -331,6 +366,25 @@ async def multimodal_rag_content():
         )
 
         content_list, relevant_images_list = await multimodal_rag.execute(CONTENT_GENERATOR, title, submodules=submodules, profile=user_profile, top_k_docs=7)
+        final_content = ServerUtils.json_list_to_markdown(content_list)
+        return jsonify({"message": "Query successful", "relevant_images": relevant_images_list, "content": final_content, "response": True}), 200
+    elif search_web:
+        submodules = session.get("submodules")
+        title = session.get("title")
+        keys_list = list(submodules.keys())
+        submodules_split_one = {key: submodules[key] for key in keys_list[:2]}
+        submodules_split_two = {key: submodules[key] for key in keys_list[2:4]}
+        submodules_split_three = {key: submodules[key] for key in keys_list[4:]}
+        with ThreadPoolExecutor() as executor:
+            future_images_list = executor.submit(SerperProvider.module_image_from_web, submodules)
+            future_content_one = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_one, title,'first')
+            future_content_two = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_two, title,'second')
+            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_three, title,'third')
+        content_one = future_content_one.result()
+        content_two = future_content_two.result()
+        content_three = future_content_three.result()
+        relevant_images_list = future_images_list.result()
+        content_list = content_one + content_two + content_three
         final_content = ServerUtils.json_list_to_markdown(content_list)
         return jsonify({"message": "Query successful", "relevant_images": relevant_images_list, "content": final_content, "response": True}), 200
     else:
