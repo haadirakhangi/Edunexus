@@ -16,18 +16,28 @@ class GeminiProvider:
         else:
             self.chat = None
 
-    def generate_json_response(self, prompt, response_schema=None):
+    def generate_json_response(self, prompt, response_schema=None,markdown=False):
         while True:
             try:
-                if response_schema is None:
-                    generation_config = genai.GenerationConfig(
-                        response_mime_type="application/json"
+                if markdown:
+                    generation_config=genai.GenerationConfig()
+                    print("Markdown in generate json response")
+                    completion = self.gemini_client.generate_content(
+                    prompt,
+                    generation_config=generation_config,
                     )
+                    # output = ast.literal_eval(completion.text)
+                    return completion.text
                 else:
-                    generation_config=genai.GenerationConfig(
-                        response_mime_type="application/json",
-                        response_schema = response_schema
-                    )
+                    if response_schema is None:
+                        generation_config = genai.GenerationConfig(
+                            response_mime_type="application/json"
+                        )
+                    else:
+                        generation_config=genai.GenerationConfig(
+                            response_mime_type="application/json",
+                            response_schema = response_schema
+                        )
                 completion = self.gemini_client.generate_content(
                         prompt,
                         generation_config=generation_config,

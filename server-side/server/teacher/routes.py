@@ -18,6 +18,8 @@ from core.rag import MultiModalRAG, SimpleRAG
 from server.constants import *
 from server.utils import ServerUtils
 import json
+from core.lab_manual_gen import LabManualGenerator
+
 
 teachers = Blueprint(name='teachers', import_name=__name__)
 
@@ -380,3 +382,41 @@ async def generate_lesson():
     output = LESSON_PLANNER.generate_lesson_plan(course_name=course_name, context=relevant_text, num_lectures=num_lectures)
     print("LESSON PLANS\n", output)
     return jsonify({"lessons": output})
+
+#[TESTING YET TO BE DONE]
+
+@teachers.route('/generate-lab-manual', methods=['POST'])
+def generate_lab_manual():
+    data = request.json 
+
+    experiment_num = data.get('experiment_num')
+    exp_aim = data.get('exp_aim')
+    teacher_name = data.get('teacher_name')
+    course_name = data.get('course_name')
+    include_videos = data.get('include_videos', False)  
+    
+    components = data.get('components_of_lab_manual', [])
+    generator = LabManualGenerator()
+    result = generator.generate_lab_manual(exp_aim,teacher_name, course_name, components, include_videos)
+
+    return jsonify(result)
+
+
+@teachers.route('/convert-docx', methods=['POST'])
+def convert_docx():
+    try:
+        data = request.json
+        markdown = data.get('markdown')
+        course_name = data.get('course_name')
+        exp_num = data.get('exp_num')
+        
+        doc=LabManualGenerator.convert_markdown_to_docx(markdown,course_name,exp_num)
+        print("DOCCCCC==========================================================\n",doc)
+        return send_file(
+            doc,
+            as_attachment=True,
+            download_name=f"{course_name}_{exp_num}.docx",
+            mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+    except Exception as e:  
+        print(e)
