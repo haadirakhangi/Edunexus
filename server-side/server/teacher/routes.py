@@ -198,19 +198,19 @@ async def multimodal_rag_submodules():
         files = []
     else:
         files = request.files.getlist('files[]')
-    title = request.form['title']
+    lesson_name = request.form['lesson_name']
     course_name = request.form['course_name']
     include_images = request.form['includeImages']
     if include_images=="true":
         include_images=True
     else:
         include_images=False
-    if title=="":
-        raise Exception("Title must be provided")
+    if lesson_name=="":
+        raise Exception("lesson_name must be provided")
     description = request.form['description']
     
     current_dir = os.path.dirname(__file__)
-    uploads_path = os.path.join(current_dir, 'uploaded-documents', title)
+    uploads_path = os.path.join(current_dir, 'uploaded-documents', lesson_name)
     if not os.path.exists(uploads_path):
         os.makedirs(uploads_path)
     
@@ -234,7 +234,8 @@ async def multimodal_rag_submodules():
         session['input_type']='pdf_and_link'
         print("\nInput: File + Links...\nLinks: ",links_list)
         multimodal_rag = MultiModalRAG(
-            course_name=title,
+            course_name=course_name,
+            lesson_name=lesson_name,
             documents_directory_path=uploads_path,  
             embeddings=EMBEDDINGS,
             clip_model=CLIP_MODEL,
@@ -248,7 +249,8 @@ async def multimodal_rag_submodules():
         session['input_type']='pdf_and_web'
         print("\nInput: File + Web Search...\n")
         multimodal_rag = MultiModalRAG(
-            course_name=title,
+            course_name=course_name,
+            lesson_name=lesson_name,
             documents_directory_path=uploads_path,  
             embeddings=EMBEDDINGS,
             clip_model=CLIP_MODEL,
@@ -262,7 +264,8 @@ async def multimodal_rag_submodules():
         session['input_type']='pdf'
         print("\nInput: File only...\n")
         multimodal_rag = MultiModalRAG(
-            course_name=title,
+            course_name=course_name,
+            lesson_name=lesson_name,
             documents_directory_path=uploads_path,  
             embeddings=EMBEDDINGS,
             clip_model=CLIP_MODEL,
@@ -273,9 +276,10 @@ async def multimodal_rag_submodules():
         )
     elif len(links_list)>0:
         session['input_type']='link'
-        print("\nInput: Links only..\nLinks: ", links_list)
+        print("\nInput: Links only...\nLinks: ", links_list)
         multimodal_rag = MultiModalRAG(
-            course_name=title,
+            course_name=course_name,
+            lesson_name=lesson_name,
             documents_directory_path=uploads_path,  
             embeddings=EMBEDDINGS,
             clip_model=CLIP_MODEL,
@@ -288,8 +292,9 @@ async def multimodal_rag_submodules():
     elif search_web:
         session['input_type']='web'
         print("\nInput: Web Search only...\n")
-        submodules = SUB_MODULE_GENERATOR.generate_submodules_from_web(title, course_name)
-        session['title'] = title
+        submodules = SUB_MODULE_GENERATOR.generate_submodules_from_web(lesson_name, course_name)
+        session['lesson_name'] = lesson_name
+        session['course_name'] = course_name
         session['user_profile'] = submodules
         session['submodules'] = submodules
         session['is_multimodal_rag']=False
@@ -297,8 +302,9 @@ async def multimodal_rag_submodules():
         return jsonify({"message": "Query successful", "submodules": submodules, "response": True}), 200
     else:
         print("\nInput: None\n")
-        submodules = SUB_MODULE_GENERATOR.generate_submodules(title)
-        session['title'] = title
+        submodules = SUB_MODULE_GENERATOR.generate_submodules(lesson_name)
+        session['lesson_name'] = lesson_name
+        session['course_name'] = course_name
         session['user_profile'] = description
         session['submodules'] = submodules
         session['is_multimodal_rag'] = False
@@ -313,11 +319,12 @@ async def multimodal_rag_submodules():
     VECTORDB_TEXTBOOK = FAISS.load_local(text_vectorstore_path, EMBEDDINGS, allow_dangerous_deserialization=True)
     
     if search_web:
-        await submodules = SUB_MODULE_GENERATOR.generate_submodules_from_documents_and_web(module_name=title, course_name=course_name, vectordb=VECTORDB_TEXTBOOK)
+        submodules = await SUB_MODULE_GENERATOR.generate_submodules_from_documents_and_web(module_name=lesson_name, course_name=course_name, vectordb=VECTORDB_TEXTBOOK)
     else:
-        submodules = SUB_MODULE_GENERATOR.generate_submodules_from_textbook(title, VECTORDB_TEXTBOOK)
+        submodules = SUB_MODULE_GENERATOR.generate_submodules_from_textbook(lesson_name, VECTORDB_TEXTBOOK)
         
-    session['title'] = title
+    session['lesson_name'] = lesson_name
+    session['course_name'] = course_name
     session['user_profile'] = description
     session['submodules'] = submodules
     session['document_directory_path'] = uploads_path 
@@ -341,9 +348,11 @@ async def multimodal_rag_content():
     
     is_multimodal_rag = session.get("is_multimodal_rag")
     search_web = session.get("search_web")
+    course_name = session.get("course_name")
+    lesson_name = session.get("lesson_name")
     if is_multimodal_rag:
         document_paths = session.get("document_directory_path") 
-        title = session.get("title")
+        lesson_name = session.get("lesson_name")
         user_profile = session.get("user_profile")
         submodules = session.get("submodules")
         text_vectorstore_path = session.get("text_vectorstore_path")
@@ -351,8 +360,9 @@ async def multimodal_rag_content():
         input_type = session.get('input_type')
         include_images=session.get('include_images')
         multimodal_rag = MultiModalRAG(
+            course_name=course_name,
             documents_directory_path=document_paths,
-            course_name=title,
+            lesson_name=lesson_name,
             embeddings=EMBEDDINGS,
             clip_model=CLIP_MODEL,
             clip_processor=CLIP_PROCESSOR,
@@ -365,21 +375,20 @@ async def multimodal_rag_content():
             image_vectorstore_path=image_vectorstore_path,
             include_images=include_images
         )
-        content_list, relevant_images_list = await multimodal_rag.execute(CONTENT_GENERATOR, TAVILY_CLIENT, title, submodules=submodules, profile=user_profile, top_k_docs=7, search_web=search_web)
+        content_list, relevant_images_list = await multimodal_rag.execute(CONTENT_GENERATOR, TAVILY_CLIENT, lesson_name, submodules=submodules, profile=user_profile, top_k_docs=7, search_web=search_web)
         final_content = ServerUtils.json_list_to_markdown(content_list)
         return jsonify({"message": "Query successful", "relevant_images": relevant_images_list, "content": final_content, "response": True}), 200
     elif search_web:
         submodules = session.get("submodules")
-        title = session.get("title")
         keys_list = list(submodules.keys())
         submodules_split_one = {key: submodules[key] for key in keys_list[:2]}
         submodules_split_two = {key: submodules[key] for key in keys_list[2:4]}
         submodules_split_three = {key: submodules[key] for key in keys_list[4:]}
         with ThreadPoolExecutor() as executor:
             future_images_list = executor.submit(SerperProvider.module_image_from_web, submodules)
-            future_content_one = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_one, title,'first')
-            future_content_two = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_two, title,'second')
-            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_three, title,'third')
+            future_content_one = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_one, lesson_name,course_name,'first')
+            future_content_two = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_two, lesson_name, course_name,'second')
+            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_three, lesson_name, course_name,'third')
         content_one = future_content_one.result()
         content_two = future_content_two.result()
         content_three = future_content_three.result()
@@ -389,16 +398,15 @@ async def multimodal_rag_content():
         return jsonify({"message": "Query successful", "relevant_images": relevant_images_list, "content": final_content, "response": True}), 200
     else:
         submodules = session.get("submodules")
-        title = session.get("title")
         keys_list = list(submodules.keys())
         submodules_split_one = {key: submodules[key] for key in keys_list[:2]}
         submodules_split_two = {key: submodules[key] for key in keys_list[2:4]}
         submodules_split_three = {key: submodules[key] for key in keys_list[4:]}
         with ThreadPoolExecutor() as executor:
             future_images_list = executor.submit(SerperProvider.module_image_from_web, submodules)
-            future_content_one = executor.submit(CONTENT_GENERATOR.generate_content, submodules_split_one, title,'first')
-            future_content_two = executor.submit(CONTENT_GENERATOR.generate_content, submodules_split_two, title,'second')
-            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content, submodules_split_three, title,'third')
+            future_content_one = executor.submit(CONTENT_GENERATOR.generate_content, submodules_split_one, lesson_name, course_name,'first')
+            future_content_two = executor.submit(CONTENT_GENERATOR.generate_content, submodules_split_two, lesson_name, course_name,'second')
+            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content, submodules_split_three, lesson_name, course_name,'third')
         content_one = future_content_one.result()
         content_two = future_content_two.result()
         content_three = future_content_three.result()

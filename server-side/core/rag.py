@@ -58,6 +58,7 @@ class MultiModalRAG:
     def __init__(
             self, 
             course_name=None,
+            lesson_name=None,
             documents_directory_path=None, 
             embeddings=None, 
             clip_model=None, 
@@ -72,6 +73,8 @@ class MultiModalRAG:
             links=None,
             include_images=None,
     ):
+        self.course_name = course_name
+        self.lesson_name = lesson_name
         if documents_directory_path is None:
             raise Exception("Document Directory Path path must be provided")
         self.documents_directory_path = documents_directory_path
@@ -90,7 +93,7 @@ class MultiModalRAG:
         self.current_dir = os.path.dirname(__file__)
         self.faiss_vectorstore_directory = os.path.join(self.current_dir, 'faiss-vectorstore')
         os.makedirs(self.faiss_vectorstore_directory, exist_ok=True)
-        self.image_directory_path = os.path.join(self.current_dir, 'extracted-images', course_name)
+        self.image_directory_path = os.path.join(self.current_dir, 'extracted-images', lesson_name)
         self.text_vectorstore_path = os.path.join(self.faiss_vectorstore_directory, 'text-faiss-index')
         self.image_vectorstore_path = os.path.join(self.faiss_vectorstore_directory, 'image-faiss-index')
         if text_vectorstore_path is not None:
@@ -109,12 +112,14 @@ class MultiModalRAG:
         result_handler = ResultHandler.start()
         try:
             if self.include_images:
-                self.text_vectorstore, self.image_vectorstore = await asyncio.gather(
-                    DocumentLoader.create_faiss_vectorstore_for_text(self.documents_directory_path, self.embeddings, self.chunk_size, self.chunk_overlap, self.input_type, self.links),
-                    DocumentLoader.create_faiss_vectorstore_for_image(self.documents_directory_path, self.image_directory_path, self.clip_model, self.clip_processor, self.input_type, self.links)
-                )
-                result_handler.tell("Text Vector store created")
-                result_handler.tell("Image Vector store created")
+                with ThreadPoolExecutor() as executor:
+                    tasks = [
+                        executor.submit(asyncio.run, DocumentLoader.create_faiss_vectorstore_for_text(self.documents_directory_path, self.embeddings, self.chunk_size, self.chunk_overlap, self.input_type, self.links)),
+                        executor.submit(asyncio.run, DocumentLoader.create_faiss_vectorstore_for_image(self.documents_directory_path, self.image_directory_path, self.clip_model, self.clip_processor, self.input_type, self.links)),
+                    ]
+                self.text_vectorstore = tasks[0].result()
+                self.image_vectorstore = tasks[1].result()
+                result_handler.tell((self.text_vectorstore, self.image_vectorstore))
                 faiss.write_index(self.image_vectorstore, self.image_vectorstore_path)
             else:
                 self.text_vectorstore = await DocumentLoader.create_faiss_vectorstore_for_text(self.documents_directory_path, self.embeddings, self.chunk_size, self.chunk_overlap, self.input_type, self.links)
@@ -163,7 +168,7 @@ class MultiModalRAG:
                     rel_docs = [doc.page_content for doc in relevant_docs]
                     context = '\n'.join(rel_docs)
                     image_explanation = await content_generator.generate_explanation_from_images(top_images[:2], val)
-                    output = await content_generator.generate_content_from_textbook_and_images(module_name, val, profile, context, image_explanation)
+                    output = await content_generator.generate_content_from_textbook_and_images(self.course_name, module_name, val, profile, context, image_explanation)
                 else:
                     rel_docs = [doc.page_content for doc in relevant_docs]
                     context = '\n'.join(rel_docs)
@@ -171,7 +176,7 @@ class MultiModalRAG:
                     try:
                         relevant_images, output = await asyncio.gather(
                             SerperProvider.submodule_image_from_web(val),
-                            content_generator.generate_single_content_from_textbook(module_name, val, profile, context)
+                            content_generator.generate_single_content_from_textbook(self.course_name, module_name, val, profile, context)
                         )
                         result_handler.tell(relevant_images)
                         result_handler.tell(output)
@@ -185,7 +190,7 @@ class MultiModalRAG:
                 try:
                     relevant_images, output = await asyncio.gather(
                         SerperProvider.submodule_image_from_web(val),
-                        content_generator.generate_single_content_from_textbook(module_name, val, profile, context)
+                        content_generator.generate_single_content_from_textbook(self.course_name, module_name, val, profile, context)
                     )
                     result_handler.tell(relevant_images)
                     result_handler.tell(output)
@@ -205,11 +210,12 @@ class MultiModalRAG:
         submodule_content = []
         submodule_images=[]
         for key, val in submodule_split.items():
+            tavily_query = self.course_name + " : " + val
             if len(images_in_directory) >= 5:
                 with ThreadPoolExecutor() as executor:
                     future_docs = executor.submit(self.search_text, val, top_k_docs)
                     future_images = executor.submit(self.search_image, val, images_in_directory)
-                    future_web_context = executor.submit(tavily_client.search_context, val)
+                    future_web_context = executor.submit(tavily_client.search_context, tavily_query)
                 relevant_docs = future_docs.result()
                 top_images = future_images.result()
                 web_context = future_web_context.result()
@@ -218,7 +224,7 @@ class MultiModalRAG:
                     rel_docs = [doc.page_content for doc in relevant_docs]
                     context = '\n'.join(rel_docs)
                     image_explanation = await content_generator.generate_explanation_from_images(top_images[:2], val)
-                    output = await content_generator.generate_content_from_textbook_and_images_with_web(module_name, val, profile, context, image_explanation, web_context)
+                    output = await content_generator.generate_content_from_textbook_and_images_with_web(self.course_name, module_name, val, profile, context, image_explanation, web_context)
                 else:
                     rel_docs = [doc.page_content for doc in relevant_docs]
                     context = '\n'.join(rel_docs)
@@ -226,24 +232,25 @@ class MultiModalRAG:
                     try:
                         relevant_images, output = await asyncio.gather(
                             SerperProvider.submodule_image_from_web(val),
-                            content_generator.generate_single_content_from_textbook_with_web(module_name, val, profile, context, web_context)
+                            content_generator.generate_single_content_from_textbook_with_web(self.course_name, module_name, val, profile, context, web_context)
                         )
                         result_handler.tell(relevant_images)
                         result_handler.tell(output)
                     finally:
                         result_handler.stop()
             else:
-                relevant_docs, web_context = await asyncio.gather(
-                    self.asearch_text(val, top_k_docs),
-                    tavily_client.asearch_context(val)
-                )
+                with ThreadPoolExecutor() as executor:
+                    future_docs = executor.submit(self.search_text, val, top_k_docs)
+                    future_web_context = executor.submit(tavily_client.search_context, tavily_query)
+                relevant_docs = future_docs.result()
+                web_context = future_web_context.result()
                 rel_docs = [doc.page_content for doc in relevant_docs]
                 context = '\n'.join(rel_docs)
                 result_handler = ResultHandler.start()
                 try:
                     relevant_images, output = await asyncio.gather(
                         SerperProvider.submodule_image_from_web(val),
-                        content_generator.generate_single_content_from_textbook_with_web(module_name, val, profile, context, web_context)
+                        content_generator.generate_single_content_from_textbook_with_web(self.course_name, module_name, val, profile, context, web_context)
                     )
                     result_handler.tell(relevant_images)
                     result_handler.tell(output)
@@ -253,33 +260,39 @@ class MultiModalRAG:
             submodule_images.append(relevant_images)
         return submodule_content, submodule_images
     
-    async def execute(self, content_generator, tavily_client, module_name, submodules:dict, profile, top_k_docs=5, search_web=False):
+    async def execute(self, content_generator, tavily_client, module_name, submodules: dict, profile, top_k_docs=5, search_web=False):
         keys_list = list(submodules.keys())
         submodules_split_one = {key: submodules[key] for key in keys_list[:2]}
         submodules_split_two = {key: submodules[key] for key in keys_list[2:4]}
         submodules_split_three = {key: submodules[key] for key in keys_list[4:]}
         result_handler = ResultHandler.start()
+
         try:
             if search_web:
-                results = await asyncio.gather(
-                    self.run_with_web(content_generator=content_generator, tavily_client=tavily_client, module_name=module_name, submodule_split=submodules_split_one, profile=profile, top_k_docs=top_k_docs),
-                    self.run_with_web(content_generator=content_generator, tavily_client=tavily_client, module_name=module_name, submodule_split=submodules_split_two, profile=profile, top_k_docs=top_k_docs),
-                    self.run_with_web(content_generator=content_generator, tavily_client=tavily_client, module_name=module_name, submodule_split=submodules_split_three, profile=profile, top_k_docs=top_k_docs),
-                )
+                with ThreadPoolExecutor() as executor:
+                    tasks = [
+                        executor.submit(asyncio.run, self.run_with_web(content_generator=content_generator, tavily_client=tavily_client, module_name=module_name, submodule_split=submodules_split_one, profile=profile, top_k_docs=top_k_docs)),
+                        executor.submit(asyncio.run, self.run_with_web(content_generator=content_generator, tavily_client=tavily_client, module_name=module_name, submodule_split=submodules_split_two, profile=profile, top_k_docs=top_k_docs)),
+                        executor.submit(asyncio.run, self.run_with_web(content_generator=content_generator, tavily_client=tavily_client, module_name=module_name, submodule_split=submodules_split_three, profile=profile, top_k_docs=top_k_docs)),
+                    ]
+                    results = [task.result() for task in tasks]
             else:
-                results = await asyncio.gather(
-                    self.run(content_generator=content_generator, module_name=module_name, submodule_split=submodules_split_one, profile=profile, top_k_docs=top_k_docs),
-                    self.run(content_generator=content_generator, module_name=module_name, submodule_split=submodules_split_two, profile=profile, top_k_docs=top_k_docs),
-                    self.run(content_generator=content_generator, module_name=module_name, submodule_split=submodules_split_three, profile=profile, top_k_docs=top_k_docs),
-                )
-            content_one, images_one = results[0]
-            content_two, images_two = results[1]
-            content_three, images_three = results[2]
-            content = content_one + content_two + content_three
-            images = images_one + images_two + images_three
+                with ThreadPoolExecutor() as executor:
+                    tasks = [
+                        executor.submit(asyncio.run, self.run(content_generator, module_name, submodules_split_one, profile, top_k_docs)),
+                        executor.submit(asyncio.run, self.run(content_generator, module_name, submodules_split_two, profile, top_k_docs)),
+                        executor.submit(asyncio.run, self.run(content_generator, module_name, submodules_split_three, profile, top_k_docs)),
+                    ]
+                    results = [task.result() for task in tasks]
 
-            for result in results:
-                result_handler.tell(result)
+            content = []
+            images = []
+            for content_part, images_part in results:
+                content.extend(content_part)
+                images.extend(images_part)
+                result_handler.tell((content_part, images_part))
+
         finally:
             result_handler.stop()
+
         return content, images

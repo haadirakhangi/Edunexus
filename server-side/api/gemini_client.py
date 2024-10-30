@@ -40,8 +40,8 @@ class GeminiProvider:
                 output = ast.literal_eval(completion.text)
                 return output
             except Exception as e:
+                print("Invalid JSON response, retrying in 10 seconds...")
                 time.sleep(10)
-                print("Invalid JSON response, retrying...")
         
     def explain_two_image(self, prompt, image1, image2):
         completion = self.gemini_client.generate_content(
