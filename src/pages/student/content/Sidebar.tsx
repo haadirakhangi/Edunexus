@@ -17,18 +17,44 @@ interface Subject {
 
 type Data = Subject[];
 
-export const Sidebar = ({ data, setSelectedSubject, isLoading, setCurrentIndex, setQuizData, setQuiz2Data, setQuiz3Data, trans }: { data: Data; setSelectedSubject: (subject: Subject) => void; isLoading: boolean; setCurrentIndex: (index: number) => void; setQuizData: any, setQuiz2Data: any, setQuiz3Data: any, trans: any }) => {
+export const Sidebar = ({
+    data,
+    setSelectedSubject,
+    isLoading,
+    setCurrentIndex,
+    setQuizData,
+    setQuiz2Data,
+    setQuiz3Data,
+    trans
+}: {
+    data: Data;
+    setSelectedSubject: (subject: Subject) => void;
+    isLoading: boolean;
+    setCurrentIndex: (index: number) => void;
+    setQuizData: any;
+    setQuiz2Data: any;
+    setQuiz3Data: any;
+    trans: any;
+}) => {
     const [activeIndex, setActiveIndex] = useState(0);
+
+    useEffect(() => {
+        localStorage.setItem('active_index', activeIndex.toString());
+        setSelectedSubject(data[activeIndex]);
+        setCurrentIndex(activeIndex);
+    }, [activeIndex, data, setSelectedSubject, setCurrentIndex]);
+
     const changeCon = (index2: number) => {
         setActiveIndex(index2);
         setQuizData(null);
         setQuiz2Data(null);
         setQuiz3Data(null);
-    }
+    };
+
     const fetchQuizData = async () => {
         setQuiz2Data(null);
         try {
-            setActiveIndex(data.length)
+            setActiveIndex(data.length);
             const moduleid = localStorage.getItem('moduleid');
             const websearch = localStorage.getItem('websearch');
             const source_lang = localStorage.getItem('source_lang');
@@ -43,7 +69,7 @@ export const Sidebar = ({ data, setSelectedSubject, isLoading, setCurrentIndex, 
     const fetchQuiz2Data = async () => {
         setQuizData(null);
         try {
-            setActiveIndex(data.length + 1)
+            setActiveIndex(data.length + 1);
             const moduleid = localStorage.getItem('moduleid');
             const websearch = localStorage.getItem('websearch');
             const source_lang = localStorage.getItem('source_lang');
@@ -51,44 +77,36 @@ export const Sidebar = ({ data, setSelectedSubject, isLoading, setCurrentIndex, 
             const response = await axios.get(`/api/student/quiz2/${moduleid}/${source_lang}/${websearch}`);
             setQuiz2Data(response.data.quiz);
         } catch (error) {
-            console.error('Error fetching quiz data:', error);
+            console.error('Error fetching quiz2 data:', error);
         }
     };
 
     const fetchQuiz3Data = async () => {
         setQuizData(null);
         try {
-            setActiveIndex(data.length + 2)
+            setActiveIndex(data.length + 2);
             const moduleid = localStorage.getItem('moduleid');
             const websearch = localStorage.getItem('websearch');
             const source_lang = localStorage.getItem('source_lang');
             const response = await axios.get(`/api/student/quiz3/${moduleid}/${source_lang}/${websearch}`);
             setQuiz3Data(response.data.quiz);
-            //   setQuiz3Data( [
-            //     "What is the difference between supervised and unsupervised learning?",
-            //     "Explain the bias-variance tradeoff in machine learning.",
-            // ]);
-
         } catch (error) {
-            console.error('Error fetching quiz data:', error);
+            console.error('Error fetching quiz3 data:', error);
         }
     };
 
-    useEffect(() => {
-        localStorage.setItem('active_index', activeIndex.toString());
-
-        setSelectedSubject(data[activeIndex]);
-        setCurrentIndex(activeIndex);
-    }, [activeIndex]);
     if (isLoading) {
-        return (
-            <>
-            </>
-        );
+        return <></>; // Render nothing or a loading spinner here
     }
 
     return (
-        <VStack w={"30%"} boxShadow={'10px 0 15px -5px rgba(0, 0, 0, 0.3)'} height={"90vh"} bg={useColorModeValue('white', 'white')} color={useColorModeValue('black', 'white')}>
+        <VStack
+            w={"30%"}
+            boxShadow={'10px 0 15px -5px rgba(0, 0, 0, 0.3)'}
+            height={"90vh"}
+            bg={useColorModeValue('white', 'white')}
+            color={useColorModeValue('black', 'white')}
+        >
             <Box w="full" bg={useColorModeValue('purple.500', 'white')} p={5}>
                 <Text className='main-heading' textAlign={'center'} color={useColorModeValue('white', 'white')} fontSize={30}>
                     <b>{trans('Lessons')}</b>
@@ -117,7 +135,6 @@ export const Sidebar = ({ data, setSelectedSubject, isLoading, setCurrentIndex, 
                     </Button>
                 ))}
                 <Button
-                    key={data.length}
                     onClick={fetchQuizData}
                     mb={5}
                     bg={activeIndex === data.length ? "purple.600" : ""}
@@ -136,7 +153,6 @@ export const Sidebar = ({ data, setSelectedSubject, isLoading, setCurrentIndex, 
                     </Flex>
                 </Button>
                 <Button
-                    key={data.length + 1}
                     onClick={fetchQuiz2Data}
                     mb={5}
                     bg={activeIndex === data.length + 1 ? "purple.600" : ""}
@@ -155,7 +171,6 @@ export const Sidebar = ({ data, setSelectedSubject, isLoading, setCurrentIndex, 
                     </Flex>
                 </Button>
                 <Button
-                    key={data.length + 2}
                     onClick={fetchQuiz3Data}
                     mb={5}
                     bg={activeIndex === data.length + 2 ? "purple.600" : ""}

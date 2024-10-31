@@ -23,6 +23,19 @@ interface TypingAnimationProps {
     text: string;
 }
 
+interface ContentSecProps {
+    subject?: Subject; // Optional subject
+    isLoading: boolean;
+    images: string[];
+    index: number;
+    data_len: number;
+    quiz: any;
+    quiz2: any;
+    quiz3: any;
+    trans: any;
+    videos: string[];
+}
+
 const TypingHeadingAnimation = ({ text }: TypingAnimationProps) => {
     const [typedText, setTypedText] = useState('');
 
@@ -63,7 +76,18 @@ const TypingContentAnimation = ({ text }: TypingAnimationProps) => {
     return <Text className='content' fontSize={"lg"} textAlign="justify" overflowWrap="break-word">{typedText}</Text>;
 };
 
-export const ContentSec = ({ subject, isLoading, images, index, data_len, quiz, quiz2, quiz3, trans, videos }: { subject?: Subject; isLoading: boolean; images: string[]; index: number; data_len: number, quiz: any, quiz2: any, quiz3: any, trans: any, videos: string[]; }) => {
+export const ContentSec = ({
+    subject,
+    isLoading,
+    images,
+    index,
+    data_len,
+    quiz,
+    quiz2,
+    quiz3,
+    trans,
+    videos
+}: ContentSecProps) => {
     const toast = useToast();
     const [isSpinnerLoading, setIsSpinnerLoading] = useState(false);
     const [audioSrc, setAudioSrc] = useState<string | null>(null);
@@ -76,15 +100,6 @@ export const ContentSec = ({ subject, isLoading, images, index, data_len, quiz, 
     useEffect(() => {
         setAudioSrc(null);
     }, [subject]);
-    if (isLoading) {
-        // Handle the case when subject is not defined
-        return (
-            <Box textAlign="center" w="205vh" height={"60vh"}>
-                <Spinner size="xl" mt={"140px"} color="purple.500" />
-                <Text mt={4}>Generating Content...</Text>
-            </Box>
-        );
-    }
 
     const fetchAudio = async (content: Subsection[]) => {
         if (!subject) return; // Ensure subject exists
@@ -141,9 +156,18 @@ export const ContentSec = ({ subject, isLoading, images, index, data_len, quiz, 
         }
     };
 
-    return (
-        <>
-            {index < data_len && (
+    const renderContent = () => {
+        if (isLoading) {
+            return (
+                <Box textAlign="center" w="205vh" height={"60vh"}>
+                    <Spinner size="xl" mt={"140px"} color="purple.500" />
+                    <Text mt={4}>Generating Content...</Text>
+                </Box>
+            );
+        }
+
+        if (index < data_len) {
+            return (
                 <Box px={5} mt={4} width={'full'} height={'100vh'} overflowY={"scroll"}>
                     <Text className='main-heading' mb={5} fontSize={"5xl"}><b>{subject?.title_for_the_content ?? ''}</b></Text>
                     <Text className='feature-heading' mb={5} fontSize={"3xl"}>{trans('Find it boring to read? Download and study through voice!')}</Text>
@@ -153,7 +177,8 @@ export const ContentSec = ({ subject, isLoading, images, index, data_len, quiz, 
                         colorScheme="purple" _hover={{ bg: useColorModeValue('purple.600', 'purple.800'), color: useColorModeValue('white', 'white') }}
                         onClick={() => subject?.subsections && fetchAudio(subject.subsections)}>
                         <FaFilePdf size={20} />
-                        {trans('Generate Audio')}</Button>
+                        {trans('Generate Audio')}
+                    </Button>
                     {isSpinnerLoading ? (
                         <Box textAlign="center">
                             <Spinner size="sm" color="purple.500" />
@@ -165,7 +190,6 @@ export const ContentSec = ({ subject, isLoading, images, index, data_len, quiz, 
                             Your browser does not support the audio element.
                         </audio>
                     ) : null}
-                    {/* <Text textAlign="justify" className='content' mb={10} fontSize={"xl"} overflowWrap="break-word">{subject.content}</Text> */}
                     <TypingContentAnimation text={(subject?.content ?? '').replace(/\*/g, '')} />
                     <Center>
                         <Slideshow images={firstHalf} />
@@ -174,8 +198,6 @@ export const ContentSec = ({ subject, isLoading, images, index, data_len, quiz, 
                         {subsectionfirstHalf.map((section, index) => (
                             <Box key={index} width={"100%"}>
                                 <TypingHeadingAnimation text={section.title} />
-                                {/* <Text fontSize="3xl" className='feature-heading' mb={2}><b>{section.title}</b></Text>
-                  <Text className='content' fontSize={"lg"} textAlign="justify" overflowWrap="break-word">{section.content}</Text> */}
                                 <TypingContentAnimation text={section.content.replace(/\*/g, '')} />
                             </Box>
                         ))}
@@ -185,19 +207,14 @@ export const ContentSec = ({ subject, isLoading, images, index, data_len, quiz, 
                         {subsectionsecondHalf.map((section, index) => (
                             <Box key={index} width={"100%"}>
                                 <TypingHeadingAnimation text={section.title} />
-                                {/* <Text fontSize="3xl" className='feature-heading' mb={2}><b>{section.title}</b></Text>
-                  <Text className='content' fontSize={"lg"} textAlign="justify" overflowWrap="break-word">{section.content}</Text> */}
                                 <TypingContentAnimation text={section.content.replace(/\*/g, '')} />
                             </Box>
                         ))}
                     </VStack>
-
-
-
                     <Text fontSize="3xl" className='feature-heading'><b>{trans('Links of Resources:')}</b></Text>
                     <List mb={5}>
                         {Array.isArray(subject?.urls) ? (
-                            subject?.urls.map((url, index) => (
+                            subject.urls.map((url, index) => (
                                 <ListItem key={index}>
                                     <Link fontSize={20} href={url} isExternal color={useColorModeValue('purple.600', 'gray.500')}>
                                         {url}
@@ -208,17 +225,7 @@ export const ContentSec = ({ subject, isLoading, images, index, data_len, quiz, 
                             <Text>No Links available</Text>
                         )}
                     </List>
-
                     <Text fontSize="3xl" className='feature-heading'><b>{trans('Links of Videos:')}</b></Text>
-                    {/* <iframe
-              width="560"
-              height="315"
-              src='https://www.youtube.com/watch?v=olFxW7kdtP8'
-              title="YouTube video player"
-              frameborder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowfullscreen
-            ></iframe> */}
                     <List mb={5}>
                         {Array.isArray(videos[index]) ? (
                             videos[index].map((url, index) => (
@@ -232,7 +239,6 @@ export const ContentSec = ({ subject, isLoading, images, index, data_len, quiz, 
                             <Text>No Links available</Text>
                         )}
                     </List>
-
                     <Text fontSize="3xl" className='feature-heading'>{trans('Want to Learn Offline? Download the whole Course here:')}</Text>
                     <Button
                         variant="outline"
@@ -241,45 +247,25 @@ export const ContentSec = ({ subject, isLoading, images, index, data_len, quiz, 
                         colorScheme="purple" _hover={{ bg: useColorModeValue('purple.600', 'purple.800'), color: useColorModeValue('white', 'white') }}
                     >
                         <FaDownload size={20} />
-
-                        {trans('Download Course')}</Button>
+                        {trans('Download Course')}
+                    </Button>
                 </Box>
-            )}
-            {index === data_len && (
-                quiz ? (
-                    <Quiz data={quiz} trans={trans}></Quiz>
-                ) : (
-                    <Box textAlign="center" w="100%" mt={40}>
-                        <Spinner size="xl" color="purple.500" />
-                        <Text mt={4}>Generating Quiz...</Text>
-                    </Box>
+            );
+        } else if (index === data_len) {
+            return quiz ? <Quiz data={quiz} trans={trans} /> : <LoadingQuiz />;
+        } else if (index === data_len + 1) {
+            return quiz2 ? <Quiz data={quiz2} trans={trans} /> : <LoadingQuiz />;
+        } else if (index === data_len + 2) {
+            return quiz3 ? <VoiceQuiz data={quiz3} trans={trans} /> : <LoadingQuiz />;
+        }
+    };
 
-                )
-            )}
-            {index === data_len + 1 && (
-                quiz2 ? (
-                    <Quiz data={quiz2} trans={trans}></Quiz>
-                ) : (
-                    <Box textAlign="center" w="100%" mt={40}>
-                        <Spinner size="xl" color="purple.500" />
-                        <Text mt={4}>Generating Quiz...</Text>
-                    </Box>
-
-                )
-            )}
-
-            {index === data_len + 2 && (
-                quiz3 ? (
-                    <VoiceQuiz data={quiz3} trans={trans}></VoiceQuiz>
-                ) : (
-                    <Box textAlign="center" w="100%" mt={40}>
-                        <Spinner size="xl" color="purple.500" />
-                        <Text mt={4}>Generating Quiz...</Text>
-                    </Box>
-
-                )
-            )}
-
-        </>
+    const LoadingQuiz = () => (
+        <Box textAlign="center" w="100%" mt={40}>
+            <Spinner size="xl" color="purple.500" />
+            <Text mt={4}>Generating Quiz...</Text>
+        </Box>
     );
+
+    return <>{renderContent()}</>;
 };

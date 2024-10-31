@@ -17,22 +17,23 @@ import {
   Checkbox,
   useToast,
   useColorModeValue,
-  FormErrorMessage
+  FormErrorMessage,
+  Switch
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Navbar } from '../../components/navbar';
 import { SubmoduleModal } from './submoduleModal';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 
 // Validation schema using Yup
 const schema = yup.object().shape({
-  courseName: yup.string().required('Course name is required'),
-  courseStyle: yup.string().required('Course style is required'),
-  courseType: yup.string().required('Course type is required'),
+  lessonName: yup.string().required('lesson name is required'),
+  lessonStyle: yup.string().required('lesson style is required'),
+  lessonType: yup.string().required('lesson type is required'),
   links: yup.array().of(yup.string().url('Invalid URL')),
   websitesReference: yup.string().required('Website references are required'),
 });
@@ -45,22 +46,33 @@ const Create = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [submodules, setSubmodules] = useState<Record<string, string>>({});
+  const [links, setLinks] = useState(['']);
+  const [webSearch, setWebSearch] = useState<boolean>(false);
 
-  const { register, handleSubmit, control, formState: { errors } } = useForm({
+  const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
-      courseName: '',
-      courseStyle: '',
-      courseType: '',
+      lessonName: '',
+      lessonStyle: '',
+      lessonType: '',
       links: [''],
       websitesReference: '',
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'links',
-  });
+  const handleAddLink = () => {
+    setLinks([...links, '']); // Add a new link input
+  };
+
+  const handleRemoveLink = (index: number) => {
+    setLinks(links.filter((_, i) => i !== index)); // Remove link input by index
+  };
+
+  const handleLinkChange = (index: number, value: string) => {
+    const newLinks = [...links];
+    newLinks[index] = value; // Update link value
+    setLinks(newLinks);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -70,12 +82,13 @@ const Create = () => {
 
   const onSubmit = async (data: { [key: string]: any }) => {
     const formData = new FormData();
-    formData.append('title', data.courseName);
-    formData.append('description', data.courseStyle);
-    formData.append('courseType', data.courseType);
-    formData.append('links', JSON.stringify(data.links));
+    formData.append('title', data.lessonName);
+    formData.append('description', data.lessonStyle);
+    formData.append('lessonType', data.lessonType);
+    formData.append('links', JSON.stringify(links));
     formData.append('websitesReference', data.websitesReference);
     formData.append('includeImages', includeImages.toString());
+    formData.append('search_web', webSearch.toString());
 
     if (pdfFile) {
       formData.append('files[]', pdfFile);
@@ -95,7 +108,7 @@ const Create = () => {
         setIsModalOpen(true);
       } else {
         toast({
-          title: 'Failed to create course',
+          title: 'Failed to create lesson',
           status: 'error',
           duration: 3000,
           isClosable: true,
@@ -124,7 +137,7 @@ const Create = () => {
           duration: 3000,
           isClosable: true,
         });
-        navigate('/teacher/course');
+        navigate('/teacher/lesson');
       } else {
         throw new Error('Failed to update submodules.');
       }
@@ -157,41 +170,46 @@ const Create = () => {
           <Box width={'full'} display="flex" alignItems="center" justifyContent="center" p={10}>
             <Box maxWidth="5xl" bg="white" width="100%" p={10} borderWidth={1} borderRadius="xl" boxShadow="lg">
               <Center>
-                <Text className='main-heading' fontSize={"5xl"} mb={6} color={"purple.600"}>
-                  <b>Generate Course</b>
+                <Text className='main-heading' fontSize={"5xl"} color={"purple.600"}>
+                  <b>Generate Lesson</b>
+                </Text>
+              </Center>
+              <Center>
+                <Text className='feature-heading' fontSize={"4xl"} mb={4}>
+                  <b>Course name:</b> Large Language Models
                 </Text>
               </Center>
               <form onSubmit={handleSubmit(onSubmit)}>
                 <Flex direction={['column', 'row']} justify="space-between" gap={6}>
                   {/* Left Section */}
                   <VStack width={['full', '45%']} spacing={6} align="stretch">
-                    <FormControl isInvalid={!!errors.courseName} isRequired>
-                      <FormLabel className='feature-heading' letterSpacing={2}><b>Course Name</b></FormLabel>
+                    <FormControl isInvalid={!!errors.lessonName} isRequired>
+                      <FormLabel className='feature-heading' letterSpacing={2}><b>Lesson Name</b></FormLabel>
                       <Input
-                        placeholder="Enter the course name"
-                        {...register('courseName')}
+                        placeholder="Enter the lesson name"
+                        {...register('lessonName')}
                         borderColor={'purple.600'}
                         _hover={{ borderColor: "purple.600" }}
                       />
-                      <FormErrorMessage>{errors.courseName?.message}</FormErrorMessage>
+                      <FormErrorMessage>{errors.lessonName?.message}</FormErrorMessage>
                     </FormControl>
 
-                    <FormControl isInvalid={!!errors.courseStyle} isRequired>
-                      <FormLabel className='feature-heading' letterSpacing={2}><b>Course Description</b></FormLabel>
+                    <FormControl isInvalid={!!errors.lessonStyle} isRequired>
+                      <FormLabel className='feature-heading' letterSpacing={2}><b>Lesson Description</b></FormLabel>
                       <Input
-                        placeholder="Describe the course"
-                        {...register('courseStyle')}
+                        placeholder="Describe the lesson"
+                        {...register('lessonStyle')}
                         borderColor={'purple.600'}
                         _hover={{ borderColor: "purple.600" }}
                       />
-                      <FormErrorMessage>{errors.courseStyle?.message}</FormErrorMessage>
+                      <FormErrorMessage>{errors.lessonStyle?.message}</FormErrorMessage>
                     </FormControl>
 
-                    <FormControl isInvalid={!!errors.courseType} isRequired>
-                      <FormLabel className='feature-heading' letterSpacing={2}><b>Course Type</b></FormLabel>
+                    <FormControl isInvalid={!!errors.lessonType} isRequired>
+                      <FormLabel className='feature-heading' letterSpacing={2}><b>Lesson Type</b></FormLabel>
                       <Select
-                        placeholder="Select course type"
-                        {...register('courseType')}
+                        placeholder="Select lesson type"
+                        {...register('lessonType')}
                         borderColor={'purple.600'}
                         _hover={{ borderColor: "purple.600" }}
                       >
@@ -199,14 +217,24 @@ const Create = () => {
                         <option value="mathematical">Mathematical</option>
                         <option value="practical">Practical</option>
                       </Select>
-                      <FormErrorMessage>{errors.courseType?.message}</FormErrorMessage>
+                      <FormErrorMessage>{errors.lessonType?.message}</FormErrorMessage>
+                    </FormControl>
+
+                    <FormControl>
+                      <FormLabel className='feature-heading' letterSpacing={2}><b>Web Search</b></FormLabel>
+                      <Switch
+                        isChecked={webSearch}
+                        onChange={(e) => setWebSearch(e.target.checked)} // Manage Web Search switch state
+                        colorScheme='purple'
+                        size={"lg"}
+                      />
                     </FormControl>
                   </VStack>
 
                   {/* Right Section */}
                   <VStack width={['full', '45%']} spacing={6} align="stretch">
                     <FormControl>
-                      <FormLabel className='feature-heading' letterSpacing={2}><b>Upload Course Related PDFs</b></FormLabel>
+                      <FormLabel className='feature-heading' letterSpacing={2}><b>Upload Lesson Related PDFs</b></FormLabel>
                       <Input
                         type="file"
                         borderColor={'purple.600'}
@@ -220,11 +248,12 @@ const Create = () => {
 
                     <FormControl>
                       <FormLabel className='feature-heading' letterSpacing={2}><b>Links</b></FormLabel>
-                      {fields.map((field, index) => (
-                        <Box key={field.id} display="flex" alignItems="center" mb={2}>
+                      {links.map((link, index) => (
+                        <Box key={index} display="flex" alignItems="center" mb={2}>
                           <Input
                             placeholder={`Enter link ${index + 1}`}
-                            {...register(`links.${index}` as const)}
+                            value={link}
+                            onChange={(e) => handleLinkChange(index, e.target.value)} // Handle link change
                             borderColor={'purple.600'}
                             _hover={{ borderColor: "purple.600" }}
                           />
@@ -235,46 +264,41 @@ const Create = () => {
                               size="sm"
                               ml={2}
                               aria-label="Delete Link"
-                              onClick={() => remove(index)}
+                              onClick={() => handleRemoveLink(index)} // Remove link
                             />
                           </Tooltip>
                         </Box>
                       ))}
                       <Tooltip label="Add new Link">
-                        <IconButton icon={<AddIcon />} onClick={() => append('')} aria-label="Add Link" />
+                        <IconButton
+                          icon={<AddIcon />}
+                          onClick={handleAddLink} // Add new link
+                          aria-label="Add Link"
+                        />
                       </Tooltip>
                     </FormControl>
-                    <FormControl isInvalid={!!errors.websitesReference} isRequired>
-                      <FormLabel className='feature-heading' letterSpacing={2}><b>Website References</b></FormLabel>
-                      <Input
-                        placeholder="Add website references (e.g., research papers, articles)"
-                        {...register('websitesReference')}
-                        borderColor={'purple.600'}
-                        _hover={{ borderColor: "purple.600" }}
-                      />
-                      <FormErrorMessage>{errors.websitesReference?.message}</FormErrorMessage>
-                    </FormControl>
 
-                    
-                    <FormControl display="flex" alignItems="center" mt={4}>
-                      <Checkbox
-                        isChecked={includeImages}
-                        size={'lg'}
-                        borderColor={"purple.700"}
-                        _focus={{ outline: 'none', boxShadow: 'none' }}
-                        variant={"solid"}
-                        onChange={(e) => setIncludeImages(e.target.checked)}
-                        colorScheme="purple"
-                        className='feature-heading' 
-                        letterSpacing={2}
-                      >
-                        <b>Include Images</b>
-                      </Checkbox>
-                    </FormControl>
+                    {(pdfFile || links.some(link => link.trim() !== '')) && (
+                      <FormControl display="flex" alignItems="center" mt={4}>
+                        <Checkbox
+                          isChecked={includeImages}
+                          size={'lg'}
+                          borderColor={"purple.700"}
+                          _focus={{ outline: 'none', boxShadow: 'none' }}
+                          variant={"solid"}
+                          onChange={(e) => setIncludeImages(e.target.checked)}
+                          colorScheme="purple"
+                          className='feature-heading'
+                          letterSpacing={2}
+                        >
+                          <b>Include Images</b>
+                        </Checkbox>
+                      </FormControl>
+                    )}
                   </VStack>
                 </Flex>
-                <Button colorScheme="purple" _hover={{bg:useColorModeValue('purple.600', 'purple.800'), color: useColorModeValue('white', 'white') }} variant="outline" type="submit" width="full" mt={4}>
-                  Generate Base Course
+                <Button colorScheme="purple" _hover={{ bg: useColorModeValue('purple.600', 'purple.800'), color: useColorModeValue('white', 'white') }} variant="outline" type="submit" width="full" mt={4}>
+                  Generate Base lesson
                 </Button>
               </form>
             </Box>
