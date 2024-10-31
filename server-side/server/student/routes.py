@@ -359,6 +359,7 @@ def personalized_module_content():
     characters = string.ascii_letters + string.digits  # Alphanumeric characters
     key = ''.join(secrets.choice(characters) for _ in range(7))
     title=session['title']
+    topic=session['topic']
     description=session['user_profile']
     VECTORDB_TEXTBOOK = FAISS.load_local(USER_DOCS_PATH, EMBEDDINGS, allow_dangerous_deserialization=True)
     # new_module = PersonalizedModule(
@@ -378,9 +379,9 @@ def personalized_module_content():
         submodules_split_one = {key: submodules[key] for key in keys_list[:2]}
         submodules_split_two = {key: submodules[key] for key in keys_list[2:4]}
         submodules_split_three = {key: submodules[key] for key in keys_list[4:]}
-        future_content_one = executor.submit(CONTENT_GENERATOR.generate_content_from_textbook,title ,submodules_split_one,description,VECTORDB_TEXTBOOK,'first')
-        future_content_two = executor.submit(CONTENT_GENERATOR.generate_content_from_textbook,title ,submodules_split_two,description,VECTORDB_TEXTBOOK,'second')
-        future_content_three = executor.submit(CONTENT_GENERATOR.generate_content_from_textbook,title ,submodules_split_three,description,VECTORDB_TEXTBOOK,'third')
+        future_content_one = executor.submit(CONTENT_GENERATOR.generate_content_from_textbook,topic,title ,submodules_split_one,description,VECTORDB_TEXTBOOK,'first')
+        future_content_two = executor.submit(CONTENT_GENERATOR.generate_content_from_textbook,topic,title ,submodules_split_two,description,VECTORDB_TEXTBOOK,'second')
+        future_content_three = executor.submit(CONTENT_GENERATOR.generate_content_from_textbook,topic,title ,submodules_split_three,description,VECTORDB_TEXTBOOK,'third')
 
     # Retrieve the results when both functions are done
     content_one = future_content_one.result()
@@ -433,6 +434,7 @@ def query_topic(topicname,level,websearch,source_lang):
     else:
         trans_topic_name = topicname
     topic = Topic.query.filter_by(topic_name=trans_topic_name.lower()).first()
+    session['topic']=trans_topic_name
     if topic is None:
             topic = Topic(topic_name=trans_topic_name.lower())
             db.session.add(topic)
@@ -501,7 +503,7 @@ def course_overview(module_id, source_language, websearch):
     if user is None:
         return jsonify({"message": "User not found", "response": False}), 404
     session["module_id"] = module_id
-    
+    topic = session.get("topic")
     module = Module.query.get(module_id)
     other_modules = Module.query.filter(Module.topic_id == module.topic_id,Module.level==module.level,Module.websearch==module.websearch, Module.module_id != module_id).all()
     modules_dict_list = [module.to_dict() for module in other_modules]
@@ -525,9 +527,9 @@ def course_overview(module_id, source_language, websearch):
             submodules_split_one = {key: submodules[key] for key in keys_list[:2]}
             submodules_split_two = {key: submodules[key] for key in keys_list[2:4]}
             submodules_split_three = {key: submodules[key] for key in keys_list[4:]}
-            future_content_one = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_one, module.module_name, 'first')
-            future_content_two = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_two, module.module_name, 'second')
-            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_three, module.module_name, 'third')
+            future_content_one = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_one, module.module_name,topic, 'first')
+            future_content_two = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_two, module.module_name,topic, 'second')
+            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_three, module.module_name,topic, 'third')
 
         else:
             submodules = SUB_MODULE_GENERATOR.generate_submodules(module.module_name)
@@ -538,9 +540,9 @@ def course_overview(module_id, source_language, websearch):
             submodules_split_one = {key: submodules[key] for key in keys_list[:2]}
             submodules_split_two = {key: submodules[key] for key in keys_list[2:4]}
             submodules_split_three = {key: submodules[key] for key in keys_list[4:]}
-            future_content_one = executor.submit(CONTENT_GENERATOR.generate_content, submodules_split_one, module.module_name,'first')
-            future_content_two = executor.submit(CONTENT_GENERATOR.generate_content, submodules_split_two, module.module_name,'second')
-            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content, submodules_split_three, module.module_name,'third')
+            future_content_one = executor.submit(CONTENT_GENERATOR.generate_content, submodules_split_one, module.module_name,topic,'first')
+            future_content_two = executor.submit(CONTENT_GENERATOR.generate_content, submodules_split_two, module.module_name,topic,'second')
+            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content, submodules_split_three, module.module_name,topic,'third')
 
     content_one = future_content_one.result()
     content_two = future_content_two.result()
