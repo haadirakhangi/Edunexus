@@ -3,6 +3,7 @@ import torch
 from transformers import AutoImageProcessor, AutoModel, AutoTokenizer
 from api.gemini_client import GeminiProvider
 from api.serper_client import SerperProvider
+from api.tavily_client import TavilyProvider
 from core.submodule_generator import SubModuleGenerator
 from core.content_generator import ContentGenerator
 from core.module_generator import ModuleGenerator
@@ -21,6 +22,7 @@ CLIP_PROCESSOR = AutoImageProcessor.from_pretrained(IMAGE_EMBEDDING_MODEL_NAME)
 CLIP_TOKENIZER = AutoTokenizer.from_pretrained(IMAGE_EMBEDDING_MODEL_NAME)
 EMBEDDINGS = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
 GEMINI_CLIENT = GeminiProvider()
+TAVILY_CLIENT = TavilyProvider()
 TOOLS = [AssistantUtils.get_page_context]
 MODULE_GENERATOR = ModuleGenerator()
 SUB_MODULE_GENERATOR = SubModuleGenerator()

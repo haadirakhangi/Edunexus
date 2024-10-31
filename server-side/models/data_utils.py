@@ -10,7 +10,6 @@ from bs4 import BeautifulSoup
 from pathlib import Path
 from urllib.parse import urlparse
 import re
-import time
 
 class DocumentUtils:
 
@@ -34,7 +33,7 @@ class DocumentUtils:
 
     @staticmethod
     async def extract_images_from_directory(documents_directory, output_directory_path):
-        start = time.time()
+        print("\nExtracting images from documents...\n")
         if not os.path.exists(output_directory_path):
             os.makedirs(output_directory_path)
 
@@ -53,8 +52,6 @@ class DocumentUtils:
                 raise Exception("Only PDF format is supported.")
         await asyncio.gather(*extract_task)
         print(f"Images extracted from all documents in {documents_directory} and saved to {output_directory_path}")
-        end = time.time()
-        print("\n\nTIME TAKEN TO EXTRACT IMAGES ASYNC:", end-start)
 
     @staticmethod
     def embed_image_with_clip(image_path, clip_model, clip_processor, device_type="cpu"):
@@ -83,11 +80,9 @@ class DocumentUtils:
 class WebUtils:
     @staticmethod
     def sanitize_filename(url):
-        # Extract the path from the URL
         parsed_url = urlparse(url)
         path = parsed_url.path
         
-        # Remove query parameters and replace invalid characters with underscores
         sanitized_filename = re.sub(r'[<>:"/\\|?*]', '_', Path(path).name)
         return sanitized_filename
 
@@ -132,7 +127,7 @@ class WebUtils:
     async def extract_images_from_webpages(urls, output_directory_path):
         download_dir = Path(output_directory_path)
         download_dir.mkdir(parents=True, exist_ok=True)
-
+        print("\nExtracting images from Webpages...\n")
         async with httpx.AsyncClient() as client:
             scrape_tasks = []
             for url in urls:
@@ -146,3 +141,4 @@ class WebUtils:
                 url_download_dir.mkdir(parents=True, exist_ok=True)
                 scrape_tasks.append(WebUtils.scrape_images(valid_url, client, url_download_dir))
             await asyncio.gather(*scrape_tasks)
+        print("\nExtracted images from web pages successfully!\n")

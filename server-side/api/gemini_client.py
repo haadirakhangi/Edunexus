@@ -16,10 +16,12 @@ class GeminiProvider:
         else:
             self.chat = None
 
-    def generate_json_response(self, prompt, response_schema=None):
+    def generate_json_response(self, prompt, response_schema=None, markdown=False):
         while True:
             try:
-                if response_schema is None:
+                if markdown:
+                    generation_config=genai.GenerationConfig()
+                elif response_schema is None:
                     generation_config = genai.GenerationConfig(
                         response_mime_type="application/json"
                     )
@@ -28,15 +30,18 @@ class GeminiProvider:
                         response_mime_type="application/json",
                         response_schema = response_schema
                     )
+
                 completion = self.gemini_client.generate_content(
-                        prompt,
-                        generation_config=generation_config,
+                    prompt,
+                    generation_config=generation_config,
                 )
+                if markdown:
+                    return completion.text
                 output = ast.literal_eval(completion.text)
                 return output
             except Exception as e:
+                print("Invalid JSON response, retrying in 10 seconds...")
                 time.sleep(10)
-                print("Invalid JSON response, retrying...")
         
     def explain_two_image(self, prompt, image1, image2):
         completion = self.gemini_client.generate_content(
