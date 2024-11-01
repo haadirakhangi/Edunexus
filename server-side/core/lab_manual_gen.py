@@ -28,8 +28,6 @@ class LabManualGenerator:
             }
 
         result = {component: lab_manual_components.get(component, "DESCRIPTION NOT AVAILABLE") for component in components}
-
-        # result_string = str(result)
         return result
 
 

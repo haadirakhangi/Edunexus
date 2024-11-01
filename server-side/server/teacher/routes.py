@@ -57,7 +57,7 @@ def register():
     new_teacher.set_password(password)
     db.session.add(new_teacher)
     db.session.commit()
-    return jsonify({"message": "Registration successful!"}), 201
+    return jsonify({"message": "Registration successful!","response":True}), 200
 
 
 @teachers.route('/login', methods=['POST'])
@@ -74,7 +74,7 @@ def login():
         return jsonify({"message": "Invalid email or password."}), 401
 
     session['teacher_id'] = teacher.id
-    return jsonify({"message": "Login successful!", "teacher_id": teacher.id}), 200
+    return jsonify({"message": "Login successful!", "teacher_id": teacher.id,"response":True}), 200
 
 
 @teachers.route('/add-course', methods=['POST'])
@@ -444,23 +444,38 @@ async def generate_lesson():
 
 @teachers.route('/generate-lab-manual', methods=['POST'])
 def generate_lab_manual():
-    data = request.json 
-
-    experiment_num = data.get('experiment_num')
+    # teacher_id = session.get('teacher_id')
+    # if teacher_id is None:
+    #     return jsonify({"message": "Teacher not logged in", "response": False}), 401
+    # teacher = Teacher.query.get(teacher_id)
+    # if not teacher:
+    #     return jsonify({"message": "Teacher not found", "response": False}), 404
+    # teacher_name = f"{teacher.first_name} {teacher.last_name}"
+    teacher_name = "Aruna Gawade"
+    data = request.json
+    print(data) 
+    experiment_num = data.get('exp_num')
     exp_aim = data.get('exp_aim')
-    teacher_name = data.get('teacher_name')
     course_name = data.get('course_name')
-    include_videos = data.get('include_videos', False)  
+    include_videos = data.get('include_videos')
+    if include_videos == "false":
+        print("i was here!!")
+        include_videos = False
+    else:
+        include_videos = True  
     
-    components = data.get('components_of_lab_manual', [])
+    components = data.get('lab_components', [])
     generator = LabManualGenerator()
     result = generator.generate_lab_manual(exp_aim,teacher_name, course_name, components, include_videos)
 
-    return jsonify(result)
+    return jsonify({"message": "Query successful","MarkdownContent": result, "response": True}), 200
 
 
 @teachers.route('/convert-docx', methods=['POST'])
 def convert_docx():
+    # teacher_id = session.get('teacher_id')
+    # if teacher_id is None:
+    #     return jsonify({"message": "Teacher not logged in", "response": False}), 401
     try:
         data = request.json
         markdown = data.get('markdown')
