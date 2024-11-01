@@ -28,36 +28,36 @@ export const renderMarkdown = (content: string): JSX.Element[] => {
             );
         } else if (line.startsWith('## ')) {
             renderedContent.push(
-                <Heading size={'md'} key={idx} fontWeight="bold">
+                <Heading size={'md'} style={{"fontFamily":"Rajdhani"}} key={idx} fontWeight="bold">
                     {line.slice(3)}
                 </Heading>
             );
         } else if (line.startsWith('# ')) {
             renderedContent.push(
-                <Heading size={'lg'} key={idx}>
+                <Heading size={'lg'} style={{"fontFamily":"Rajdhani"}} key={idx}>
                     {line.slice(2)}
                 </Heading>
             );
         } else if (line.startsWith('### ')) {
             renderedContent.push(
-                <Heading size={"sm"} key={idx} fontWeight="bold">
+                <Heading size={"sm"} style={{"fontFamily":"Rajdhani"}} key={idx} fontWeight="bold">
                     {line.slice(4)}
                 </Heading>
             );
         } else if (line.startsWith('* ') || line.startsWith('- ')) {
             const boldPattern = /\*\*(.*?)\*\*/g;
-            const formattedLine = line.slice(2).replace(boldPattern, (match, p1) => `<strong>${p1}</strong>`);
+            const formattedLine = line.slice(2).replace(boldPattern, (_, p1) => `<strong>${p1}</strong>`);
             renderedContent.push(
-                <li key={idx} style={{ marginLeft: '20px', listStyleType: 'disc' }} dangerouslySetInnerHTML={{ __html: formattedLine }} />
+                <li key={idx} className='content' style={{ marginLeft: '20px', listStyleType: 'disc' }} dangerouslySetInnerHTML={{ __html: formattedLine }} />
             );
         } else {
             const boldPattern = /\*\*(.*?)\*\*/g;
-            const formattedLine = line.replace(boldPattern, (match, p1) => `<strong>${p1}</strong>`);
+            const formattedLine = line.replace(boldPattern, (_, p1) => `<strong>${p1}</strong>`);
             if (line.trim() === '') {
                 renderedContent.push(<br key={idx} />);
             } else {
                 renderedContent.push(
-                    <p key={idx} dangerouslySetInnerHTML={{ __html: formattedLine.replace(/\n/g, '<br />') }} />
+                    <p key={idx} className='content' dangerouslySetInnerHTML={{ __html: formattedLine.replace(/\n/g, '<br />') }} />
                 );
             }
         }

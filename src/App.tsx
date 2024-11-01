@@ -10,6 +10,8 @@ import Home from "./pages/student/Home";
 import Explore from "./pages/student/Explore"
 import CourseOverview from "./pages/student/CourseOverview"
 import Content from "./pages/student/content/Content";
+import LabManual from "./pages/teacher/course/Lab Manual/LabManual";
+import LabManualCreate from "./pages/teacher/course/Lab Manual/LabManualCreate";
 import "./pages/student/content/i18n"
 function App() {
   return (
@@ -18,6 +20,9 @@ function App() {
       <Route element={<HomePage />} path="/" />
       <Route element={<CreatePage />} path="/teacher/create" />
       <Route element={<CoursePage />} path="/teacher/course" />
+      <Route element={<LabManual />} path="/teacher/lab-manual" />
+      <Route element={<LabManualCreate />} path="/teacher/lab-manual-create" />
+
       <Route element={<Testing />} path="/testing" />
       <Route element={<Login />} path="/login" />
       <Route element={<Register />} path="/register" />
