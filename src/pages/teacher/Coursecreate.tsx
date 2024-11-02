@@ -29,7 +29,7 @@ const schema = yup.object().shape({
     
 });
 
-const Create = () => {
+const CourseCreate = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -111,7 +111,7 @@ const Create = () => {
         <Box bg="purple.200" minHeight={'100vh'} minWidth={'100vw'}>
           <Navbar />
           <Box display="flex" alignItems="center" justifyContent="center" p={10}>
-            <Box maxWidth="5xl" bg="white" width="50%" p={10} borderWidth={1} borderRadius="xl" boxShadow="lg">
+            <Box maxWidth="5xl" bg="white" width="40%" p={10} borderWidth={1} borderRadius="xl" boxShadow="lg">
               <Center>
                 <Text className='main-heading' fontSize={"5xl"} color={"purple.600"}>
                   <b>Generate Course</b>
@@ -119,8 +119,8 @@ const Create = () => {
               </Center>
               <form onSubmit={handleSubmit(onSubmit)}>
                   {/* Left Section */}
-                    <FormControl mb={"5"} isInvalid={!!errors.CourseName} isRequired>
-                      <FormLabel className='feature-heading' letterSpacing={2}><b>Course Name</b></FormLabel>
+                    <FormControl mb={"5"} mt={5} isInvalid={!!errors.CourseName} isRequired>
+                      <FormLabel className='feature-heading' letterSpacing={2}><b>Course Name:</b></FormLabel>
                       <Input
                         placeholder="Enter the course name"
                         {...register('CourseName')}
@@ -131,7 +131,7 @@ const Create = () => {
                     </FormControl>
 
                     <FormControl mb={"5"} isInvalid={!!errors.NumLects} isRequired>
-                      <FormLabel className='feature-heading' letterSpacing={2}><b>Lesson Description</b></FormLabel>
+                      <FormLabel className='feature-heading' letterSpacing={2}><b>Minimum Number of Lectures:</b></FormLabel>
                       <Input
                         placeholder="Describe the lesson"
                         {...register('NumLects')}
@@ -140,7 +140,7 @@ const Create = () => {
                       />
                       <FormErrorMessage>{errors.NumLects?.message}</FormErrorMessage>
                     </FormControl>
-                    <FormControl mb={"5"} >
+                    <FormControl mb={"5"} isRequired>
                       <FormLabel className='feature-heading' letterSpacing={2}><b>Upload Lesson Related PDFs</b></FormLabel>
                       <Input
                         type="file"
@@ -164,4 +164,4 @@ const Create = () => {
   );
 }
 
-export default Create;
+export default CourseCreate;

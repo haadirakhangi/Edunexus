@@ -1,7 +1,8 @@
 import { Route, Routes, Navigate } from "react-router-dom";
 import HomePage from "./pages/Landing";
 import CoursePage from "./pages/teacher/course/course";
-import CreatePage from "./pages/teacher/Coursecreate";
+import CourseCreate from "./pages/teacher/Coursecreate";
+import LessonCreate from "./pages/teacher/Lessoncreate"
 import Testing from "./pages/testing";
 import Login from "./pages/Login"
 import Register from "./pages/register/Register"
@@ -17,15 +18,17 @@ function App() {
   return (
     <Routes>
       <Route path="*" element={<Navigate to="/" />} />
+      <Route element={<Login />} path="/login" />
+      <Route element={<Register />} path="/register" />
+
       <Route element={<HomePage />} path="/" />
-      <Route element={<CreatePage />} path="/teacher/create" />
+      <Route element={<CourseCreate />} path="/teacher/create-course" />
+      <Route element={<LessonCreate />} path="/teacher/create-lesson" />
       <Route element={<CoursePage />} path="/teacher/course" />
       <Route element={<LabManual />} path="/teacher/lab-manual" />
       <Route element={<LabManualCreate />} path="/teacher/lab-manual-create" />
 
       <Route element={<Testing />} path="/testing" />
-      <Route element={<Login />} path="/login" />
-      <Route element={<Register />} path="/register" />
       <Route element={<Pico />} path="/pico" />
       <Route element={<Home />} path="/student/home" />
       <Route element={<Explore />} path="/student/explore" />

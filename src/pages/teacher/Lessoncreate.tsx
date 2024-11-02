@@ -29,7 +29,6 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 
-// Validation schema using Yup
 const schema = yup.object().shape({
   lessonName: yup.string().required('lesson name is required'),
   lessonStyle: yup.string().required('lesson style is required'),
@@ -38,7 +37,7 @@ const schema = yup.object().shape({
   websitesReference: yup.string().required('Website references are required'),
 });
 
-const Create = () => {
+const LessonCreate = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -61,16 +60,16 @@ const Create = () => {
   });
 
   const handleAddLink = () => {
-    setLinks([...links, '']); // Add a new link input
+    setLinks([...links, '']);
   };
 
   const handleRemoveLink = (index: number) => {
-    setLinks(links.filter((_, i) => i !== index)); // Remove link input by index
+    setLinks(links.filter((_, i) => i !== index));
   };
 
   const handleLinkChange = (index: number, value: string) => {
     const newLinks = [...links];
-    newLinks[index] = value; // Update link value
+    newLinks[index] = value;
     setLinks(newLinks);
   };
 
@@ -253,7 +252,7 @@ const Create = () => {
                           <Input
                             placeholder={`Enter link ${index + 1}`}
                             value={link}
-                            onChange={(e) => handleLinkChange(index, e.target.value)} // Handle link change
+                            onChange={(e) => handleLinkChange(index, e.target.value)}
                             borderColor={'purple.600'}
                             _hover={{ borderColor: "purple.600" }}
                           />
@@ -264,7 +263,7 @@ const Create = () => {
                               size="sm"
                               ml={2}
                               aria-label="Delete Link"
-                              onClick={() => handleRemoveLink(index)} // Remove link
+                              onClick={() => handleRemoveLink(index)}
                             />
                           </Tooltip>
                         </Box>
@@ -272,7 +271,7 @@ const Create = () => {
                       <Tooltip label="Add new Link">
                         <IconButton
                           icon={<AddIcon />}
-                          onClick={handleAddLink} // Add new link
+                          onClick={handleAddLink}
                           aria-label="Add Link"
                         />
                       </Tooltip>
@@ -315,4 +314,4 @@ const Create = () => {
   );
 }
 
-export default Create;
+export default LessonCreate;

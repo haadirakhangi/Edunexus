@@ -20,10 +20,8 @@ import {
   useToast,
   Text,
   InputLeftElement,
-  Tabs, TabList, TabPanel, Tab, TabPanels
 } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
-import { Navbar } from '../../components/navbar';
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useNavigate } from 'react-router-dom';
 import * as yup from "yup";
@@ -63,7 +61,7 @@ const Form1 = ({ register, errors }: { register: any; errors: any }) => {
       </Text>
       <Flex>
         <FormControl isInvalid={!!errors.firstName} mr="5%">
-          <FormLabel htmlFor="first-name" fontWeight={"normal"}>
+          <FormLabel htmlFor="first-name" >
             First name
           </FormLabel>
           <Input id="first-name" name="first-name" placeholder="First name" {...register("firstName")} />
@@ -73,7 +71,7 @@ const Form1 = ({ register, errors }: { register: any; errors: any }) => {
         </FormControl>
 
         <FormControl isInvalid={!!errors.lastName}>
-          <FormLabel htmlFor="last-name" fontWeight={"normal"}>
+          <FormLabel htmlFor="last-name" >
             Last name
           </FormLabel>
           <Input id="last-name" name="last-name" placeholder="Last name" {...register("lastName")} />
@@ -83,7 +81,7 @@ const Form1 = ({ register, errors }: { register: any; errors: any }) => {
         </FormControl>
       </Flex>
       <FormControl isInvalid={!!errors.email} mt="2%">
-        <FormLabel htmlFor="email" fontWeight={"normal"}>
+        <FormLabel htmlFor="email" >
           Email address
         </FormLabel>
         <Input id="email" name="email" placeholder="Email address" type="email" {...register("email")} />
@@ -94,7 +92,7 @@ const Form1 = ({ register, errors }: { register: any; errors: any }) => {
       </FormControl>
 
       <FormControl isInvalid={!!errors.password}>
-        <FormLabel htmlFor="password" fontWeight={"normal"} mt="2%">
+        <FormLabel htmlFor="password" mt="2%">
           Password
         </FormLabel>
         <InputGroup size="md">
@@ -119,7 +117,7 @@ const Form2 = ({ register, errors, collegeIdFile, setCollegeIdFile }: { register
   return (
     <>
       <Text w="80vh" fontSize={'50px'} className='feature-heading' color={useColorModeValue('purple.600', 'purple.500')} textAlign={"center"} fontWeight="normal" mb="2%">
-        User Details
+        Student Details
       </Text>
       <Flex>
         <FormControl as={GridItem} colSpan={[6, 3]} isInvalid={!!errors.country} mb={4} mr="3%">
@@ -223,11 +221,13 @@ const Form2 = ({ register, errors, collegeIdFile, setCollegeIdFile }: { register
             style={{ display: 'none' }}
             {...register('collegeId')}
             onChange={(e) => {
-              setCollegeIdFile(e.target.files[0]);
+              if (e.target.files && e.target.files.length > 0) {
+                setCollegeIdFile(e.target.files[0]);
+              }
             }}
           />
           <Button
-            onClick={() => document.getElementById('college-id').click()}
+            onClick={() => (document.getElementById('college-id') as HTMLElement)?.click()}
             variant="outline"
             colorScheme="purple"
           >
@@ -248,7 +248,7 @@ const StudentRegister = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [progress, setProgress] = useState(50);
-  const [collegeIdFile, setCollegeIdFile] = useState(null);
+  const [collegeIdFile, setCollegeIdFile] = useState<File | null>(null);
 
   const resolver: any = step === 1 ? yupResolver(form1Schema) : yupResolver(form2Schema);
 
@@ -280,7 +280,10 @@ const StudentRegister = () => {
       formData.append('interest', data.interest);
 
       // Append college ID file
-      formData.append('collegeId', collegeIdFile);
+      if (collegeIdFile) {
+        formData.append('collegeId', collegeIdFile);
+      }
+      
       const response = await axios.post('/api/student/register', formData, {
         withCredentials: true, headers: {
           'Content-Type': 'multipart/form-data',
@@ -322,65 +325,65 @@ const StudentRegister = () => {
   };
 
   return (
-    <div>
-      <Flex
-         bg={useColorModeValue('purple.200', 'purple.800')} width='full' align='center' justifyContent='center'>
-        <Box
-          rounded="lg"
-          my={10}
-          bg={useColorModeValue('white', 'gray.900')}
-          shadow="dark-lg"
-          maxWidth={800}
-          borderColor={useColorModeValue('purple.400', 'gray.900')}
-          p={6}>
-          <Progress colorScheme="purple" size="sm" value={progress} hasStripe mb="5%" mx="5%" isAnimated />
-          <form onSubmit={handleSubmit(onSubmit)}>
-            {step === 1 && <Form1 register={register} errors={errors} />}
-            {step === 2 && <Form2 register={register} errors={errors} collegeIdFile={collegeIdFile} setCollegeIdFile={setCollegeIdFile} />}
-            <ButtonGroup mt="5%" w="100%">
-              <Flex w="100%" justifyContent="space-between">
-                <Flex>
-                  {step > 1 && (
-                    <Button
-                      variant="outline"
-                      colorScheme="purple" _hover={{ bg: useColorModeValue('purple.600', 'purple.800'), color: useColorModeValue('white', 'white') }}
-                      onClick={() => {
-                        setStep(step - 1);
-                        setProgress(progress - 50);
-                      }}
-                    >
-                      Previous
-                    </Button>
-                  )}
-                  {step < 2 && (
-                    <Button
-                      variant="outline"
-                      colorScheme="purple" _hover={{ bg: useColorModeValue('purple.600', 'purple.800'), color: useColorModeValue('white', 'white') }}
-                      onClick={async () => {
-                        const isValid = await trigger();
-                        if (isValid) {
-                          setStep(step + 1);
-                          setProgress(progress + 50);
-                        }
-                      }}
-                    >
-                      Next
-                    </Button>
-                  )}
-                </Flex>
-                {step === 2 && (
+
+    <Flex
+      bg={useColorModeValue('purple.200', 'purple.800')} width='full' align='center' justifyContent='center' minHeight={"79vh"}>
+      <Box
+        rounded="lg"
+        my={10}
+        bg={useColorModeValue('white', 'gray.900')}
+        shadow="dark-lg"
+        maxWidth={800}
+        borderColor={useColorModeValue('purple.400', 'gray.900')}
+        p={6}>
+        <Progress colorScheme="purple" size="sm" value={progress} hasStripe mb="5%" mx="5%" isAnimated />
+        <form onSubmit={handleSubmit(onSubmit)}>
+          {step === 1 && <Form1 register={register} errors={errors} />}
+          {step === 2 && <Form2 register={register} errors={errors} collegeIdFile={collegeIdFile} setCollegeIdFile={setCollegeIdFile} />}
+          <ButtonGroup mt="5%" w="100%">
+            <Flex w="100%" justifyContent="space-between">
+              <Flex>
+                {step > 1 && (
                   <Button
                     variant="outline"
                     colorScheme="purple" _hover={{ bg: useColorModeValue('purple.600', 'purple.800'), color: useColorModeValue('white', 'white') }}
-                    type="submit">Submit</Button>
+                    onClick={() => {
+                      setStep(step - 1);
+                      setProgress(progress - 50);
+                    }}
+                  >
+                    Previous
+                  </Button>
+                )}
+                {step < 2 && (
+                  <Button
+                    variant="outline"
+                    colorScheme="purple" _hover={{ bg: useColorModeValue('purple.600', 'purple.800'), color: useColorModeValue('white', 'white') }}
+                    onClick={async () => {
+                      const isValid = await trigger();
+                      if (isValid) {
+                        setStep(step + 1);
+                        setProgress(progress + 50);
+                      }
+                    }}
+                  >
+                    Next
+                  </Button>
                 )}
               </Flex>
-            </ButtonGroup>
-          </form>
-        </Box>
-      </Flex>
+              {step === 2 && (
+                <Button
+                  variant="outline"
+                  colorScheme="purple" _hover={{ bg: useColorModeValue('purple.600', 'purple.800'), color: useColorModeValue('white', 'white') }}
+                  type="submit">Submit</Button>
+              )}
+            </Flex>
+          </ButtonGroup>
+        </form>
+      </Box>
+    </Flex>
 
-    </div>
+
   );
 }
 
