@@ -243,7 +243,7 @@ const Form2 = ({ register, errors, collegeIdFile, setCollegeIdFile }: { register
   );
 };
 
-const Signup = () => {
+const StudentRegister = () => {
   const toast = useToast();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -324,7 +324,7 @@ const Signup = () => {
   return (
     <div>
       <Flex
-        minHeight='100vh' bg={useColorModeValue('purple.200', 'purple.800')} width='full' align='center' justifyContent='center'>
+         bg={useColorModeValue('purple.200', 'purple.800')} width='full' align='center' justifyContent='center'>
         <Box
           rounded="lg"
           my={10}
@@ -384,4 +384,4 @@ const Signup = () => {
   );
 }
 
-export default Signup;
+export default StudentRegister;

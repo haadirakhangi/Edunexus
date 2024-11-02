@@ -15,7 +15,8 @@ import {
   FormErrorMessage,
   Tabs, TabList, TabPanel, Tab, TabPanels
 } from '@chakra-ui/react';
-import Signup from './StudentRegister';
+import StudentRegister from './StudentRegister';
+import TeacherRegister from './TeacherRegister';
 
 const Register = () => {
   return(
@@ -23,7 +24,7 @@ const Register = () => {
       <Navbar />
       
         
-          <Box>
+          <Box mt={5}>
             <Tabs isFitted variant='soft-rounded' colorScheme='purple'>
             <TabList>
               <Tab>Teacher</Tab>
@@ -32,11 +33,10 @@ const Register = () => {
             </TabList>
             <TabPanels>
               <TabPanel>
+                <TeacherRegister />
               </TabPanel>
               <TabPanel>
-              <p>
-                  <Signup />
-              </p>
+                <StudentRegister />
               </TabPanel>
               <TabPanel>
               </TabPanel>
