@@ -4,7 +4,7 @@ import CoursePage from "./pages/teacher/course/course";
 import CreatePage from "./pages/teacher/create";
 import Testing from "./pages/testing";
 import Login from "./pages/Login"
-import Register from "./pages/Register"
+import Register from "./pages/register/Register"
 import Pico from "./pages/Pico"
 import Home from "./pages/student/Home";
 import Explore from "./pages/student/Explore"

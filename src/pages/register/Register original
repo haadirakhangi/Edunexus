@@ -20,6 +20,7 @@ import {
   useToast,
   Text,
   InputLeftElement,
+  Tabs, TabList, TabPanel, Tab, TabPanels
 } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
 import { Navbar } from '../components/navbar';
