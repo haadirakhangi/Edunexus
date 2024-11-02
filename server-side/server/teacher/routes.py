@@ -25,35 +25,45 @@ teachers = Blueprint(name='teachers', import_name=__name__)
 
 @teachers.route('/register', methods=['POST'])
 def register():
-    data = request.get_json()
-    first_name = data.get('first_name')
-    last_name = data.get('last_name')
-    email = data.get('email')
-    password = data.get('password')
-    college_name = data.get('college_name')
-    department = data.get('department')
-    experience = data.get('experience')
-    phone_number = data.get('phone_number')
-    qualification = data.get('qualification')
-    subjects = data.get('subjects', [])
+    first_name = request.form['first_name']
+    last_name = request.form['last_name']
+    email = request.form['email']
+    password = request.form['password']
+    college_name = request.form['college_name']
+    department = request.form['department']
+    experience = request.form['experience']
+    phone_number = request.form['phone_number']
+    qualification = request.form['qualification']
+    subjects = request.form['subjects']
+    country = request.form['country']
+    state = request.form['state']
+    city = request.form['city']
+    gender = request.form['gender']
+    age = request.form['age']
 
     if not first_name or not last_name or not email or not password:
         return jsonify({"message": "First name, last name, email, and password are required."}), 400
-
+        
     if Teacher.query.filter_by(email=email).first():
-        return jsonify({"message": "Email already registered."}), 400
+        return jsonify({"message": "User already exists", "response":False}), 201
 
     new_teacher = Teacher(
-        first_name=first_name,
-        last_name=last_name,
-        email=email,
-        college_name=college_name,
-        department=department,
-        experience=experience,
-        phone_number=phone_number,
-        qualification=qualification,
-        subjects=subjects
+    first_name=first_name,
+    last_name=last_name,
+    email=email,
+    college_name=college_name,
+    department=department,
+    experience=experience,
+    phone_number=phone_number,
+    qualification=qualification,
+    subjects=subjects,
+    country=country,
+    state=state,
+    city=city,     
+    gender=gender,    
+    age=age           
     )
+
     new_teacher.set_password(password)
     db.session.add(new_teacher)
     db.session.commit()
@@ -491,3 +501,9 @@ def convert_docx():
         )
     except Exception as e:  
         print("An error occured while creating document: ",e)
+
+@teachers.route('/logout', methods=['GET'])
+@cross_origin(supports_credentials=True)
+def logout():
+    session.clear()
+    return jsonify({"message": "User logged out successfully", "response":True}), 200

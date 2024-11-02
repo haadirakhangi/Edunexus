@@ -180,7 +180,7 @@ def getuser():
 @students.route('/logout', methods=['GET'])
 @cross_origin(supports_credentials=True)
 def logout():
-    session.pop("user_id", None)
+    session.clear()
     return jsonify({"message": "User logged out successfully", "response":True}), 200
 
 
