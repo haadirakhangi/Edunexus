@@ -14,6 +14,7 @@ import Content from "./pages/student/content/Content";
 import LabManual from "./pages/teacher/course/Lab Manual/LabManual";
 import LabManualCreate from "./pages/teacher/course/Lab Manual/LabManualCreate";
 import "./pages/student/content/i18n"
+import LessonsGrid from "./pages/teacher/scheduler";
 function App() {
   return (
     <Routes>
@@ -27,6 +28,7 @@ function App() {
       <Route element={<CoursePage />} path="/teacher/course" />
       <Route element={<LabManual />} path="/teacher/lab-manual" />
       <Route element={<LabManualCreate />} path="/teacher/lab-manual-create" />
+      <Route element={<LessonsGrid />} path="/teacher/scheduler" />
 
       <Route element={<Testing />} path="/testing" />
       <Route element={<Pico />} path="/pico" />
