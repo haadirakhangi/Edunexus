@@ -9,13 +9,15 @@ class LabManualGenerator:
     def __init__(self):
         self.gemini_client = GeminiProvider()
         
+    @staticmethod
     def get_lab_manual_description(components):
         lab_manual_components = {
-            "Title": "The name of the experiment, providing a concise and descriptive label for the lab.",
-            "Aim": "A brief statement describing the objective or purpose of the experiment.",
-            "Theory": "A section that explains the fundamental principles, scientific theories, and background information relevant to the experiment.",
+            "Theory": "A section that explains the theoretical aspects for example (but not limited to): fundamental principles, scientific theories, and background information relevant to the experiment.",
             "Apparatus": "A list of all equipment, tools, chemicals, and materials required to conduct the experiment.",
-            "Procedure": "Step-by-step instructions outlining how the experiment is to be performed, including any safety precautions.",
+            "Requirements": "A list of all equipment, tools, chemicals, and materials required to conduct the experiment.",
+            "Technologies Used": "A list of all the technologies, software or system requirements required to conduct the experiment.",
+            "Procedure": "Step-by-step instructions outlining how the experiment is to be performed.",
+            "Code":"A sample code snippet that helps to guides on how to perform the experiment",
             "Observations": "A section for recording observations, data collected, and any qualitative information noted during the experiment.",
             "Results": "This section includes tables, graphs, or any other format of data representation showing the outcomes obtained from the experiment.",
             "Calculations": "A detailed explanation of any mathematical calculations or formulas used to derive the results.",
@@ -25,24 +27,30 @@ class LabManualGenerator:
             "Questions": "Related questions or problems to solve, encouraging critical thinking and deeper understanding of the experiment's concepts.",
             "References": "Citations for any books, articles, or online resources used in preparing the lab manual or for further reading.",
             "Appendix": "Additional information, such as supplementary data, extra calculations, or detailed explanations that support the experiment."
-            }
+        }
 
         result = {component: lab_manual_components.get(component, "DESCRIPTION NOT AVAILABLE") for component in components}
         return result
 
 
-    def generate_lab_manual(self, aim, teacher_name, course_name, components, include_videos=False):
+    def generate_lab_manual(self, experiment_aim, experiment_num, teacher_name, course_name, components, include_videos=False):
+        components = LabManualGenerator.get_lab_manual_description(components)
         today_date = datetime.now().date()
-        prompt = f"""Given the aim for {course_name} and the components of the lab manual to be generated, you are to act as a lab assistant. Your task is to create lab manuals for students studying {course_name}. Generate the content of each component so it becomes a lab manual.
-        The components of the lab manual are {components}.
-        The aim of the experiment is: {aim}.
-        The name of the teacher conducting the experiment is: {teacher_name}.
-        Course Name is: {course_name}.
-        Print the date of conducting the experiment on the right side: {today_date}.
-
-        Structure the output in a properly formatted markdown file."""
+        lab_headers = (
+            f"# {course_name}\n\n"               
+            f"**Experiment No: {experiment_num}**\n\n"  
+            f"**Instructor:** {teacher_name}  \n\n  "   
+            f"**Date:** {today_date}\n\n"           
+            f"**Aim:** {experiment_aim}\n\n"
+        )
+        prompt = f"""Act as a lab assistant creating a lab manual for students based on the course: **{course_name}** and the experiment aim: **{experiment_aim}**. Using this context, generate content only for each of the specified components in markdown format, ensuring a logical instructional flow where any concluding sections (e.g., conclusions, evaluations) appear at the end.
+        ## Components:\n{components}
+        Use {course_name} and {experiment_aim} for context only; do not include them in the generated output. The output should be limited strictly to these components and in a properly formatted markdown. You may use headers for each component or the title of each components as section labels  (such as "## Technologies Used") but do not include any overarching section headers like "## Components:" in the response. Ensure that the order of components follows a natural flow, with concluding or evaluative content placed at the end if applicable."""
         result = self.gemini_client.generate_json_response(prompt=prompt,markdown=True)
-        return result
+        # lab_headers = f"\t **{course_name}** \n \t **Experiment No. {experiment_num}** \n**Instructor:**{teacher_name} \t **Date:{today_date}** \n**Aim:** {experiment_aim}\n"
+        final_manual_markdown = lab_headers + result
+        print("LAB MANUAL RESULT;\n",final_manual_markdown)
+        return final_manual_markdown
     
 
     @staticmethod
@@ -59,7 +67,7 @@ class LabManualGenerator:
         output_dir = os.path.join(current_dir, "lab-manuals")
         os.makedirs(output_dir, exist_ok=True)
         
-        doc=f"{course_name}_{exp_num}.docx"
+        doc=f"{course_name} Experiment {exp_num}.docx"
         output_file = os.path.join(output_dir, doc)
         pypandoc.convert_text(input_file, 'docx', format='markdown', outputfile=output_file, extra_args=extra_args)
         
