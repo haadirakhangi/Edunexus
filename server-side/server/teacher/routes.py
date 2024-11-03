@@ -86,34 +86,53 @@ def login():
     session['teacher_id'] = teacher.id
     return jsonify({"message": "Login successful!", "teacher_id": teacher.id,"response":True}), 200
 
-
-@teachers.route('/add-course', methods=['POST'])
-def add_course():
+@teachers.route('/get-courses', methods=['GET'])
+def get_courses():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in.", "response": False}), 401
 
-    data = request.get_json()
-    course_name = data.get('course_name')
-    num_of_lectures = data.get('num_of_lectures')
-    lessons_data = data.get('lessons_data', {})
+    courses = Course.query.filter_by(teacher_id=teacher_id).all()
+    courses_data = [
+        {
+            'id': course.id,
+            'course_name': course.course_name,
+            'num_of_lectures': course.num_of_lectures,
+            'course_code': course.course_code,
+            'lessons_data': course.lessons_data,
+        }
+        for course in courses
+    ]
+    
+    return jsonify({"courses": courses_data,"response":True}), 200
 
-    if not course_name or not num_of_lectures:
-        return jsonify({"message": "Course name and number of lectures are required."}), 400
+@teachers.route('/get-lesson', methods=['POST'])
+def get_lesson():
+    teacher_id = session.get('teacher_id')
+    data = request.json
+    course_id = data.get('course_id')
+    if teacher_id is None:
+        return jsonify({"message": "Teacher not logged in.", "response": False}), 401
+    
+    if course_id is None:
+        return jsonify({"message": "Course ID not found in session.", "response": False}), 400
 
-    course_code = ServerUtils.generate_course_code()
-    new_course = Course(
-        course_name=course_name,
-        num_of_lectures=num_of_lectures,
-        teacher_id=teacher_id,
-        lessons_data=lessons_data,
-        course_code=course_code
-    )
+    course = Course.query.filter_by(id=course_id, teacher_id=teacher_id).first()
+    
+    if course is None:
+        return jsonify({"message": "Course not found for this teacher."}), 404
+    
+    lessons_data = json.loads(course.lessons_data)
+    lesson_statuses = []
+    for lesson_title in lessons_data.keys():
+        existing_lesson = Lesson.query.filter_by(title=lesson_title, course_id=course_id).first()
+        if existing_lesson:
+            lesson_statuses.append("View")
+        else:
+            lesson_statuses.append("Generate")
 
-    db.session.add(new_course)
-    db.session.commit()
-    return jsonify({"message": "Course added successfully!", "course_id": new_course.id, "course_code": new_course.course_code}), 200
 
+    return jsonify({"lessons": lessons_data,"lesson_statuses": lesson_statuses}), 200
 
 @teachers.route('/add-lab-manual', methods=['POST'])
 def add_lab_manual():
@@ -136,7 +155,7 @@ def add_lab_manual():
 
     db.session.add(new_lab_manual)
     db.session.commit()
-    return jsonify({"message": "Lab manual added successfully!", "lab_manual_id": new_lab_manual.id}), 201
+    return jsonify({"message": "Lab manual added successfully!", "lab_manual_id": new_lab_manual.id}), 200
 
 
 @teachers.route('/get-lab-manuals', methods=['GET'])
@@ -182,20 +201,36 @@ def add_lesson():
     db.session.commit()
     return jsonify({"message": "Lesson added successfully!", "lesson_id": new_lesson.id}), 201
 
-
-@teachers.route('/get-courses', methods=['GET'])
-def get_courses():
+@teachers.route('/create-course', methods=['POST'])
+def create_course():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:
-        return jsonify({"message": "Teacher not logged in.", "response": False}), 401
+        return jsonify({"message": "Teacher not logged in", "response": False}), 401
+    try:
+        course_name = request.form['course_name']
+        num_lectures = request.form['num_lectures']
+        lessons = request.form['lessons']
 
-    courses = Course.query.filter_by(teacher_id=teacher_id).all()
-    if not courses:
-        return jsonify({"message": "No courses found for this teacher."}), 404
+        course_code = ServerUtils.generate_course_code()
+        new_course = Course(
+            course_name=course_name,
+            num_of_lectures=num_lectures,
+            teacher_id=teacher_id,
+            lessons_data=lessons,
+            course_code=course_code
+        )
+        db.session.add(new_course)
+        db.session.commit()
+        session['course_id']=new_course.id
+        session['lessons'] = lessons
+        return jsonify({'message': 'Course and lessons created successfully',"course_name": course_name,"course_id": new_course.id}), 200
 
-    course_list = [{"id": course.id, "course_name": course.course_name, "num_of_lectures": course.num_of_lectures, "course_code": course.course_code} for course in courses]
-    
-    return jsonify({"courses": course_list}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'An error occurred', 'error': str(e)}), 500
+   
+
+
 
 
 @teachers.route('/multimodal-rag-submodules', methods=['POST'])
@@ -349,7 +384,8 @@ def update_submodules():
     updated_submodules = request.get_json()
     session['submodules'] = updated_submodules
     return jsonify({'message': 'Submodules updated successfully'}), 200
-    
+
+ 
 @teachers.route('/multimodal-rag-content', methods=['GET'])
 async def multimodal_rag_content():
     teacher_id = session.get('teacher_id')
@@ -450,7 +486,7 @@ async def generate_lesson():
     await simple_rag.create_text_vectorstore()
     relevant_text = await simple_rag.search_similar_text(query=course_name, k=10)
     output = LESSON_PLANNER.generate_lesson_plan(course_name=course_name, context=relevant_text, num_lectures=num_lectures)
-    return jsonify({"lessons": output})
+    return jsonify({"message": "Query successful", "lessons": output, "response": True}), 200
 
 @teachers.route('/generate-lab-manual', methods=['POST'])
 def generate_lab_manual():
