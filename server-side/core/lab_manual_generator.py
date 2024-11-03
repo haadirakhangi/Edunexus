@@ -1,8 +1,9 @@
 from api.gemini_client import GeminiProvider
+from api.serper_client import SerperProvider
 import pypandoc
 import os
 from datetime import datetime
-
+from concurrent.futures import ThreadPoolExecutor
 
 
 class LabManualGenerator:
@@ -46,13 +47,23 @@ class LabManualGenerator:
         prompt = f"""Act as a lab assistant creating a lab manual for students based on the course: **{course_name}** and the experiment aim: **{experiment_aim}**. Using this context, generate content only for each of the specified components in markdown format, ensuring a logical instructional flow where any concluding sections (e.g., conclusions, evaluations) appear at the end.
         ## Components:\n{components}
         Use {course_name} and {experiment_aim} for context only; do not include them in the generated output. The output should be limited strictly to these components and in a properly formatted markdown. You may use headers for each component or the title of each components as section labels  (such as "## Technologies Used") but do not include any overarching section headers like "## Components:" in the response. Ensure that the order of components follows a natural flow, with concluding or evaluative content placed at the end if applicable."""
-        result = self.gemini_client.generate_json_response(prompt=prompt,markdown=True)
-        # lab_headers = f"\t **{course_name}** \n \t **Experiment No. {experiment_num}** \n**Instructor:**{teacher_name} \t **Date:{today_date}** \n**Aim:** {experiment_aim}\n"
+
+        if include_videos:
+            with ThreadPoolExecutor() as executor:
+                future_result = executor.submit(self.gemini_client.generate_json_response, prompt, None, True)
+                future_video_links = executor.submit(SerperProvider.search_videos_from_web, experiment_aim)
+            result = future_result.result()
+            video_links = future_video_links.result()
+        else:
+            result = self.gemini_client.generate_json_response(prompt=prompt, markdown=True)
+        
         final_manual_markdown = lab_headers + result
-        print("LAB MANUAL RESULT;\n",final_manual_markdown)
+        if include_videos:
+            final_manual_markdown += "\n\n## Videos References:\n"
+            for link in video_links:
+                final_manual_markdown += f"* [{link}]({link})\n"
         return final_manual_markdown
     
-
     @staticmethod
     def convert_markdown_to_docx(input_file, course_name, exp_num, reference_docx=None):
         extra_args = [
