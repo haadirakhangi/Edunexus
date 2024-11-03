@@ -62,7 +62,7 @@ const Login = () => {
 
         if (activeTab==0){
           sessionStorage.setItem('teacher_authenticated', 'true');
-          navigate('/');
+          navigate('/teacher/dashboard');
           
         }else{
           sessionStorage.setItem('student_authenticated', 'true');

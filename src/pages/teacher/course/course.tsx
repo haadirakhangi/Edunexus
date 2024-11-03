@@ -17,7 +17,7 @@ interface ContentDataItem {
 }
 
 
-import { contentData_textbook, relevant_images_textbook, contentData, relevant_images,content_testing,relevant_images_testing } from './tp';
+import { contentData_textbook, relevant_images_textbook, contentData, relevant_images, content_testing, relevant_images_testing } from './tp';
 
 const PerContent: React.FC = () => {
     const [data, setData] = useState<ContentDataItem[]>([]);
@@ -27,30 +27,32 @@ const PerContent: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [uploadedImages, setUploadedImages] = useState<string[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [lessonData, setLessonData] = useState({
-        title: '',
-        lesson_code: '',
-        markdown_content: '',
-        relevant_images: [],
-        uploaded_images: [],
-        course_id: ''
-    });
+    const [hasInsertedImages, setHasInsertedImages] = useState(false);
+    const [apiCalled, setApiCalled] = useState(false);
+    const lesson_id = Number(localStorage.getItem('lesson_id'));
     const handleSaveLesson = async () => {
-        // try {
-        //     const response = await axios.post('/api/teacher/add-lesson', {
-        //         title: "lesson 1",
-        //         markdown_content: data,
-        //         relevant_images: images[currentIndex],
-        //         uploaded_images: uploadedImages,
-        //         course_id: 'HDSHB' // Replace with the actual course ID
-        //     }, { withCredentials: true });
+        const lesson_name = localStorage.getItem('lesson_name');
+        const course_id = Number(localStorage.getItem('course_id'));
+        
 
-        //     alert(response.data.message); // Show success message
-        // } catch (error) {
-        //     console.error('Error saving lesson:', error);
-        //     alert('Failed to save lesson.');
-        // }
-        console.log("i was called")
+        try {
+            const response = await axios.post('/api/teacher/add-lesson', {
+                title: lesson_name,
+                markdown_content: data,
+                relevant_images: images,
+                uploaded_images: uploadedImages,
+                lesson_id: lesson_id,
+                course_id: course_id
+            }, { withCredentials: true });
+
+            alert(response.data.message);
+            if(response.data.response){
+                localStorage.setItem('lesson_id',response.data.lesson_id.toString())
+            }
+        } catch (error) {
+            console.error('Error saving lesson:', error);
+            alert('Failed to save lesson.');
+        }
     };
 
     const insertImagesForAllSubmodules = () => {
@@ -77,7 +79,7 @@ const PerContent: React.FC = () => {
             return { ...item, [submoduleKey]: updatedContent };
         });
 
-        setData(updatedData); 
+        setData(updatedData);
     };
 
     const insertImageAtCursor = (imageUrl: string, i: number) => {
@@ -109,20 +111,32 @@ const PerContent: React.FC = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // const response = await axios.get('/api/query2/multimodal-rag-content', { withCredentials: true });
-                // Example static data for now
-                // Replace with actual data fetching
+                if (lesson_id==0) {
+                    const response = await axios.get('/api/teacher/multimodal-rag-content', { withCredentials: true });
+                    setImages(response.data.relevant_images);
+                    setData(response.data.content);
+                    setApiCalled(true);
+                    setSelectedSubmodule(Object.keys(response.data.content[0] || {})[0]);
+                }else{
+                    const response = await axios.post('/api/teacher/fetch-lesson',{
+                        lesson_id: lesson_id
+                    }, { withCredentials: true });
+                    const mk = JSON.parse(response.data.markdown_content);
+                    const rimg = JSON.parse(response.data.relevant_images);
+                    const umg = JSON.parse(response.data.uploaded_images);
+                    setImages(rimg);
+                    setData(mk);
+                    setUploadedImages(umg)
+                    setApiCalled(true);
+                    setHasInsertedImages(true);
+                    setIsLoading(false);
+                    setSelectedSubmodule(Object.keys(response.data.content[0] || {})[0]);
+                }
 
-                // setImages(response.data.relevant_images);
-                // setVideos(videoUrls);
-                // setData(response.data.content);
-                setImages(relevant_images_testing);
-                setData(content_testing);
-                setSelectedSubmodule(Object.keys(content_testing[0] || {})[0]); // Set the first submodule as default
+                // setImages(relevant_images_testing);
+                // setData(content_testing);
             } catch (error) {
                 console.error('Error fetching data:', error);
-            } finally {
-                setIsLoading(false);
             }
         };
 
@@ -130,10 +144,12 @@ const PerContent: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if (!isLoading) {
+        if (data.length > 0 && images.length > 0 && !hasInsertedImages) {
             insertImagesForAllSubmodules();
+            setHasInsertedImages(true);
+            setIsLoading(false);
         }
-    }, [isLoading]);
+    }, [data, images, hasInsertedImages]);
 
     const handleUpdateContent = (updatedContent: { [submodule: string]: string }[]) => {
         setData(updatedContent);

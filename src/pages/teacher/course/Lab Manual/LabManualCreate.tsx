@@ -46,8 +46,7 @@ const schema = yup.object().shape({
 
 const LabManualCreate = () => {
     const navigate = useNavigate();
-    // const course_name = localStorage.getItem('course_name');
-    const course_name = "Large Language Models"
+    const course_name = localStorage.getItem('course_name');
     const { register, handleSubmit, formState: { errors }, watch } = useForm({
         resolver: yupResolver(schema),
         defaultValues: {

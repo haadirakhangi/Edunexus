@@ -102,7 +102,7 @@ export const Navbar = () => {
                 <HStack as={'nav'} spacing={4} display={{ base: 'none', md: 'flex' }} ml="auto">
                     {teacherAuthenticated && (
                         <>
-                            <NavLink href="/">
+                            <NavLink href="/teacher/dashboard">
                                 <HStack spacing={2}>
                                     <FaHome size={24} />
                                     <span>Home</span>

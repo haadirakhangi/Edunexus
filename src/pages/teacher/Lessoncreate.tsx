@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Box,
   VStack,
@@ -18,7 +18,9 @@ import {
   useToast,
   useColorModeValue,
   FormErrorMessage,
-  Switch
+  RadioGroup,
+  Radio,
+  Stack
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
 import { useNavigate } from 'react-router-dom';
@@ -30,11 +32,9 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 
 const schema = yup.object().shape({
-  lessonName: yup.string().required('lesson name is required'),
   lessonStyle: yup.string().required('lesson style is required'),
   lessonType: yup.string().required('lesson type is required'),
   links: yup.array().of(yup.string().url('Invalid URL')),
-  websitesReference: yup.string().required('Website references are required'),
 });
 
 const LessonCreate = () => {
@@ -45,19 +45,26 @@ const LessonCreate = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [submodules, setSubmodules] = useState<Record<string, string>>({});
-  const [links, setLinks] = useState(['']);
+  const [links, setLinks] = useState<string[]>([]);
   const [webSearch, setWebSearch] = useState<boolean>(false);
-
+  const course_name = localStorage.getItem('course_name');
+  const lesson_name = localStorage.getItem('lesson_name');
+  const lessonNameInputRef = useRef<HTMLInputElement>(null);
+  
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
-      lessonName: '',
       lessonStyle: '',
       lessonType: '',
-      links: [''],
-      websitesReference: '',
+      links: [],
     },
   });
+
+  useEffect(() => {
+    if (lessonNameInputRef.current) {
+      lessonNameInputRef.current.focus();
+    }
+  }, []);
 
   const handleAddLink = () => {
     setLinks([...links, '']);
@@ -81,11 +88,11 @@ const LessonCreate = () => {
 
   const onSubmit = async (data: { [key: string]: any }) => {
     const formData = new FormData();
-    formData.append('title', data.lessonName);
+    formData.append('lesson_name', lesson_name || '');
+    formData.append('course_name', course_name || '');
     formData.append('description', data.lessonStyle);
     formData.append('lessonType', data.lessonType);
     formData.append('links', JSON.stringify(links));
-    formData.append('websitesReference', data.websitesReference);
     formData.append('includeImages', includeImages.toString());
     formData.append('search_web', webSearch.toString());
 
@@ -96,7 +103,7 @@ const LessonCreate = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('/api/query2/multimodal-rag-submodules', formData, {
+      const response = await axios.post('/api/teacher/multimodal-rag-submodules', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -127,7 +134,7 @@ const LessonCreate = () => {
 
   const handleModalSubmit = async (updatedSubmodules: Record<string, string>) => {
     try {
-      const response = await axios.post('/api/update-submodules', updatedSubmodules);
+      const response = await axios.post('/api/teacher/update-submodules', updatedSubmodules);
 
       if (response.status === 200) {
         toast({
@@ -136,7 +143,7 @@ const LessonCreate = () => {
           duration: 3000,
           isClosable: true,
         });
-        navigate('/teacher/lesson');
+        navigate('/teacher/course');
       } else {
         throw new Error('Failed to update submodules.');
       }
@@ -175,26 +182,23 @@ const LessonCreate = () => {
               </Center>
               <Center>
                 <Text className='feature-heading' fontSize={"4xl"} mb={4}>
-                  <b>Course name:</b> Large Language Models
+                  <b>Course name:</b> {course_name}
                 </Text>
               </Center>
               <form onSubmit={handleSubmit(onSubmit)}>
                 <Flex direction={['column', 'row']} justify="space-between" gap={6}>
                   {/* Left Section */}
                   <VStack width={['full', '45%']} spacing={6} align="stretch">
-                    <FormControl isInvalid={!!errors.lessonName} isRequired>
-                      <FormLabel className='feature-heading' letterSpacing={2}><b>Lesson Name</b></FormLabel>
-                      <Input
-                        placeholder="Enter the lesson name"
-                        {...register('lessonName')}
-                        borderColor={'purple.600'}
-                        _hover={{ borderColor: "purple.600" }}
-                      />
-                      <FormErrorMessage>{errors.lessonName?.message}</FormErrorMessage>
-                    </FormControl>
+                    <Box>
+                      <FormLabel className='feature-heading' letterSpacing={2}><b>Lesson Name:</b></FormLabel>
+                      <Text borderColor={"purple.400"} borderRadius={10} borderWidth={2} p={2} className='content' fontSize={"lg"}>
+                        {lesson_name}
+                      </Text>
+                    </Box>
+
 
                     <FormControl isInvalid={!!errors.lessonStyle} isRequired>
-                      <FormLabel className='feature-heading' letterSpacing={2}><b>Lesson Description</b></FormLabel>
+                      <FormLabel className='feature-heading' letterSpacing={2}><b>Lesson Style</b></FormLabel>
                       <Input
                         placeholder="Describe the lesson"
                         {...register('lessonStyle')}
@@ -218,16 +222,6 @@ const LessonCreate = () => {
                       </Select>
                       <FormErrorMessage>{errors.lessonType?.message}</FormErrorMessage>
                     </FormControl>
-
-                    <FormControl>
-                      <FormLabel className='feature-heading' letterSpacing={2}><b>Web Search</b></FormLabel>
-                      <Switch
-                        isChecked={webSearch}
-                        onChange={(e) => setWebSearch(e.target.checked)} // Manage Web Search switch state
-                        colorScheme='purple'
-                        size={"lg"}
-                      />
-                    </FormControl>
                   </VStack>
 
                   {/* Right Section */}
@@ -245,37 +239,47 @@ const LessonCreate = () => {
                       />
                     </FormControl>
 
-                    <FormControl>
-                      <FormLabel className='feature-heading' letterSpacing={2}><b>Links</b></FormLabel>
-                      {links.map((link, index) => (
-                        <Box key={index} display="flex" alignItems="center" mb={2}>
-                          <Input
-                            placeholder={`Enter link ${index + 1}`}
-                            value={link}
-                            onChange={(e) => handleLinkChange(index, e.target.value)}
-                            borderColor={'purple.600'}
-                            _hover={{ borderColor: "purple.600" }}
-                          />
-                          <Tooltip label="Delete Link">
-                            <IconButton
-                              icon={<DeleteIcon />}
-                              colorScheme="red"
-                              size="sm"
-                              ml={2}
-                              aria-label="Delete Link"
-                              onClick={() => handleRemoveLink(index)}
+                    <FormLabel m={0} as="legend" className='feature-heading' letterSpacing={2}><b>Select Search Method</b></FormLabel>
+                    <RadioGroup onChange={(value) => setWebSearch(value === 'web')} colorScheme='purple'>
+                      <Stack>
+                        <Radio value="web" isChecked={webSearch}>Web Search</Radio>
+                        <Radio value="links" isChecked={!webSearch}>Links</Radio>
+                      </Stack>
+                    </RadioGroup>
+                    {!webSearch && (
+                      <FormControl>
+                        <FormLabel className='feature-heading' letterSpacing={2}><b>Links</b></FormLabel>
+                        {links.map((link, index) => (
+                          <Box key={index} display="flex" alignItems="center" mb={2}>
+                            <Input
+                              placeholder={`Enter link ${index + 1}`}
+                              value={link}
+                              onChange={(e) => handleLinkChange(index, e.target.value)}
+                              borderColor={'purple.600'}
+                              _hover={{ borderColor: "purple.600" }}
                             />
-                          </Tooltip>
-                        </Box>
-                      ))}
-                      <Tooltip label="Add new Link">
-                        <IconButton
-                          icon={<AddIcon />}
-                          onClick={handleAddLink}
-                          aria-label="Add Link"
-                        />
-                      </Tooltip>
-                    </FormControl>
+                            <Tooltip label="Delete Link">
+                              <IconButton
+                                icon={<DeleteIcon />}
+                                colorScheme="red"
+                                size="sm"
+                                ml={2}
+                                aria-label="Delete Link"
+                                onClick={() => handleRemoveLink(index)}
+                              />
+                            </Tooltip>
+                          </Box>
+                        ))}
+                        <Tooltip label="Add new Link">
+                          <IconButton
+                            icon={<AddIcon />}
+                            onClick={handleAddLink}
+                            aria-label="Add Link"
+                          />
+                        </Tooltip>
+                      </FormControl>
+                    )}
+
 
                     {(pdfFile || links.some(link => link.trim() !== '')) && (
                       <FormControl display="flex" alignItems="center" mt={4}>

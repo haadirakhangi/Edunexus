@@ -15,7 +15,7 @@ import {
     Box,
     Text,
 } from '@chakra-ui/react';
-import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
+import { AddIcon, DeleteIcon, ChevronUpIcon, ChevronDownIcon } from '@chakra-ui/icons';
 
 interface SubmoduleModalProps {
     isOpen: boolean;
@@ -57,6 +57,22 @@ export const SubmoduleModal: React.FC<SubmoduleModalProps> = ({
         setSubmodules(updatedSubmodules);
     };
 
+    const moveSubmoduleUp = (index: number) => {
+        if (index === 0) return; // Already at the top
+        const keys = Object.keys(submodules);
+        const newSubmodules = { ...submodules };
+        [newSubmodules[keys[index]], newSubmodules[keys[index - 1]]] = [newSubmodules[keys[index - 1]], newSubmodules[keys[index]]];
+        setSubmodules(newSubmodules);
+    };
+
+    const moveSubmoduleDown = (index: number) => {
+        const keys = Object.keys(submodules);
+        if (index === keys.length - 1) return; // Already at the bottom
+        const newSubmodules = { ...submodules };
+        [newSubmodules[keys[index]], newSubmodules[keys[index + 1]]] = [newSubmodules[keys[index + 1]], newSubmodules[keys[index]]];
+        setSubmodules(newSubmodules);
+    };
+
     const handleSubmit = () => {
         onSubmit(submodules);
         onClose();
@@ -71,7 +87,6 @@ export const SubmoduleModal: React.FC<SubmoduleModalProps> = ({
                     <VStack spacing={4} p={4} height={"400px"} overflow={"auto"}>
                         {Object.keys(submodules).map((key, index) => (
                             <Box key={key} display="flex" alignItems="center" width="100%">
-                                {/* Numbering each submodule */}
                                 <Text mr={4}><b>{index + 1}.</b></Text>
                                 <Input
                                     placeholder={`Submodule ${index + 1} value`}
@@ -85,6 +100,22 @@ export const SubmoduleModal: React.FC<SubmoduleModalProps> = ({
                                     ml={2}
                                     onClick={() => deleteSubmodule(key)}
                                     aria-label="Delete submodule"
+                                />
+                                <IconButton
+                                    icon={<ChevronUpIcon />}
+                                    colorScheme="blue"
+                                    size="sm"
+                                    ml={2}
+                                    onClick={() => moveSubmoduleUp(index)}
+                                    aria-label="Move up"
+                                />
+                                <IconButton
+                                    icon={<ChevronDownIcon />}
+                                    colorScheme="blue"
+                                    size="sm"
+                                    ml={2}
+                                    onClick={() => moveSubmoduleDown(index)}
+                                    aria-label="Move down"
                                 />
                             </Box>
                         ))}
