@@ -41,7 +41,6 @@ class Lesson(db.Model):
     __tablename__ = 'lessons'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
-    summary = db.Column(db.String(500), nullable=False)
     markdown_content = db.Column(db.Text, nullable=True)
     relevant_images = db.Column(JSON, nullable=True)
     uploaded_images = db.Column(JSON, nullable=True)
