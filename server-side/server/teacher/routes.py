@@ -18,7 +18,7 @@ from core.rag import MultiModalRAG, SimpleRAG
 from server.constants import *
 from server.utils import ServerUtils
 import json
-from core.lab_manual_gen import LabManualGenerator
+from core.lab_manual_generator import LabManualGenerator
 
 
 teachers = Blueprint(name='teachers', import_name=__name__)
@@ -454,34 +454,31 @@ async def generate_lesson():
 
 @teachers.route('/generate-lab-manual', methods=['POST'])
 def generate_lab_manual():
-    # teacher_id = session.get('teacher_id')
-    # if teacher_id is None:
-    #     return jsonify({"message": "Teacher not logged in", "response": False}), 401
-    # teacher = Teacher.query.get(teacher_id)
-    # if not teacher:
-    #     return jsonify({"message": "Teacher not found", "response": False}), 404
-    # teacher_name = f"{teacher.first_name} {teacher.last_name}"
-    teacher_name = "Aruna Gawade"
-    data = request.json
-    print(data) 
+    teacher_id = session.get('teacher_id')
+    if teacher_id is None:
+        return jsonify({"message": "Teacher not logged in", "response": False}), 401
+    teacher : Teacher = Teacher.query.get(teacher_id)
+    if not teacher:
+        return jsonify({"message": "Teacher not found", "response": False}), 404
+    teacher_name = f"{teacher.first_name} {teacher.last_name}"
+    data : dict = request.json
     experiment_num = data.get('exp_num')
     exp_aim = data.get('exp_aim')
     course_name = data.get('course_name')
     include_videos = data.get('include_videos')
     if include_videos == "false":
-        print("i was here!!")
         include_videos = False
     else:
         include_videos = True  
-    
     components = data.get('lab_components', [])
-    generator = LabManualGenerator()
-    result = generator.generate_lab_manual(exp_aim,teacher_name, course_name, components, include_videos)
+    
+    lab_generator = LabManualGenerator()
+    result = lab_generator.generate_lab_manual(experiment_aim=exp_aim, experiment_num=experiment_num ,teacher_name=teacher_name, course_name=course_name, components=components, include_videos=include_videos)
 
     return jsonify({"message": "Query successful","MarkdownContent": result, "response": True}), 200
 
 
-@teachers.route('/convert-docx', methods=['POST'])
+@teachers.route('/create-lab-manual-docx', methods=['POST'])
 def convert_docx():
     # teacher_id = session.get('teacher_id')
     # if teacher_id is None:
