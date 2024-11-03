@@ -10,7 +10,7 @@ google_serp_api_key = os.getenv('GOOGLE_SERP_API_KEY')
 
 class SerperProvider:
     @staticmethod
-    def module_image_from_web(submodules):
+    def module_image_from_web(submodules:dict):
         print('FETCHING IMAGES...')
         keys_list = list(submodules.keys())
         url = "https://google.serper.dev/images"
@@ -65,3 +65,18 @@ class SerperProvider:
             yt_links = [i['link'] for i in video_results[:10]]
             videos_list.append(yt_links)
         return videos_list
+    
+    @staticmethod
+    def search_videos_from_web(query : str, n_videos : int = 5):
+        params = {
+            "q": query,
+            "engine": "google_videos",
+            "ijn": "0",
+            "api_key": google_serp_api_key
+        }
+
+        search = GoogleSearch(params)
+        results = search.get_dict()
+        video_results = results["video_results"]
+        yt_links = [i['link'] for i in video_results[:n_videos]]
+        return yt_links
