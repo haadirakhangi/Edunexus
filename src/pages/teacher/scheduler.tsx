@@ -13,12 +13,26 @@ import {
   TabPanel,
   Tab,
   TabPanels,
+  IconButton,
   useColorModeValue,
 } from '@chakra-ui/react';
+import { DeleteIcon } from '@chakra-ui/icons';
+
 import { Navbar } from '../../components/navbar';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { keyframes } from "@emotion/react";
 
+const slideIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translate(5px, -7px);
+  }
+  to {
+    opacity: 0.9;
+    transform: translate(0, 0);
+  }
+`;
 type Lesson = {
   [key: string]: string;
 };
@@ -84,8 +98,8 @@ const LessonsGrid = () => {
   };
 
   const handleViewLabMnaual = (id: Number) => {
-      localStorage.setItem('lab_manual_id', id.toString());
-      navigate('/teacher/lab-manual');
+    localStorage.setItem('lab_manual_id', id.toString());
+    navigate('/teacher/lab-manual');
   };
 
   const handleCreateLabManual = () => {
@@ -111,6 +125,7 @@ const LessonsGrid = () => {
         </TabList>
         <TabPanels>
           <TabPanel>
+
             <Box p={5}>
               <Heading textAlign="center" mb={6} color="purple.600">
                 Lesson Modules
@@ -121,6 +136,8 @@ const LessonsGrid = () => {
                     key={key}
                     direction="column"
                     p={5}
+                    pt={7}
+                    pb={7}
                     maxWidth="350px"
                     borderWidth="1px"
                     borderRadius="lg"
@@ -129,7 +146,28 @@ const LessonsGrid = () => {
                     boxShadow="lg"
                     ref={(el) => (cardRefs.current[index] = el)}
                     minHeight={`${maxHeight}px`}
+                    position="relative"
+                    _hover={{
+                      '.delete-icon': {
+                        opacity: 0.95,
+                        animation: `${slideIn} 0.6s ease-in-out`,
+                      },
+                    }}
                   >
+                    {/* Delete Icon */}
+                    <IconButton
+                      aria-label="Delete lesson"
+                      icon={<DeleteIcon />}
+                      size="sm"
+                      colorScheme="red"
+                      borderRadius="full"
+                      position="absolute"
+                      top={2}
+                      right={2}
+                      opacity={0}
+                      className="delete-icon"
+                    />
+
                     <VStack align="start" spacing={3} flex="1">
                       <Text fontWeight="bold" fontSize="lg" color="purple.500">
                         {index + 1}. {key}

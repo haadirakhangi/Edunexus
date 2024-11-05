@@ -8,11 +8,14 @@ import {
   VStack,
   Flex,
   Spinner,
+  IconButton,
+  Switch,
   useColorModeValue,
 } from '@chakra-ui/react';
 import { Navbar } from '../../components/navbar';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { DeleteIcon } from '@chakra-ui/icons';
 
 type Course = {
   id: number;
@@ -59,16 +62,20 @@ const TeacherDashboard = () => {
 
   return (
     <div>
+
       <Navbar />
       <Box p={5}>
         <Heading textAlign="center" mb={6} color="purple.600">
           My Courses
         </Heading>
-        <Grid gap={6}>
+        <Grid
+          gap={6}
+          templateColumns="repeat(auto-fit, minmax(250px, 0.2fr))"
+        >
           {courses.map((course) => (
-            <Flex
+            <Box
               key={course.id}
-              direction="column"
+              position="relative"
               p={5}
               borderWidth="1px"
               borderRadius="lg"
@@ -77,6 +84,32 @@ const TeacherDashboard = () => {
               boxShadow="lg"
               maxWidth="350px"
             >
+              {/* Header with Delete Button and Privacy Switch */}
+              <Flex justifyContent="space-between" alignItems="center" mb={4}>
+                <IconButton
+                  aria-label="Delete Course"
+                  icon={<DeleteIcon />}
+                  size="sm"
+                  colorScheme="red"
+                  onClick={() => handleDeleteCourse(course.id)}
+                />
+
+                <Flex alignItems="center">
+                  <Text fontSize="sm" mr={2}>
+                    Private
+                  </Text>
+                  <Switch
+                    colorScheme="purple"
+                    onChange={() => handlePrivacyToggle(course.id)}
+                    isChecked={course.isPublic}
+                  />
+                  <Text fontSize="sm" ml={2}>
+                    Public
+                  </Text>
+                </Flex>
+              </Flex>
+
+              {/* Course Information */}
               <VStack align="start" spacing={3} flex="1">
                 <Text fontWeight="bold" fontSize="lg" color="purple.500">
                   {course.course_name}
@@ -84,6 +117,7 @@ const TeacherDashboard = () => {
                 <Text fontSize="sm">Course Code: {course.course_code}</Text>
                 <Text fontSize="sm">Number of Lectures: {course.num_of_lectures}</Text>
               </VStack>
+
               <Button
                 size="sm"
                 width="100%"
@@ -91,13 +125,15 @@ const TeacherDashboard = () => {
                 color="white"
                 _hover={{ bg: 'purple.500' }}
                 mt={3}
-                onClick={() => handleViewLessons(course)}              >
+                onClick={() => handleViewLessons(course)}
+              >
                 View Lessons
               </Button>
-            </Flex>
+            </Box>
           ))}
         </Grid>
       </Box>
+
     </div>
   );
 };
