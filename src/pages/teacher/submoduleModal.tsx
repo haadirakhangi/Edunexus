@@ -93,14 +93,7 @@ export const SubmoduleModal: React.FC<SubmoduleModalProps> = ({
                                     value={submodules[key]}
                                     onChange={(e) => handleSubmoduleChange(key, e.target.value)}
                                 />
-                                <IconButton
-                                    icon={<DeleteIcon />}
-                                    colorScheme="red"
-                                    size="sm"
-                                    ml={2}
-                                    onClick={() => deleteSubmodule(key)}
-                                    aria-label="Delete submodule"
-                                />
+                                
                                 <IconButton
                                     icon={<ChevronUpIcon />}
                                     colorScheme="blue"
@@ -116,6 +109,14 @@ export const SubmoduleModal: React.FC<SubmoduleModalProps> = ({
                                     ml={2}
                                     onClick={() => moveSubmoduleDown(index)}
                                     aria-label="Move down"
+                                />
+                                <IconButton
+                                    icon={<DeleteIcon />}
+                                    colorScheme="red"
+                                    size="sm"
+                                    ml={2}
+                                    onClick={() => deleteSubmodule(key)}
+                                    aria-label="Delete submodule"
                                 />
                             </Box>
                         ))}

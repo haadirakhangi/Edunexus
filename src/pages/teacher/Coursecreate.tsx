@@ -226,7 +226,7 @@ const CourseCreate = () => {
               </Box>
             </Box>
           </Box>
-          <Modal isOpen={isOpen} onClose={onClose} size="xl">
+          <Modal isOpen={isOpen} onClose={onClose} size="3xl">
             <ModalOverlay />
             <ModalContent height={"90vh"} overflow={"scroll"}>
               <ModalHeader>Edit Lessons</ModalHeader>

@@ -27,15 +27,21 @@ type ButtonTextList = string[];
 
 type LessionIds = Number[];
 
+type LabManual = { id: number; markdown_content: string, exp_aim: string, exp_number: string };
+
 const LessonsGrid = () => {
   const [lessons, setLessons] = useState<Lesson>({});
   const [buttonTexts, setButtonTexts] = useState<ButtonTextList>([]);
   const [lessionIds, setLessionIds] = useState<LessionIds>([]);
+  const [labIds, setLabIds] = useState<LessionIds>([]);
+  const [labManuals, setLabManuals] = useState<LabManual[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [maxHeight, setMaxHeight] = useState(0);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   localStorage.removeItem('lesson_id');
+  localStorage.removeItem('lab_manual_id');
+
   useEffect(() => {
     const fetchLessons = async () => {
       try {
@@ -44,11 +50,13 @@ const LessonsGrid = () => {
         const lessonData = response.data.lessons || {};
         const buttonData: ButtonTextList = response.data.lesson_statuses || [];
         const lessonidData: LessionIds = response.data.lesson_ids || [];
-
-        console.log(buttonData)
+        const labidData: LessionIds = response.data.manual_ids || [];
+        const labManualData: LabManual[] = response.data.lab_manuals || [];
         setLessons(lessonData);
         setButtonTexts(buttonData);
         setLessionIds(lessonidData);
+        setLabManuals(labManualData);
+        setLabIds(labidData);
       } catch (error) {
         console.error('Error fetching lessons:', error);
       }
@@ -65,7 +73,7 @@ const LessonsGrid = () => {
     }
   }, [lessons]);
 
-  const handleViewLesson = (buttonText: string, name: string,id: Number) => {
+  const handleViewLesson = (buttonText: string, name: string, id: Number) => {
     if (buttonText === "Generate") {
       localStorage.setItem('lesson_name', name);
       navigate('/teacher/create-lesson');
@@ -74,7 +82,15 @@ const LessonsGrid = () => {
       navigate('/teacher/course');
     }
   };
-  
+
+  const handleViewLabMnaual = (id: Number) => {
+      localStorage.setItem('lab_manual_id', id.toString());
+      navigate('/teacher/lab-manual');
+  };
+
+  const handleCreateLabManual = () => {
+    navigate('/teacher/lab-manual-create');
+  };
 
   if (loading) {
     return (
@@ -88,10 +104,10 @@ const LessonsGrid = () => {
   return (
     <div>
       <Navbar />
-      <Tabs mt={3} isFitted variant="soft-rounded" colorScheme="purple">
+      <Tabs mt={3} isFitted variant="enclosed" colorScheme="purple">
         <TabList>
-          <Tab>Lessons</Tab>
-          <Tab>Lab Manuals</Tab>
+          <Tab _selected={{ bg: "purple.500", color: "white" }} >Lessons</Tab>
+          <Tab _selected={{ bg: "purple.500", color: "white" }}>Lab Manuals</Tab>
         </TabList>
         <TabPanels>
           <TabPanel>
@@ -105,6 +121,7 @@ const LessonsGrid = () => {
                     key={key}
                     direction="column"
                     p={5}
+                    maxWidth="350px"
                     borderWidth="1px"
                     borderRadius="lg"
                     bg={useColorModeValue('gray.100', 'gray.700')}
@@ -117,7 +134,7 @@ const LessonsGrid = () => {
                       <Text fontWeight="bold" fontSize="lg" color="purple.500">
                         {index + 1}. {key}
                       </Text>
-                      <Text  fontSize="sm" justifyContent={"center"}>
+                      <Text fontSize="sm" justifyContent={"center"}>
                         {description}
                       </Text>
                     </VStack>
@@ -126,7 +143,7 @@ const LessonsGrid = () => {
                       width="100%"
                       bg={useColorModeValue('purple.600', 'purple.300')}
                       color="white"
-                      onClick={() => handleViewLesson(buttonTexts[index],key,lessionIds[index])}
+                      onClick={() => handleViewLesson(buttonTexts[index], key, lessionIds[index])}
                       _hover={{ bg: 'purple.500' }}
                       mt={3}
                     >
@@ -138,7 +155,57 @@ const LessonsGrid = () => {
             </Box>
           </TabPanel>
           <TabPanel>
-            HELLO
+            <Box>
+              <Heading textAlign="center" mb={6} color="purple.600">
+                Lab Manuals
+              </Heading>
+              {labManuals.length > 0 ? (
+                <Grid templateColumns="repeat(auto-fit, minmax(300px, 1fr))" gap={6}>
+                  {labManuals.map((manual, index) => (
+                    <Flex
+                      key={manual.id}
+                      direction="column"
+                      p={5}
+                      maxWidth="350px"
+                      borderWidth="1px"
+                      borderRadius="lg"
+                      minHeight="180px"
+                      bg={useColorModeValue('gray.100', 'gray.700')}
+                      color={useColorModeValue('gray.700', 'gray.100')}
+                      boxShadow="lg"
+                    >
+                      <VStack align="start" spacing={3} flex="1">
+                        <Text fontWeight="bold" fontSize="lg" color="purple.500">
+                          {manual.exp_number} : {manual.exp_aim}
+                        </Text>
+                      </VStack>
+                      <Button
+                        size="sm"
+                        width="100%"
+                        bg={useColorModeValue('purple.600', 'purple.300')}
+                        color="white"
+                        onClick={() => handleViewLabMnaual(labIds[index])}
+                        _hover={{ bg: 'purple.500' }}
+                        mt={3}
+                      >
+                        View
+                      </Button>
+                    </Flex>
+                  ))}
+                </Grid>
+              ) : (
+                <Text textAlign="center" color="gray.500">
+                  No Lab Manuals available.
+                </Text>
+              )}
+              <Button
+                mt={4}
+                colorScheme="purple"
+                onClick={handleCreateLabManual}
+              >
+                Create Lab Manual
+              </Button>
+            </Box>
           </TabPanel>
         </TabPanels>
       </Tabs>

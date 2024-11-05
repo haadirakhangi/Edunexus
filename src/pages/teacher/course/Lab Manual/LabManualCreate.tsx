@@ -20,11 +20,12 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 
 const lab_manual_components = {
-    "Title": "The name of the experiment, providing a concise and descriptive label for the lab.",
-    "Aim": "A brief statement describing the objective or purpose of the experiment.",
-    "Theory": "A section that explains the fundamental principles, scientific theories, and background information relevant to the experiment.",
+    "Theory": "A section that explains the theoretical aspects for example (but not limited to): fundamental principles, scientific theories, and background information relevant to the experiment.",
     "Apparatus": "A list of all equipment, tools, chemicals, and materials required to conduct the experiment.",
-    "Procedure": "Step-by-step instructions outlining how the experiment is to be performed, including any safety precautions.",
+    "Requirements": "A list of all equipment, tools, chemicals, and materials required to conduct the experiment.",
+    "Technologies Used": "A list of all the technologies, software or system requirements required to conduct the experiment.",
+    "Procedure": "Step-by-step instructions outlining how the experiment is to be performed.",
+    "Code":"A sample code snippet that helps to guides on how to perform the experiment",
     "Observations": "A section for recording observations, data collected, and any qualitative information noted during the experiment.",
     "Results": "This section includes tables, graphs, or any other format of data representation showing the outcomes obtained from the experiment.",
     "Calculations": "A detailed explanation of any mathematical calculations or formulas used to derive the results.",
@@ -62,9 +63,6 @@ const LabManualCreate = () => {
             (key) => data.lab_components?.includes(key)
         );
     
-        // Retrieve course_name from localStorage
-        
-    
         const formData = {
             ...data,
             lab_components,
@@ -72,6 +70,9 @@ const LabManualCreate = () => {
         };
     
         // Save formData to localStorage
+        localStorage.setItem('exp_num',data.exp_num)
+        localStorage.setItem('exp_aim',data.exp_aim)
+
         localStorage.setItem('labManualData', JSON.stringify(formData));
     
         // Navigate to a new page after saving
@@ -128,7 +129,7 @@ const LabManualCreate = () => {
 
                             <VStack mt={6} align="center" width="100%">
                                 <Text className='feature-heading' fontSize="2xl" mb={4}><b>Lab Components</b></Text>
-                                <SimpleGrid columns={[1, 2]} spacing={2} width="70%">
+                                <SimpleGrid columns={[1, 2]} spacing={2} width="80%">
                                     {Object.keys(lab_manual_components).map((component) => (
                                         <FormControl key={component} display="flex" ml={5} alignItems="center">
                                             <Checkbox {...register('lab_components')} value={component}

@@ -20,23 +20,30 @@ const LabManual: React.FC = () => {
     const [contentReady, setContentReady] = useState(false);
     const { register, setValue, watch } = useForm<{ markdownContent: string }>();
     const markdownContent = watch("markdownContent") || "";
+    const lab_manual_id = Number(localStorage.getItem('lab_manual_id'));
+    const handleSaveLabManual = async () => {
+        const course_id = Number(localStorage.getItem('course_id'));
+        const exp_num = Number(localStorage.getItem('exp_num'));
+        const exp_aim = localStorage.getItem('exp_aim');
 
-    const handleSaveLesson = async () => {
-        // try {
-        //     const response = await axios.post('/api/teacher/add-lesson', {
-        //         title: "lesson 1",
-        //         markdown_content: data,
-        //         relevant_images: images[currentIndex],
-        //         uploaded_images: uploadedImages,
-        //         course_id: 'HDSHB' // Replace with the actual course ID
-        //     }, { withCredentials: true });
+        try {
+            const response = await axios.post('/api/teacher/add-lab-manual', {
+                markdown_content: markdownContent,
+                uploaded_images: uploadedImages,
+                course_id: course_id,
+                lab_manual_id: lab_manual_id,
+                exp_aim: exp_aim,
+                exp_num: exp_num,
+            }, { withCredentials: true });
 
-        //     alert(response.data.message); // Show success message
-        // } catch (error) {
-        //     console.error('Error saving lesson:', error);
-        //     alert('Failed to save lesson.');
-        // }
-        console.log("i was called")
+            alert("Lab Manual Saved Successfully!");
+            if (response.data.response) {
+                localStorage.setItem('lab_manual_id', response.data.lab_manual_id.toString())
+            }
+        } catch (error) {
+            console.error('Error saving lab manual:', error);
+            alert('Failed to save lab manual.');
+        }
     };
 
     const insertImageAtCursor = (imageUrl: string) => {
@@ -51,12 +58,13 @@ const LabManual: React.FC = () => {
     const downloadDocxFile = async () => {
         try {
             const storedData = localStorage.getItem('labManualData');
+            const course_id = localStorage.getItem('course_id');
             const formData = storedData ? JSON.parse(storedData) : {};
             const course_name = formData.course_name;
             const exp_num = formData.exp_num;
             const response = await axios.post(
-                '/api/teacher/convert-docx',
-                { markdown:markdownContent, course_name: course_name, exp_num: exp_num },
+                '/api/teacher/create-lab-manual-docx',
+                { markdown: markdownContent, course_id: course_id, course_name: course_name, exp_num: exp_num },
                 {
                     responseType: 'blob',
                     headers: {
@@ -81,11 +89,11 @@ const LabManual: React.FC = () => {
 
 
     useEffect(() => {
-        const fetchData = async () => {
-            setValue("markdownContent", MarkdownContent_ex);
-            setContentReady(true);
-            const fetchContent = async () => {
-                setIsLoading(true);
+        // setValue("markdownContent", MarkdownContent_ex);
+        // setContentReady(true);
+        const fetchContent = async () => {
+            setIsLoading(true);
+            if (lab_manual_id == 0) {
                 try {
                     const storedData = localStorage.getItem('labManualData');
                     const formData = storedData ? JSON.parse(storedData) : {};
@@ -107,10 +115,19 @@ const LabManual: React.FC = () => {
                 } catch (error) {
                     console.error("Error fetching content:", error);
                 }
-            };
+            } else {
+                const response = await axios.post('/api/teacher/fetch-lab-manual', {
+                    lab_manual_id: lab_manual_id
+                }, { withCredentials: true });
+                const umg = JSON.parse(response.data.uploaded_images);
+                setUploadedImages(umg);
+                setValue("markdownContent", response.data.markdown_content);
+                setIsLoading(false);
+
+            }
         };
 
-        fetchData();
+        fetchContent();
     }, []);
 
     useEffect(() => {
@@ -144,8 +161,8 @@ const LabManual: React.FC = () => {
                     uploadedImages={uploadedImages}
                     onInsertImage={insertImageAtCursor}
                     setUploadedImages={setUploadedImages}
-                    handleSaveLesson={handleSaveLesson}
-                    downloadDocxFile = {downloadDocxFile}
+                    handleSaveLesson={handleSaveLabManual}
+                    downloadDocxFile={downloadDocxFile}
                 />
 
                 <LabManualContent

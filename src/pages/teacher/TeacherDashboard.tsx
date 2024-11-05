@@ -64,7 +64,7 @@ const TeacherDashboard = () => {
         <Heading textAlign="center" mb={6} color="purple.600">
           My Courses
         </Heading>
-        <Grid templateColumns="repeat(auto-fit, minmax(300px, 1fr))" gap={6}>
+        <Grid gap={6}>
           {courses.map((course) => (
             <Flex
               key={course.id}
@@ -75,6 +75,7 @@ const TeacherDashboard = () => {
               bg={useColorModeValue('gray.100', 'gray.700')}
               color={useColorModeValue('gray.700', 'gray.100')}
               boxShadow="lg"
+              maxWidth="350px"
             >
               <VStack align="start" spacing={3} flex="1">
                 <Text fontWeight="bold" fontSize="lg" color="purple.500">
