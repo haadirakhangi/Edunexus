@@ -53,3 +53,6 @@ class LabManual(db.Model):
     course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=False)
     teacher_id = db.Column(db.Integer, db.ForeignKey('teachers.id'), nullable=False)
     markdown_content = db.Column(db.Text, nullable=False)
+    uploaded_images = db.Column(JSON, nullable=True)
+    exp_aim = db.Column(db.Text, nullable=False)
+    exp_number = db.Column(db.Integer, nullable=False)

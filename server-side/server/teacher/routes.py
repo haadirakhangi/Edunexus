@@ -145,7 +145,8 @@ def get_lesson():
         return jsonify({"message": "Course ID not found in session.", "response": False}), 400
 
     course = Course.query.filter_by(id=course_id, teacher_id=teacher_id).first()
-    
+    print(course,"-------------------------------")
+
     if course is None:
         return jsonify({"message": "Course not found for this teacher."}), 404
     
@@ -162,31 +163,17 @@ def get_lesson():
             lesson_statuses.append("Generate")
             lesson_ids.append(0)
 
+    lab_manuals = LabManual.query.filter_by(course_id=course_id).all()
+    manual_statuses = []
+    manual_ids = []
 
-    return jsonify({"lessons": lessons_data,"lesson_statuses": lesson_statuses,"lesson_ids":lesson_ids}), 200
+    for manual in lab_manuals:
+        manual_statuses.append("View" if manual else "Generate")
+        manual_ids.append(manual.id if manual else 0)
 
-@teachers.route('/add-lab-manual', methods=['POST'])
-def add_lab_manual():
-    teacher_id = session.get('teacher_id')
-    if teacher_id is None:
-        return jsonify({"message": "Teacher not logged in.", "response": False}), 401
+    manuals = [{"id": lm.id, "markdown_content": lm.markdown_content, "exp_aim": lm.exp_aim, "exp_number": lm.exp_number} for lm in lab_manuals]
 
-    data = request.get_json()
-    course_id = data.get('course_id')
-    markdown_content = data.get('markdown_content')
-
-    if not course_id or not markdown_content:
-        return jsonify({"message": "Course ID and markdown content are required."}), 400
-
-    new_lab_manual = LabManual(
-        course_id=course_id,
-        teacher_id=teacher_id,
-        markdown_content=markdown_content
-    )
-
-    db.session.add(new_lab_manual)
-    db.session.commit()
-    return jsonify({"message": "Lab manual added successfully!", "lab_manual_id": new_lab_manual.id}), 200
+    return jsonify({"lessons": lessons_data,"lesson_statuses": lesson_statuses,"lesson_ids":lesson_ids,"lab_manuals":manuals,"manual_statuses":manual_statuses,"manual_ids":manual_ids}), 200
 
 @teachers.route('/multimodal-rag-submodules', methods=['POST'])
 async def multimodal_rag_submodules():
@@ -481,19 +468,6 @@ def fetch_lesson():
 
     return jsonify(lesson_data), 200
 
-@teachers.route('/get-lab-manuals', methods=['GET'])
-def get_lab_manuals():
-    course_id = request.args.get('course_id')
-    
-    if not course_id:
-        return jsonify({"message": "Course ID is required."}), 400
-
-    lab_manuals = LabManual.query.filter_by(course_id=course_id).all()
-    if not lab_manuals:
-        return jsonify({"message": "No lab manuals found for this course."}), 404
-    manuals = [{"id": lm.id, "markdown_content": lm.markdown_content} for lm in lab_manuals]
-    return jsonify({"lab_manuals": manuals}), 200
-
 @teachers.route('/generate-lesson', methods=['POST'])
 async def generate_lesson():
     teacher_id = session.get('teacher_id')
@@ -566,6 +540,76 @@ def convert_docx():
         )
     except Exception as e:  
         print("An error occured while creating document: ",e)
+
+@teachers.route('/add-lab-manual', methods=['POST'])
+def add_lab_manual():
+    teacher_id = session.get('teacher_id')
+    if teacher_id is None:
+        return jsonify({"message": "Teacher not logged in.", "response": False}), 401
+
+    data = request.get_json()
+    course_id = data.get('course_id')
+    exp_aim = data.get('exp_aim', '')
+    exp_number = data.get('exp_num', None)
+    markdown_content = data.get('markdown_content', '')
+    uploaded_images = data.get('uploaded_images', None)
+    lab_manual_id = data.get('lab_manual_id', None)
+
+    if not course_id or not exp_aim or exp_number is None:
+        return jsonify({"message": "Course ID, experiment aim, and experiment number are required."}), 400
+
+    if lab_manual_id:
+        lab_manual: LabManual = LabManual.query.get(lab_manual_id)
+        if not lab_manual or lab_manual.teacher_id != teacher_id:
+            return jsonify({"message": "Lab manual not found or you do not have permission to edit it."}), 404
+
+        # Update existing lab manual
+        lab_manual.course_id = course_id
+        lab_manual.exp_aim = exp_aim
+        lab_manual.exp_number = exp_number
+        lab_manual.markdown_content = markdown_content
+        lab_manual.uploaded_images = json.dumps(uploaded_images)
+    else:
+        # Create new lab manual
+        new_lab_manual = LabManual(
+            course_id=course_id,
+            teacher_id=teacher_id,
+            exp_aim=exp_aim,
+            exp_number=exp_number,
+            markdown_content=markdown_content,
+            uploaded_images=json.dumps(uploaded_images)
+        )
+        db.session.add(new_lab_manual)
+
+    db.session.commit()
+    lab_manual_id_to_return = lab_manual.id if lab_manual_id else new_lab_manual.id
+    return jsonify({"message": "Lab manual saved successfully!", "lab_manual_id": lab_manual_id_to_return, "response": True}), 200
+
+@teachers.route('/fetch-lab-manual', methods=['POST'])
+def fetch_lab_manual():
+    data = request.get_json()
+    lab_manual_id = data.get('lab_manual_id')
+
+    if not lab_manual_id:
+        return jsonify({"message": "Lab manual ID is required."}), 400
+
+    lab_manual = LabManual.query.get(lab_manual_id)
+
+    if lab_manual is None:
+        return jsonify({"message": "Lab manual not found."}), 404
+
+    lab_manual_data = {
+        "id": lab_manual.id,
+        "course_id": lab_manual.course_id,
+        "teacher_id": lab_manual.teacher_id,
+        "markdown_content": lab_manual.markdown_content,
+        "uploaded_images": lab_manual.uploaded_images,
+        "exp_aim": lab_manual.exp_aim,
+        "exp_number": lab_manual.exp_number
+    }
+
+    return jsonify(lab_manual_data), 200
+
 
 @teachers.route('/logout', methods=['GET'])
 @cross_origin(supports_credentials=True)
