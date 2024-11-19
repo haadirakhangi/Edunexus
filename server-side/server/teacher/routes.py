@@ -415,15 +415,14 @@ def add_lesson():
     course_id = data.get('course_id')
     lesson_id = data.get('lesson_id', None)
 
-    if not title or not course_id:
-        return jsonify({"message": "Title and course ID are required."}), 400
+    if not course_id:
+        return jsonify({"message": "course ID are required."}), 400
 
     if lesson_id:
         lesson = Lesson.query.get(lesson_id)
         if not lesson or lesson.teacher_id != teacher_id:
             return jsonify({"message": "Lesson not found or you do not have permission to edit it."}), 404
         
-        lesson.title = title
         lesson.markdown_content = json.dumps(markdown_content)
         lesson.relevant_images = json.dumps(relevant_images)
         lesson.uploaded_images = json.dumps(uploaded_images)
