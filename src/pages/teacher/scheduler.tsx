@@ -41,6 +41,9 @@ const LessonsGrid = () => {
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   localStorage.removeItem('lesson_id');
   localStorage.removeItem('lab_manual_id');
+  localStorage.removeItem('lesson_name');
+  localStorage.removeItem('exp_aim');
+  localStorage.removeItem('exp_num');
 
   useEffect(() => {
     const fetchLessons = async () => {
