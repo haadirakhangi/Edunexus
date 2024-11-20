@@ -6,7 +6,7 @@ export const useSessionCheck = (): void => {
     const toast = useToast();
 
     useEffect(() => {
-        const sessionValue = sessionStorage.getItem('authenticated');
+        const sessionValue = sessionStorage.getItem('student_authenticated');
         if (!sessionValue) {
             toast({
                 title: 'Login Required!.',
