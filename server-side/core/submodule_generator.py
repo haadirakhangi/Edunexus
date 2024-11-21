@@ -9,11 +9,15 @@ class SubModuleGenerator:
         self.tavily_client = TavilyProvider()
 
     def generate_submodules(self, module_name):
-        prompt_submodules = """You are an educational assistant having knowledge in various domains. You will be provided with a module name and your task is to generate six 'Sub-Modules' names that are related to the module. The output should be in json format where each key corresponds to the sub-module number and the values are the sub-module names.
-    Module Name: {module_name}
-    """
-        output = self.gemini_client.generate_json_response(prompt_submodules.format(module_name = module_name))
+        prompt_submodules = f"""You are an educational assistant having knowledge in various domains. You will be provided with a module name and your task is to generate six 'Sub-Modules' names that are related to the module. The output should be in json format where each key corresponds to the sub-module number and the values are the sub-module names.
+        Module Name: {module_name}. The output should be a list of dictionaries as given in the below example.
+        Example: [{{"1": "Data Retrieval Methods"}}, {{"2": "Knowledge Base Construction"}}]
+        """
+    
+        output = self.gemini_client.generate_json_response(prompt_submodules)
         return output
+
+
     
     def generate_submodules_from_web(self, module_name, course_name):
         topic = module_name +" : " +course_name

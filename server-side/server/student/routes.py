@@ -167,7 +167,7 @@ def getuser():
     if len(user_queries) == 0:
         query_message = "You have not searched for any topic yet. Please search for a topic to get recommendations."
         recommended_modules = RECOMMENDATION_GENERATOR.generate_recommendations_with_interests(user_course, user_interest) 
-
+        print("Recommmended------------------------",recommended_modules)
         return jsonify({"message": "User found", "query_message":query_message,"recommended_topics":recommended_modules, "user_ongoing_modules":ongoing_modules, "user_completed_module":completed_modules, "response":True}), 200
     else:
         latest_query = Query.query.filter_by(user_id=user_id).order_by(desc(Query.date_search)).first() 
