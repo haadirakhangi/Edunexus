@@ -145,7 +145,7 @@ class ServerUtils:
             course_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
             if not TeacherCourse.query.filter_by(course_code=course_code).first():
                 return course_code
-    
+
 class AssistantUtils:
     @staticmethod
     def get_page_context(index: int = 1):
