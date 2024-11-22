@@ -1,7 +1,6 @@
 import os
 import ast
 from dotenv import load_dotenv
-from flask import session
 import google.generativeai as genai
 import time 
 load_dotenv()
@@ -23,12 +22,14 @@ class GeminiProvider:
                     generation_config=genai.GenerationConfig()
                 elif response_schema is None:
                     generation_config = genai.GenerationConfig(
-                        response_mime_type="application/json"
+                        response_mime_type="application/json",
+                        temperature=0.5
                     )
                 else:
                     generation_config=genai.GenerationConfig(
                         response_mime_type="application/json",
-                        response_schema = response_schema
+                        response_schema = response_schema,
+                        temperature=0.5
                     )
 
                 completion = self.gemini_client.generate_content(

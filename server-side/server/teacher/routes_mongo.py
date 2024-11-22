@@ -18,14 +18,16 @@ from core.rag import MultiModalRAG, SimpleRAG
 from server.constants import *
 from server.utils import ServerUtils
 import json
+import uuid
 from core.lab_manual_generator import LabManualGenerator
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
+from bson.objectid import ObjectId
 from urllib.parse import quote_plus
 from werkzeug.security import check_password_hash, generate_password_hash
+
 teachers = Blueprint(name='teachers', import_name=__name__)
 password = quote_plus(os.getenv("MONGO_PASS"))
-from bson.objectid import ObjectId
 uri = "mongodb+srv://hatim:" + password +"@cluster0.f7or37n.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(uri, server_api=ServerApi('1'))
 db = client["FYP"]
