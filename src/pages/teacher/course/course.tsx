@@ -118,7 +118,7 @@ const PerContent: React.FC = () => {
                     setApiCalled(true);
                     setSelectedSubmodule(Object.keys(response.data.content[0] || {})[0]);
                 }else{
-                    const response = await axios.post('/api/teacher/fetch-lesson',{
+                    const response = await axios.post('/api/teacher/get-lesson',{
                         lesson_id: lesson_id
                     }, { withCredentials: true });
                     const mk = JSON.parse(response.data.markdown_content);
