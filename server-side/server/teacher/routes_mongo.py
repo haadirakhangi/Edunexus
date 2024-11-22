@@ -23,6 +23,7 @@ from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from urllib.parse import quote_plus
 from werkzeug.security import check_password_hash, generate_password_hash
+import uuid
 teachers = Blueprint(name='teachers', import_name=__name__)
 password = quote_plus(os.getenv("MONGO_PASS"))
 from bson.objectid import ObjectId
@@ -32,6 +33,7 @@ db = client["FYP"]
 teachers_collection = db["teacher"]
 lessons_collection = db["lessons"]
 courses_collection = db["course"]
+lab_manuals_collection = db["lab_manuals"]
 
 @teachers.route('/register', methods=['POST'])
 def register():
@@ -109,13 +111,6 @@ def login():
     }), 200
 
 @teachers.route('/create-course', methods=['POST'])
-class ServerUtils:
-    @staticmethod
-    def generate_course_code():
-        # Generate a unique course code (example implementation)
-        return str(uuid.uuid4())[:8].upper()
-
-@teachers.route('/create-course', methods=['POST'])
 def create_course():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:
@@ -174,6 +169,7 @@ def get_courses():
         }
         for course in courses
     ]
+    print(courses_data)
     
     return jsonify({"courses": courses_data, "response": True}), 200
 
@@ -182,43 +178,62 @@ def get_lesson():
     teacher_id = session.get('teacher_id')
     data = request.json
     course_id = data.get('course_id')
+    
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in.", "response": False}), 401
-    
-    if course_id is None:
-        return jsonify({"message": "Course ID not found in session.", "response": False}), 400
 
-    course = Course.query.filter_by(id=course_id, teacher_id=teacher_id).first()
-    print(course,"-------------------------------")
+    if course_id is None:
+        return jsonify({"message": "Course ID not found in the request.", "response": False}), 400
+
+    # Fetch the course from the database
+    course = courses_collection.find_one({"_id": ObjectId(course_id), "teacher_id": teacher_id})
 
     if course is None:
         return jsonify({"message": "Course not found for this teacher."}), 404
-    
-    lessons_data = json.loads(course.lessons_data)
+
+    # Parse lessons data from the course
+    lessons_data = json.loads(course.get("lessons_data", "{}"))
     lesson_statuses = []
     lesson_ids = []
 
+    # Check for existing lessons in the database
     for lesson_title in lessons_data.keys():
-        existing_lesson = Lesson.query.filter_by(title=lesson_title, course_id=course_id).first()
+        existing_lesson = lessons_collection.find_one({"title": lesson_title, "course_id": course_id})
         if existing_lesson:
             lesson_statuses.append("View")
-            lesson_ids.append(existing_lesson.id)
+            lesson_ids.append(str(existing_lesson["_id"]))  # Convert ObjectId to string
         else:
             lesson_statuses.append("Generate")
             lesson_ids.append(0)
 
-    lab_manuals = LabManual.query.filter_by(course_id=course_id).all()
+    # Fetch lab manuals from the database
+    lab_manuals = list(lab_manuals_collection.find({"course_id": course_id}))
     manual_statuses = []
     manual_ids = []
 
     for manual in lab_manuals:
         manual_statuses.append("View" if manual else "Generate")
-        manual_ids.append(manual.id if manual else 0)
+        manual_ids.append(str(manual["_id"]) if manual else 0)
 
-    manuals = [{"id": lm.id, "markdown_content": lm.markdown_content, "exp_aim": lm.exp_aim, "exp_number": lm.exp_number} for lm in lab_manuals]
+    # Format lab manuals data
+    manuals = [
+        {
+            "id": str(lm["_id"]),
+            "markdown_content": lm.get("markdown_content"),
+            "exp_aim": lm.get("exp_aim"),
+            "exp_number": lm.get("exp_number"),
+        }
+        for lm in lab_manuals
+    ]
 
-    return jsonify({"lessons": lessons_data,"lesson_statuses": lesson_statuses,"lesson_ids":lesson_ids,"lab_manuals":manuals,"manual_statuses":manual_statuses,"manual_ids":manual_ids}), 200
-
+    return jsonify({
+        "lessons": lessons_data,
+        "lesson_statuses": lesson_statuses,
+        "lesson_ids": lesson_ids,
+        "lab_manuals": manuals,
+        "manual_statuses": manual_statuses,
+        "manual_ids": manual_ids
+    }), 200
 @teachers.route('/multimodal-rag-submodules', methods=['POST'])
 async def multimodal_rag_submodules():
     teacher_id = session.get('teacher_id')
