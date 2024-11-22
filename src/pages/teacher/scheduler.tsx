@@ -62,7 +62,7 @@ const LessonsGrid = () => {
   useEffect(() => {
     const fetchLessons = async () => {
       try {
-        const course_id = Number(localStorage.getItem('course_id'));
+        const course_id = localStorage.getItem('course_id');
         const response = await axios.post('/api/teacher/get-lesson', { course_id: course_id });
         const lessonData = response.data.lessons || {};
         const buttonData: ButtonTextList = response.data.lesson_statuses || [];

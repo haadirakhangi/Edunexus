@@ -18,7 +18,7 @@ import axios from 'axios';
 import { DeleteIcon } from '@chakra-ui/icons';
 
 type Course = {
-  id: number;
+  id: string;
   course_name: string;
   num_of_lectures: number;
   course_code: string;
@@ -47,7 +47,7 @@ const TeacherDashboard = () => {
 
   const handleViewLessons = (course: Course) => {
     localStorage.setItem('course_name', course.course_name);
-    localStorage.setItem('course_id', course.id.toString());
+    localStorage.setItem('course_id', course.id);
     navigate('/teacher/scheduler');
   };
 
