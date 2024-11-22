@@ -33,3 +33,4 @@ pykka
 flask[async]
 pypandoc-binary
 pymongo
+markdown
