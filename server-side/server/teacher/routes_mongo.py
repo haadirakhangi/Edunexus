@@ -22,122 +22,160 @@ from core.lab_manual_generator import LabManualGenerator
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from urllib.parse import quote_plus
+from werkzeug.security import check_password_hash, generate_password_hash
 teachers = Blueprint(name='teachers', import_name=__name__)
 password = quote_plus(os.getenv("MONGO_PASS"))
 from bson.objectid import ObjectId
 uri = "mongodb+srv://hatim:" + password +"@cluster0.f7or37n.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(uri, server_api=ServerApi('1'))
 db = client["FYP"]
+teachers_collection = db["teacher"]
 lessons_collection = db["lessons"]
+courses_collection = db["course"]
+
 @teachers.route('/register', methods=['POST'])
 def register():
-    first_name = request.form['first_name']
-    last_name = request.form['last_name']
-    email = request.form['email']
-    password = request.form['password']
-    college_name = request.form['college_name']
-    department = request.form['department']
-    experience = request.form['experience']
-    phone_number = request.form['phone_number']
-    qualification = request.form['qualification']
-    subjects = request.form['subjects']
-    country = request.form['country']
-    state = request.form['state']
-    city = request.form['city']
-    gender = request.form['gender']
-    age = request.form['age']
+    # Extract form data
+    first_name = request.form.get('first_name')
+    last_name = request.form.get('last_name')
+    email = request.form.get('email')
+    password = request.form.get('password')
+    college_name = request.form.get('college_name')
+    department = request.form.get('department')
+    experience = request.form.get('experience')
+    phone_number = request.form.get('phone_number')
+    qualification = request.form.get('qualification')
+    subjects = request.form.get('subjects')
+    country = request.form.get('country')
+    state = request.form.get('state')
+    city = request.form.get('city')
+    gender = request.form.get('gender')
+    age = request.form.get('age')
 
+    # Check required fields
     if not first_name or not last_name or not email or not password:
         return jsonify({"message": "First name, last name, email, and password are required."}), 400
-        
-    if Teacher.query.filter_by(email=email).first():
-        return jsonify({"message": "User already exists", "response":False}), 201
 
-    new_teacher = Teacher(
-    first_name=first_name,
-    last_name=last_name,
-    email=email,
-    college_name=college_name,
-    department=department,
-    experience=experience,
-    phone_number=phone_number,
-    qualification=qualification,
-    subjects=subjects,
-    country=country,
-    state=state,
-    city=city,     
-    gender=gender,    
-    age=age           
-    )
+    # Check if user already exists
+    if teachers_collection.find_one({"email": email}):
+        return jsonify({"message": "User already exists", "response": False}), 201
 
-    new_teacher.set_password(password)
-    db.session.add(new_teacher)
-    db.session.commit()
-    return jsonify({"message": "Registration successful!","response":True}), 200
+    # Create new teacher document
+    new_teacher = {
+        "first_name": first_name,
+        "last_name": last_name,
+        "email": email,
+        "password": generate_password_hash(password),  # Hash the password
+        "college_name": college_name,
+        "department": department,
+        "experience": experience,
+        "phone_number": phone_number,
+        "qualification": qualification,
+        "subjects": subjects,
+        "country": country,
+        "state": state,
+        "city": city,
+        "gender": gender,
+        "age": age,
+    }
+
+    # Insert into MongoDB
+    teachers_collection.insert_one(new_teacher)
+
+    return jsonify({"message": "Registration successful!", "response": True}), 200
 
 @teachers.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
+    
     if not email or not password:
         return jsonify({"message": "Email and password are required."}), 400
 
-    teacher = Teacher.query.filter_by(email=email).first()
+    # Fetch the teacher from MongoDB
+    teacher = teachers_collection.find_one({"email": email})
 
-    if teacher is None or not teacher.check_password(password):
+    if teacher is None or not check_password_hash(teacher.get("password"), password):
         return jsonify({"message": "Invalid email or password."}), 401
 
-    session['teacher_id'] = teacher.id
-    return jsonify({"message": "Login successful!", "teacher_id": teacher.id,"response":True}), 200
+    # Store the teacher ID in the session
+    session['teacher_id'] = str(teacher["_id"])  # Convert ObjectId to string for session storage
+    
+    return jsonify({
+        "message": "Login successful!",
+        "teacher_id": str(teacher["_id"]),  # Convert ObjectId to string
+        "response": True
+    }), 200
+
+@teachers.route('/create-course', methods=['POST'])
+class ServerUtils:
+    @staticmethod
+    def generate_course_code():
+        # Generate a unique course code (example implementation)
+        return str(uuid.uuid4())[:8].upper()
 
 @teachers.route('/create-course', methods=['POST'])
 def create_course():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in", "response": False}), 401
+
     try:
         course_name = request.form['course_name']
         num_lectures = request.form['num_lectures']
         lessons = request.form['lessons']
 
+        # Generate a unique course code
         course_code = ServerUtils.generate_course_code()
-        new_course = Course(
-            course_name=course_name,
-            num_of_lectures=num_lectures,
-            teacher_id=teacher_id,
-            lessons_data=lessons,
-            course_code=course_code
-        )
-        db.session.add(new_course)
-        db.session.commit()
-        session['course_id']=new_course.id
+
+        # Create the new course document
+        new_course = {
+            "course_name": course_name,
+            "num_of_lectures": num_lectures,
+            "teacher_id": teacher_id,
+            "lessons_data": lessons,
+            "course_code": course_code,
+        }
+
+        # Insert the new course into the database
+        result = courses_collection.insert_one(new_course)
+
+        # Store the inserted course's ID and lessons in the session
+        session['course_id'] = str(result.inserted_id)  # Convert ObjectId to string
         session['lessons'] = lessons
-        return jsonify({'message': 'Course and lessons created successfully',"course_name": course_name,"course_id": new_course.id}), 200
+
+        return jsonify({
+            'message': 'Course and lessons created successfully',
+            "course_name": course_name,
+            "course_id": str(result.inserted_id)
+        }), 200
 
     except Exception as e:
-        db.session.rollback()
         return jsonify({'message': 'An error occurred', 'error': str(e)}), 500
-  
+      
 @teachers.route('/get-courses', methods=['GET'])
 def get_courses():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in.", "response": False}), 401
 
-    courses = Course.query.filter_by(teacher_id=teacher_id).all()
+    # Fetch courses for the logged-in teacher
+    courses = list(courses_collection.find({"teacher_id": teacher_id}))
+    
+    # Format the response data
     courses_data = [
         {
-            'id': course.id,
-            'course_name': course.course_name,
-            'num_of_lectures': course.num_of_lectures,
-            'course_code': course.course_code,
-            'lessons_data': course.lessons_data,
+            'id': str(course['_id']),  # Convert ObjectId to string
+            'course_name': course.get('course_name'),
+            'num_of_lectures': course.get('num_of_lectures'),
+            'course_code': course.get('course_code'),
+            'lessons_data': course.get('lessons_data'),
         }
         for course in courses
     ]
     
-    return jsonify({"courses": courses_data,"response":True}), 200
+    return jsonify({"courses": courses_data, "response": True}), 200
 
 @teachers.route('/get-lesson', methods=['POST'])
 def get_lesson():
