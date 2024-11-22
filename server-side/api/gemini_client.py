@@ -1,7 +1,7 @@
 import os
 import ast
 from dotenv import load_dotenv
-from server.teacher.routes import session
+from flask import session
 import google.generativeai as genai
 import time 
 load_dotenv()

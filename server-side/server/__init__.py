@@ -19,7 +19,7 @@ def create_app():
     bcrypt.init_app(app)
     migrate = Migrate(app, db)
 
-    from server.teacher.routes import teachers
+    from server.teacher.routes_mongo import teachers
     from server.student.routes import students
     app.register_blueprint(teachers, url_prefix="/teacher")
     app.register_blueprint(students, url_prefix="/student")

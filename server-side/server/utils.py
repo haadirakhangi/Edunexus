@@ -1,7 +1,7 @@
 import os
 from gtts import gTTS
 from deep_translator import GoogleTranslator
-from server.teacher.routes import session
+from flask import session
 from models.student_schema import Module
 from models.teacher_schema import Course as TeacherCourse
 from lingua import LanguageDetectorBuilder
