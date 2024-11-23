@@ -9,30 +9,18 @@ class SubModuleGenerator:
         self.tavily_client = TavilyProvider()
 
     def generate_submodules(self, module_name):
-        prompt_submodules = f"""You are an educational assistant having knowledge in various domains. You will be provided with a module name and your task is to generate six 'Sub-Modules' names that are related to the module. The output should be in json format where each key corresponds to the sub-module number and the values are the sub-module names.
-        Module Name: {module_name}. The output should be a list of dictionaries as given in the below example.
-        Example: [{{"1": "Data Retrieval Methods"}}, {{"2": "Knowledge Base Construction"}}]
-        """
-    
+        prompt_submodules = f"""You are an educational assistant having knowledge in various domains. You will be provided with a module name and your task is to generate six 'Sub-Modules' names that are related to the module. The output should be in json format where each key corresponds to the sub-module number and the values are the sub-module names.\nModule Name: {module_name}."""
+        prompt_submodules += """The output should be a dictionary as given in the below example. The output should be similar to the provided example. Do not change the structure of the output strictly.\n# EXAMPLE OUTPUT FORMAT: \n{ {"1": "Data Retrieval Methods"}, {"2": "Knowledge Base Construction"} }"""
         output = self.gemini_client.generate_json_response(prompt_submodules)
         return output
 
-
-    
     def generate_submodules_from_web(self, module_name, course_name):
         topic = module_name +" : " +course_name
         search_result = self.tavily_client.search_context(topic)
 
-        sub_module_generation_prompt= """You are an educational assistant named ISAAC. You will be provided with a module name and information on that module from the internet. Your task is to generate six 'Sub-Modules' names that are related to the modules. The output should be in json format where each key corresponds to the sub-module number and the values are the sub-module names.
-
-    Module Name: {module_name}
-
-    Search Results: {search_result}
-
-    Follow the provided JSON format diligently.
-        """
-
-        output = self.gemini_client.generate_json_response(sub_module_generation_prompt.format(module_name = module_name, search_result = search_result))
+        sub_module_generation_prompt= f"""You are an educational assistant named ISAAC. You will be provided with a module name and information on that module from the internet. Your task is to generate six 'Sub-Modules' names that are related to the modules. The output should be in json format where each key corresponds to the sub-module number and the values are the sub-module names.\nModule Name: {module_name}.\nSearch Results: ```{search_result}```\n"""
+        sub_module_generation_prompt += """# EXAMPLE OUTPUT FORMAT:\n{ {"1": "Data Retrieval Methods"}, {"2": "Knowledge Base Construction"} }\nFollow the provided JSON format diligently."""
+        output = self.gemini_client.generate_json_response(sub_module_generation_prompt)
         return output
     
     def generate_submodules_from_textbook(self, topic, vectordb : FAISS):

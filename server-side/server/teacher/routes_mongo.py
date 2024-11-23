@@ -39,7 +39,6 @@ lab_manuals_collection = db["lab_manuals"]
 
 @teachers.route('/register', methods=['POST'])
 def register():
-    # Extract form data
     first_name = request.form.get('first_name')
     last_name = request.form.get('last_name')
     email = request.form.get('email')
@@ -56,20 +55,17 @@ def register():
     gender = request.form.get('gender')
     age = request.form.get('age')
 
-    # Check required fields
     if not first_name or not last_name or not email or not password:
         return jsonify({"message": "First name, last name, email, and password are required."}), 400
 
-    # Check if user already exists
     if teachers_collection.find_one({"email": email}):
         return jsonify({"message": "User already exists", "response": False}), 201
 
-    # Create new teacher document
     new_teacher = {
         "first_name": first_name,
         "last_name": last_name,
         "email": email,
-        "password": generate_password_hash(password),  # Hash the password
+        "password": generate_password_hash(password),
         "college_name": college_name,
         "department": department,
         "experience": experience,
@@ -83,34 +79,26 @@ def register():
         "age": age,
     }
 
-    # Insert into MongoDB
     teachers_collection.insert_one(new_teacher)
 
     return jsonify({"message": "Registration successful!", "response": True}), 200
 
 @teachers.route('/login', methods=['POST'])
 def login():
-    data = request.get_json()
+    data : dict = request.get_json()
     email = data.get('email')
     password = data.get('password')
     
     if not email or not password:
         return jsonify({"message": "Email and password are required."}), 400
 
-    # Fetch the teacher from MongoDB
     teacher = teachers_collection.find_one({"email": email})
 
     if teacher is None or not check_password_hash(teacher.get("password"), password):
         return jsonify({"message": "Invalid email or password."}), 401
 
-    # Store the teacher ID in the session
-    session['teacher_id'] = str(teacher["_id"])  # Convert ObjectId to string for session storage
-    
-    return jsonify({
-        "message": "Login successful!",
-        "teacher_id": str(teacher["_id"]),  # Convert ObjectId to string
-        "response": True
-    }), 200
+    session['teacher_id'] = str(teacher["_id"])
+    return jsonify({"message": "Login successful!", "teacher_id": str(teacher["_id"]), "response": True}), 200
 
 @teachers.route('/create-course', methods=['POST'])
 def create_course():
@@ -123,10 +111,8 @@ def create_course():
         num_lectures = request.form['num_lectures']
         lessons = request.form['lessons']
 
-        # Generate a unique course code
         course_code = ServerUtils.generate_course_code()
 
-        # Create the new course document
         new_course = {
             "course_name": course_name,
             "num_of_lectures": num_lectures,
@@ -135,11 +121,9 @@ def create_course():
             "course_code": course_code,
         }
 
-        # Insert the new course into the database
         result = courses_collection.insert_one(new_course)
 
-        # Store the inserted course's ID and lessons in the session
-        session['course_id'] = str(result.inserted_id)  # Convert ObjectId to string
+        session['course_id'] = str(result.inserted_id) 
         session['lessons'] = lessons
 
         return jsonify({
@@ -157,13 +141,11 @@ def get_courses():
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in.", "response": False}), 401
 
-    # Fetch courses for the logged-in teacher
     courses = list(courses_collection.find({"teacher_id": teacher_id}))
     
-    # Format the response data
     courses_data = [
         {
-            'id': str(course['_id']),  # Convert ObjectId to string
+            'id': str(course['_id']),
             'course_name': course.get('course_name'),
             'num_of_lectures': course.get('num_of_lectures'),
             'course_code': course.get('course_code'),
@@ -171,8 +153,6 @@ def get_courses():
         }
         for course in courses
     ]
-    print(courses_data)
-    
     return jsonify({"courses": courses_data, "response": True}), 200
 
 @teachers.route('/fetch-lessons', methods=['POST'])
@@ -187,28 +167,24 @@ def fetch_lessons():
     if course_id is None:
         return jsonify({"message": "Course ID not found in the request.", "response": False}), 400
 
-    # Fetch the course from the database
     course = courses_collection.find_one({"_id": ObjectId(course_id), "teacher_id": teacher_id})
 
     if course is None:
         return jsonify({"message": "Course not found for this teacher."}), 404
 
-    # Parse lessons data from the course
-    lessons_data = json.loads(course.get("lessons_data", "{}"))
+    lessons_data : dict = json.loads(course.get("lessons_data", "{}"))
     lesson_statuses = []
     lesson_ids = []
 
-    # Check for existing lessons in the database
     for lesson_title in lessons_data.keys():
         existing_lesson = lessons_collection.find_one({"title": lesson_title, "course_id": course_id})
         if existing_lesson:
             lesson_statuses.append("View")
-            lesson_ids.append(str(existing_lesson["_id"]))  # Convert ObjectId to string
+            lesson_ids.append(str(existing_lesson["_id"]))
         else:
             lesson_statuses.append("Generate")
             lesson_ids.append(0)
 
-    # Fetch lab manuals from the database
     lab_manuals = list(lab_manuals_collection.find({"course_id": course_id}))
     manual_statuses = []
     manual_ids = []
@@ -217,7 +193,6 @@ def fetch_lessons():
         manual_statuses.append("View" if manual else "Generate")
         manual_ids.append(str(manual["_id"]) if manual else 0)
 
-    # Format lab manuals data
     manuals = [
         {
             "id": str(lm["_id"]),
@@ -236,6 +211,7 @@ def fetch_lessons():
         "manual_statuses": manual_statuses,
         "manual_ids": manual_ids
     }), 200
+
 @teachers.route('/multimodal-rag-submodules', methods=['POST'])
 async def multimodal_rag_submodules():
     teacher_id = session.get('teacher_id')
@@ -468,7 +444,7 @@ def add_lesson():
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in.", "response": False}), 401
 
-    data = request.get_json()
+    data : dict = request.get_json()
     title = data.get('title')
     markdown_content = data.get('markdown_content', '')
     relevant_images = data.get('relevant_images', None)
@@ -477,30 +453,35 @@ def add_lesson():
     lesson_id = data.get('lesson_id', None)
 
     if not course_id:
-        return jsonify({"message": "course ID are required."}), 400
+        return jsonify({"message": "Course ID is required."}), 400
 
     if lesson_id:
-        lesson = Lesson.query.get(lesson_id)
-        if not lesson or lesson.teacher_id != teacher_id:
+        lesson : dict = lessons_collection.find_one({"_id": ObjectId(lesson_id)})
+        if not lesson or lesson.get("teacher_id") != teacher_id:
             return jsonify({"message": "Lesson not found or you do not have permission to edit it."}), 404
         
-        lesson.markdown_content = json.dumps(markdown_content)
-        lesson.relevant_images = json.dumps(relevant_images)
-        lesson.uploaded_images = json.dumps(uploaded_images)
-        lesson.course_id = course_id
-    else:
-        new_lesson = Lesson(
-            title=title,
-            markdown_content=json.dumps(markdown_content),
-            relevant_images=json.dumps(relevant_images),
-            uploaded_images=json.dumps(uploaded_images),
-            teacher_id=teacher_id,
-            course_id=course_id
+        lessons_collection.update_one(
+            {"_id": ObjectId(lesson_id)},
+            {"$set": {
+                "title": title,
+                "markdown_content": json.dumps(markdown_content),
+                "relevant_images": json.dumps(relevant_images),
+                "uploaded_images": json.dumps(uploaded_images),
+            }}
         )
-        db.session.add(new_lesson)
+    else:
+        new_lesson = {
+            "title": title,
+            "markdown_content": json.dumps(markdown_content),
+            "relevant_images": json.dumps(relevant_images),
+            "uploaded_images": json.dumps(uploaded_images),
+            "teacher_id": teacher_id,
+            "course_id": course_id
+        }
+        result = lessons_collection.insert_one(new_lesson)
+        new_lesson_id = str(result.inserted_id)
 
-    db.session.commit()
-    lesson_id_to_return = lesson.id if lesson_id else new_lesson.id
+    lesson_id_to_return = lesson_id if lesson_id else new_lesson_id
     return jsonify({"message": "Lesson saved successfully!", "lesson_id": lesson_id_to_return, "response": True}), 200
 
 @teachers.route('/get-lesson', methods=['POST'])
@@ -511,19 +492,19 @@ def get_lesson():
     if not lesson_id:
         return jsonify({"message": "Lesson ID is required."}), 400
 
-    lesson = Lesson.query.get(lesson_id)
-
+    lesson : dict = lessons_collection.find_one({"_id":ObjectId(lesson_id)})
+    print(lesson)
     if lesson is None:
         return jsonify({"message": "Lesson not found."}), 404
 
     lesson_data = {
-        "id": lesson.id,
-        "title": lesson.title,
-        "markdown_content": lesson.markdown_content,
-        "relevant_images": lesson.relevant_images,
-        "uploaded_images": lesson.uploaded_images,
-        "teacher_id": lesson.teacher_id,
-        "course_id": lesson.course_id
+        "id": lesson.get("_id"),
+        "title": lesson.get("title"),
+        "markdown_content": lesson.get("markdown_content"),
+        "relevant_images": lesson.get("relevant_images"),
+        "uploaded_images": lesson.get("uploaded_images"),
+        "teacher_id": lesson.get("teacher_id"),
+        "course_id": lesson.get("course_id")
     }
 
     return jsonify(lesson_data), 200
@@ -582,9 +563,9 @@ def generate_lab_manual():
 
 @teachers.route('/create-lab-manual-docx', methods=['POST'])
 def convert_docx():
-    # teacher_id = session.get('teacher_id')
-    # if teacher_id is None:
-    #     return jsonify({"message": "Teacher not logged in", "response": False}), 401
+    teacher_id = session.get('teacher_id')
+    if teacher_id is None:
+        return jsonify({"message": "Teacher not logged in", "response": False}), 401
     try:
         data = request.json
         markdown = data.get('markdown')
@@ -619,30 +600,33 @@ def add_lab_manual():
         return jsonify({"message": "Course ID, experiment aim, and experiment number are required."}), 400
 
     if lab_manual_id:
-        lab_manual: LabManual = LabManual.query.get(lab_manual_id)
-        if not lab_manual or lab_manual.teacher_id != teacher_id:
+        lab_manual : dict = lab_manuals_collection.find_one({"_id":ObjectId(lab_manual_id)})
+        if not lab_manual or lab_manual.get("teacher_id") != teacher_id:
             return jsonify({"message": "Lab manual not found or you do not have permission to edit it."}), 404
 
-        # Update existing lab manual
-        lab_manual.course_id = course_id
-        lab_manual.exp_aim = exp_aim
-        lab_manual.exp_number = exp_number
-        lab_manual.markdown_content = markdown_content
-        lab_manual.uploaded_images = json.dumps(uploaded_images)
-    else:
-        # Create new lab manual
-        new_lab_manual = LabManual(
-            course_id=course_id,
-            teacher_id=teacher_id,
-            exp_aim=exp_aim,
-            exp_number=exp_number,
-            markdown_content=markdown_content,
-            uploaded_images=json.dumps(uploaded_images)
+        lab_manuals_collection.update_one(
+            {"_id": ObjectId(lab_manual_id)},
+            {"$set":{
+                "exp_aim":exp_aim,
+                "exp_number": exp_number,
+                "markdown_content": markdown_content,
+                "uploaded_images":json.dumps(uploaded_images)
+            }}
         )
-        db.session.add(new_lab_manual)
+    else:
+        new_lab_manual = {
+            "course_id": course_id,
+            "teacher_id":teacher_id,
+            "exp_aim":exp_aim,
+            "exp_number": exp_number,
+            "markdown_content": markdown_content,
+            "uploaded_images": json.dumps(uploaded_images)
+        }
+        result = lab_manuals_collection.insert_one(new_lab_manual)
+        new_lab_manual_id = str(result.inserted_id)
 
     db.session.commit()
-    lab_manual_id_to_return = lab_manual.id if lab_manual_id else new_lab_manual.id
+    lab_manual_id_to_return = lab_manual_id if lab_manual_id else new_lab_manual_id
     return jsonify({"message": "Lab manual saved successfully!", "lab_manual_id": lab_manual_id_to_return, "response": True}), 200
 
 @teachers.route('/fetch-lab-manual', methods=['POST'])
@@ -653,19 +637,19 @@ def fetch_lab_manual():
     if not lab_manual_id:
         return jsonify({"message": "Lab manual ID is required."}), 400
 
-    lab_manual = LabManual.query.get(lab_manual_id)
+    lab_manual : dict = lab_manuals_collection.find_one({"_id":ObjectId(lab_manual_id)})
 
     if lab_manual is None:
         return jsonify({"message": "Lab manual not found."}), 404
 
     lab_manual_data = {
-        "id": lab_manual.id,
-        "course_id": lab_manual.course_id,
-        "teacher_id": lab_manual.teacher_id,
-        "markdown_content": lab_manual.markdown_content,
-        "uploaded_images": lab_manual.uploaded_images,
-        "exp_aim": lab_manual.exp_aim,
-        "exp_number": lab_manual.exp_number
+        "id": lab_manual.get("_id"),
+        "course_id": lab_manual.get("course_id"),
+        "teacher_id": lab_manual.get("teacher_id"),
+        "markdown_content": lab_manual.get("markdown_content"),
+        "uploaded_images": lab_manual.get("uploaded_images"),
+        "exp_aim": lab_manual.get("exp_aim"),
+        "exp_number": lab_manual.get("exp_number")
     }
 
     return jsonify(lab_manual_data), 200

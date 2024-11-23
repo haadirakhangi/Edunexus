@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 import time 
 load_dotenv()
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 os.environ["GOOGLE_API_KEY"] = os.getenv("GEMINI_API_KEY")
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 
 class GeminiProvider:
     def __init__(self, profile=None, tools=None):
