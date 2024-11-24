@@ -7,7 +7,7 @@ from server import db, bcrypt
 from datetime import datetime
 from gtts import gTTS
 from sqlalchemy import desc
-from flask import request, session, jsonify, send_file, Blueprint
+from flask import request, session, jsonify, send_file, Blueprint, send_from_directory
 from models.teacher_schema import Teacher, Lesson, Course, LabManual
 from concurrent.futures import ThreadPoolExecutor
 from flask_cors import cross_origin
@@ -488,17 +488,16 @@ def add_lesson():
 def get_lesson():
     data = request.get_json()
     lesson_id = data.get('lesson_id')
-
+    print("lesson id------------------",lesson_id)
     if not lesson_id:
         return jsonify({"message": "Lesson ID is required."}), 400
 
     lesson : dict = lessons_collection.find_one({"_id":ObjectId(lesson_id)})
-    print(lesson)
     if lesson is None:
         return jsonify({"message": "Lesson not found."}), 404
 
     lesson_data = {
-        "id": lesson.get("_id"),
+        "id": str(lesson.get("_id")),
         "title": lesson.get("title"),
         "markdown_content": lesson.get("markdown_content"),
         "relevant_images": lesson.get("relevant_images"),
@@ -541,25 +540,34 @@ def generate_lab_manual():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in", "response": False}), 401
-    teacher : Teacher = Teacher.query.get(teacher_id)
+
+    teacher = teachers_collection.find_one({"_id": ObjectId(teacher_id)})
     if not teacher:
         return jsonify({"message": "Teacher not found", "response": False}), 404
-    teacher_name = f"{teacher.first_name} {teacher.last_name}"
-    data : dict = request.json
+
+    teacher_name = f"{teacher.get('first_name', '')} {teacher.get('last_name', '')}"
+    data = request.json
     experiment_num = data.get('exp_num')
     exp_aim = data.get('exp_aim')
     course_name = data.get('course_name')
     include_videos = data.get('include_videos')
-    if include_videos == "false":
-        include_videos = False
+    if include_videos=='true':
+        include_videos=True
     else:
-        include_videos = True  
+        include_videos=False
     components = data.get('lab_components', [])
-    
-    lab_generator = LabManualGenerator()
-    result = lab_generator.generate_lab_manual(experiment_aim=exp_aim, experiment_num=experiment_num ,teacher_name=teacher_name, course_name=course_name, components=components, include_videos=include_videos)
 
-    return jsonify({"message": "Query successful","MarkdownContent": result, "response": True}), 200
+    lab_generator = LabManualGenerator()
+    result = lab_generator.generate_lab_manual(
+        experiment_aim=exp_aim,
+        experiment_num=experiment_num,
+        teacher_name=teacher_name,
+        course_name=course_name,
+        components=components,
+        include_videos=include_videos
+    )
+
+    return jsonify({"message": "Query successful", "MarkdownContent": result, "response": True}), 200
 
 @teachers.route('/create-lab-manual-docx', methods=['POST'])
 def convert_docx():
@@ -591,13 +599,13 @@ def add_lab_manual():
     data = request.get_json()
     course_id = data.get('course_id')
     exp_aim = data.get('exp_aim', '')
-    exp_number = data.get('exp_num', None)
+    exp_number = data.get('exp_num')
     markdown_content = data.get('markdown_content', '')
     uploaded_images = data.get('uploaded_images', None)
     lab_manual_id = data.get('lab_manual_id', None)
 
-    if not course_id or not exp_aim or exp_number is None:
-        return jsonify({"message": "Course ID, experiment aim, and experiment number are required."}), 400
+    if course_id is None:
+        return jsonify({"message": "Course ID,  are required."}), 400
 
     if lab_manual_id:
         lab_manual : dict = lab_manuals_collection.find_one({"_id":ObjectId(lab_manual_id)})
@@ -607,8 +615,6 @@ def add_lab_manual():
         lab_manuals_collection.update_one(
             {"_id": ObjectId(lab_manual_id)},
             {"$set":{
-                "exp_aim":exp_aim,
-                "exp_number": exp_number,
                 "markdown_content": markdown_content,
                 "uploaded_images":json.dumps(uploaded_images)
             }}
@@ -625,7 +631,6 @@ def add_lab_manual():
         result = lab_manuals_collection.insert_one(new_lab_manual)
         new_lab_manual_id = str(result.inserted_id)
 
-    db.session.commit()
     lab_manual_id_to_return = lab_manual_id if lab_manual_id else new_lab_manual_id
     return jsonify({"message": "Lab manual saved successfully!", "lab_manual_id": lab_manual_id_to_return, "response": True}), 200
 
@@ -643,7 +648,7 @@ def fetch_lab_manual():
         return jsonify({"message": "Lab manual not found."}), 404
 
     lab_manual_data = {
-        "id": lab_manual.get("_id"),
+        "id": str(lab_manual.get("_id")),
         "course_id": lab_manual.get("course_id"),
         "teacher_id": lab_manual.get("teacher_id"),
         "markdown_content": lab_manual.get("markdown_content"),
@@ -660,3 +665,32 @@ def fetch_lab_manual():
 def logout():
     session.clear()
     return jsonify({"message": "User logged out successfully", "response":True}), 200
+
+@teachers.route('/upload-image', methods=['POST'])
+def upload_image():
+    file = request.files['image']
+    if not file:
+        return jsonify({"message": "No file uploaded"}), 400
+
+    upload_dir = os.path.join('static', 'uploads')
+    if not os.path.exists(upload_dir):
+        os.makedirs(upload_dir)
+
+    original_filename = secure_filename(file.filename)
+    unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
+    file_path = os.path.join(upload_dir, unique_filename)
+    file.save(file_path)
+
+    file_url = f"{request.host_url}teacher/uploads/{unique_filename}"
+    return jsonify({"url": file_url}), 200
+
+@teachers.route('/uploads/<filename>', methods=['GET'])
+def get_image(filename):
+    print(f"Fetching image: {filename}")
+    upload_dir = os.path.join('static', 'uploads')
+    file_path = os.path.join(upload_dir, filename)
+    
+    if not os.path.exists(file_path):
+        return jsonify({"message": "Image not found"}), 404
+    
+    return send_from_directory(upload_dir, filename)
