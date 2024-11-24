@@ -100,8 +100,8 @@ const LessonsGrid = () => {
     }
   };
 
-  const handleViewLabMnaual = (id: Number) => {
-    localStorage.setItem('lab_manual_id', id.toString());
+  const handleViewLabMnaual = (id: string) => {
+    localStorage.setItem('lab_manual_id', id);
     navigate('/teacher/lab-manual');
   };
 
@@ -201,7 +201,7 @@ const LessonsGrid = () => {
                 Lab Manuals
               </Heading>
               {labManuals.length > 0 ? (
-                <Grid templateColumns="repeat(auto-fit, minmax(300px, 1fr))" gap={6}>
+                <Grid templateColumns="repeat(auto-fit, minmax(250px, 0.2fr))" gap={6}>
                   {labManuals.map((manual, index) => (
                     <Flex
                       key={manual.id}

@@ -20,11 +20,13 @@ const LabManual: React.FC = () => {
     const [contentReady, setContentReady] = useState(false);
     const { register, setValue, watch } = useForm<{ markdownContent: string }>();
     const markdownContent = watch("markdownContent") || "";
-    const lab_manual_id = Number(localStorage.getItem('lab_manual_id'));
+    const lab_manual_id = localStorage.getItem('lab_manual_id');
     const handleSaveLabManual = async () => {
-        const course_id = Number(localStorage.getItem('course_id'));
+        const course_id = localStorage.getItem('course_id');
+        
         const exp_num = Number(localStorage.getItem('exp_num'));
         const exp_aim = localStorage.getItem('exp_aim');
+        console.log("courseid",exp_aim);
 
         try {
             const response = await axios.post('/api/teacher/add-lab-manual', {
@@ -93,7 +95,7 @@ const LabManual: React.FC = () => {
         // setContentReady(true);
         const fetchContent = async () => {
             setIsLoading(true);
-            if (lab_manual_id == 0) {
+            if (lab_manual_id == '') {
                 try {
                     const storedData = localStorage.getItem('labManualData');
                     const formData = storedData ? JSON.parse(storedData) : {};

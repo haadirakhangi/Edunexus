@@ -29,10 +29,10 @@ const PerContent: React.FC = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [hasInsertedImages, setHasInsertedImages] = useState(false);
     const [apiCalled, setApiCalled] = useState(false);
-    const lesson_id = Number(localStorage.getItem('lesson_id'));
+    const lesson_id = localStorage.getItem('lesson_id');
     const handleSaveLesson = async () => {
         const lesson_name = localStorage.getItem('lesson_name');
-        const course_id = Number(localStorage.getItem('course_id'));
+        const course_id = localStorage.getItem('course_id');
         
 
         try {
@@ -82,7 +82,7 @@ const PerContent: React.FC = () => {
         setData(updatedData);
     };
 
-    const insertImageAtCursor = (imageUrl: string, i: number) => {
+    const insertImageAtCursor = async(imageUrl: string, i: number) => {
         let fileUrl: string;
         if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
             fileUrl = imageUrl;
@@ -90,7 +90,24 @@ const PerContent: React.FC = () => {
             const file = base64ToFile(imageUrl, `image-${i + 1}.png`);
             fileUrl = URL.createObjectURL(file);
         } else {
-            fileUrl = imageUrl;
+            const response = await fetch(imageUrl);
+            const blob = await response.blob();
+            const fileName = `image-${i + 1}.png`;
+            const file = new File([blob], fileName, { type: blob.type });
+            const formData = new FormData();
+            formData.append("image", file);
+
+            try {
+            const response = await axios.post("/api/teacher/upload-image", formData, {
+                headers: {
+                "Content-Type": "multipart/form-data",
+                },
+            });
+            fileUrl = response.data.url;
+            } catch (error) {
+            console.error("Error uploading the image:", error);
+            alert("Failed to upload the image.");
+            }
         }
         setData((prevData) => {
             return prevData.map((item) => {
