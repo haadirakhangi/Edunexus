@@ -165,3 +165,10 @@ class MarkdownToPowerPoint:
 
         self.prs.save(self.output_filename)
         print(f"Presentation saved as {self.output_filename}")
+
+    # def generate_ppt_content(markdown_list):
+    #     prompt = ""
+    #     for markdown in markdown_list:
+            # prompt +=
+        # pass
+

@@ -658,6 +658,11 @@ def fetch_lab_manual():
 
     return jsonify(lab_manual_data), 200
 
+@teachers.route('/download-ppt', methods=['POST'])
+def download_ppt():
+    data = request.json
+    
+    pass
 
 @teachers.route('/logout', methods=['GET'])
 @cross_origin(supports_credentials=True)
