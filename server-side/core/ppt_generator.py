@@ -158,7 +158,7 @@ class PptGenerator:
         for slide_data in slide_data_list:
             slide = self.prs.slides.add_slide(self.blank_slide_layout)
             self.add_title(slide, slide_data.get('title', 'Untitled'))
-            self.add_content(slide, slide_data.get('content', ''))
+            self.add_content(slide, slide_data.get('slide_content', ''))
             self.add_images(slide, slide_data.get('images', []))
 
         self.prs.save(output_filename)
