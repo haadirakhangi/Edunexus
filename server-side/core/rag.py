@@ -1,5 +1,5 @@
 from models.data_loader import DocumentLoader
-from models.data_utils import DocumentUtils, WebUtils
+from models.data_utils import DocumentUtils
 from api.serper_client import SerperProvider
 from api.tavily_client import TavilyProvider
 from core.content_generator import ContentGenerator

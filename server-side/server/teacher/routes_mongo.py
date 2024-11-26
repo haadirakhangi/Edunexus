@@ -8,7 +8,6 @@ from datetime import datetime
 from gtts import gTTS
 from sqlalchemy import desc
 from flask import request, session, jsonify, send_file, Blueprint, send_from_directory
-from models.teacher_schema import Teacher, Lesson, Course, LabManual
 from concurrent.futures import ThreadPoolExecutor
 from flask_cors import cross_origin
 from werkzeug.utils import secure_filename
@@ -19,13 +18,11 @@ from server.constants import *
 from server.utils import ServerUtils
 import json
 import uuid
-from core.lab_manual_generator import LabManualGenerator
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from bson.objectid import ObjectId
 from urllib.parse import quote_plus
 from werkzeug.security import check_password_hash, generate_password_hash
-import uuid
 
 teachers = Blueprint(name='teachers', import_name=__name__)
 password = quote_plus(os.getenv("MONGO_PASS"))
@@ -545,7 +542,7 @@ def generate_lab_manual():
         return jsonify({"message": "Teacher not found", "response": False}), 404
 
     teacher_name = f"{teacher.get('first_name', '')} {teacher.get('last_name', '')}"
-    data = request.json
+    data : dict= request.json
     experiment_num = data.get('exp_num')
     exp_aim = data.get('exp_aim')
     course_name = data.get('course_name')
@@ -556,8 +553,7 @@ def generate_lab_manual():
         include_videos=False
     components = data.get('lab_components', [])
 
-    lab_generator = LabManualGenerator()
-    result = lab_generator.generate_lab_manual(
+    result = LAB_MANUAL_GENERATOR.generate_lab_manual(
         experiment_aim=exp_aim,
         experiment_num=experiment_num,
         teacher_name=teacher_name,
@@ -595,7 +591,7 @@ def add_lab_manual():
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in.", "response": False}), 401
 
-    data = request.get_json()
+    data : dict = request.get_json()
     course_id = data.get('course_id')
     exp_aim = data.get('exp_aim', '')
     exp_number = data.get('exp_num')
@@ -660,9 +656,26 @@ def fetch_lab_manual():
 
 @teachers.route('/download-ppt', methods=['POST'])
 def download_ppt():
-    data = request.json
+    # teacher_id = session.get("teacher_id")
+    # if teacher_id is None:
+    #     return jsonify({"message": "Teacher not logged in.", "response": False}), 401
     
-    pass
+    # try: 
+        data : dict = request.get_json()
+        markdown_list = data.get("markdown_list")
+        course_name = data.get("course_name")
+        lesson_name = data.get("lesson_name")
+        lesson_name += ".pptx"
+        presentation_content = PPT_GENERATOR.generate_ppt_content(markdown_list=markdown_list)
+        print("PRESENTATION CONTENT", type(presentation_content)," ", type(presentation_content[0]),"\n\n",presentation_content)
+        current_dir = os.path.dirname(__file__)
+        downloads_directory = os.path.join(current_dir, 'downloaded-presentations', course_name)
+        os.makedirs(downloads_directory, exist_ok=True)
+        downloads_path = os.path.join(downloads_directory, lesson_name)
+        PPT_GENERATOR.create_presentation(presentation_content, output_filename=downloads_path)
+        return jsonify({"message": "Presentation Created Successfully", "presentation_content": presentation_content, "response": True}), 200
+    # except Exception as e:
+    #     print(f"Error while creating ppt: {e}")
 
 @teachers.route('/logout', methods=['GET'])
 @cross_origin(supports_credentials=True)

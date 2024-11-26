@@ -15,6 +15,14 @@ class GeminiProvider:
         else:
             self.chat = None
 
+    def generate_response(self, prompt, remove_literals=False):
+        completion = self.gemini_client.generate_content(prompt)
+        if remove_literals:
+            output = ast.literal_eval(completion.text)
+        else:
+            output = completion.text
+        return output
+
     def generate_json_response(self, prompt, response_schema=None, markdown=False):
         while True:
             try:
@@ -63,5 +71,3 @@ class GeminiProvider:
         if self.chat is None:
             raise AttributeError("Chat has not been initialized. Call 'initialize_assistant' first.")
         return self.chat
-
-

@@ -1,5 +1,4 @@
-import os
-import re
+from api.gemini_client import GeminiProvider
 import markdown
 from bs4 import BeautifulSoup
 from pptx import Presentation
@@ -10,16 +9,16 @@ from PIL import Image
 import base64
 import io
 import requests
+import re
+import ast
 
-
-class MarkdownToPowerPoint:
-    def __init__(self, output_filename='presentation.pptx'):
+class PptGenerator:
+    def __init__(self):
+        self.gemini_client = GeminiProvider()
         self.prs = Presentation()
-        self.output_filename = output_filename
         self.blank_slide_layout = self.prs.slide_layouts[6]
 
-    @staticmethod
-    def convert_markdown_to_formatted_content(markdown_text):
+    def convert_markdown_to_formatted_content(self, markdown_text):
         html = markdown.markdown(markdown_text, extensions=['tables'])
         soup = BeautifulSoup(html, 'html.parser')
 
@@ -58,7 +57,6 @@ class MarkdownToPowerPoint:
                     table_data['rows'].append(row_data)
 
                 parsed_content['tables'].append(table_data)
-
         return parsed_content
 
     def add_title(self, slide, title):
@@ -156,19 +154,28 @@ class MarkdownToPowerPoint:
             for img, pos in zip(images[:4], positions):
                 self.add_image_to_slide(slide, img, pos[0], pos[1], img_width, img_height)
 
-    def create_presentation(self, slide_data_list):
+    def create_presentation(self, slide_data_list : list[dict], output_filename):
         for slide_data in slide_data_list:
             slide = self.prs.slides.add_slide(self.blank_slide_layout)
             self.add_title(slide, slide_data.get('title', 'Untitled'))
             self.add_content(slide, slide_data.get('content', ''))
             self.add_images(slide, slide_data.get('images', []))
 
-        self.prs.save(self.output_filename)
-        print(f"Presentation saved as {self.output_filename}")
+        self.prs.save(output_filename)
+        print(f"Presentation saved as {output_filename}")
 
-    # def generate_ppt_content(markdown_list):
-    #     prompt = ""
-    #     for markdown in markdown_list:
-            # prompt +=
-        # pass
+    def generate_ppt_content(self, markdown_list : list[dict]):
+        prompt = """You are a skilled and creative expert in designing PowerPoint presentations. Your task is to take the content of a course and summarize it effectively to create an engaging and concise presentation.\nFor each topic in the course, you will design slides summarizing the material provided. The number of slides (or dictionaries in the list) can be as much as necessary to adequately explain the topics. However, the number of slides must not be less than the number of topics and can be greater if required for clarity and depth. If a topic contains subtopics or sections, ensure that each subtopic is covered on separate slides where appropriate.\nEnsure that the summaries are:\n - Comprehensive yet concise.\n - Organized logically for easy understanding.\n - Engaging and aligned with professional presentation standards.\n - Tailored to the target audience of the presentation, in this case students, to match their level of expertise and interest.\n\n # Course Content:\n\n"""
+        for index, markdown in enumerate(markdown_list):
+            for key, value in markdown.items():
+                prompt += f"## Topic {index + 1}: {key}\n## Content {index +1}: {value}\n\n"
+
+        output_format_prompt = """-------------------\n# OUTPUT FORMAT INSTRUCTIONS:\nThe output should be a list of dictionaries where each dictionary represents the content of one slide. Each dictionary within the list must include two keys:\n'title': The title of the slide, summarizing the main point of the topic.\n'slide_content': The concise content to be added to the slide in the form of a markdowns, expressed in bullet points (5-7) or short paragraphs for clarity.\nProvide the output strictly as a list of dictionaries following the format as described. Do not include any additional text or explanation outside of the given structure. Do not include unnecessary text like ```json in the output. It should strictly only be a list of dictionary."""
+        prompt += output_format_prompt
+        output = self.gemini_client.generate_response(prompt, remove_literals=False)
+        pattern = r"\[\s*(.*)\s*\]"
+        match = re.search(pattern, output, re.DOTALL)
+        extracted_list_string = match.group(0)
+        extracted_list = ast.literal_eval(extracted_list_string)
+        return extracted_list
 

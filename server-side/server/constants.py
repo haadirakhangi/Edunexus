@@ -9,6 +9,8 @@ from core.content_generator import ContentGenerator
 from core.module_generator import ModuleGenerator
 from core.quiz_generator import QuizGenerator
 from core.pdf_generator import PdfGenerator
+from core.ppt_generator import PptGenerator
+from core.lab_manual_generator import LabManualGenerator
 from core.evaluator import Evaluator
 from core.recommendation_generator import RecommendationGenerator
 from core.lesson_planner import LessonPlanner
@@ -28,6 +30,8 @@ MODULE_GENERATOR = ModuleGenerator()
 SUB_MODULE_GENERATOR = SubModuleGenerator()
 CONTENT_GENERATOR = ContentGenerator()
 PDF_GENERATOR = PdfGenerator()
+LAB_MANUAL_GENERATOR = LabManualGenerator()
+PPT_GENERATOR = PptGenerator()
 QUIZ_GENERATOR = QuizGenerator()
 LESSON_PLANNER = LessonPlanner()
 RECOMMENDATION_GENERATOR = RecommendationGenerator()
