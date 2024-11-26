@@ -463,7 +463,6 @@ def add_lesson():
         lessons_collection.update_one(
             {"_id": ObjectId(lesson_id)},
             {"$set": {
-                "title": title,
                 "markdown_content": json.dumps(markdown_content),
                 "relevant_images": json.dumps(relevant_images),
                 "uploaded_images": json.dumps(uploaded_images),
@@ -659,38 +658,14 @@ def fetch_lab_manual():
 
     return jsonify(lab_manual_data), 200
 
+@teachers.route('/download-ppt', methods=['POST'])
+def download_ppt():
+    data = request.json
+    
+    pass
 
 @teachers.route('/logout', methods=['GET'])
 @cross_origin(supports_credentials=True)
 def logout():
     session.clear()
     return jsonify({"message": "User logged out successfully", "response":True}), 200
-
-@teachers.route('/upload-image', methods=['POST'])
-def upload_image():
-    file = request.files['image']
-    if not file:
-        return jsonify({"message": "No file uploaded"}), 400
-
-    upload_dir = os.path.join('static', 'uploads')
-    if not os.path.exists(upload_dir):
-        os.makedirs(upload_dir)
-
-    original_filename = secure_filename(file.filename)
-    unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
-    file_path = os.path.join(upload_dir, unique_filename)
-    file.save(file_path)
-
-    file_url = f"{request.host_url}teacher/uploads/{unique_filename}"
-    return jsonify({"url": file_url}), 200
-
-@teachers.route('/uploads/<filename>', methods=['GET'])
-def get_image(filename):
-    print(f"Fetching image: {filename}")
-    upload_dir = os.path.join('static', 'uploads')
-    file_path = os.path.join(upload_dir, filename)
-    
-    if not os.path.exists(file_path):
-        return jsonify({"message": "Image not found"}), 404
-    
-    return send_from_directory(upload_dir, filename)
