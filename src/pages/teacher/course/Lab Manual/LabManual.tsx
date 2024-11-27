@@ -95,7 +95,7 @@ const LabManual: React.FC = () => {
         // setContentReady(true);
         const fetchContent = async () => {
             setIsLoading(true);
-            if (lab_manual_id == '') {
+            if (lab_manual_id == null) {
                 try {
                     const storedData = localStorage.getItem('labManualData');
                     const formData = storedData ? JSON.parse(storedData) : {};

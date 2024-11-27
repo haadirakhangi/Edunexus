@@ -7,9 +7,14 @@ import {
     IconButton,
     Stack,
     useDisclosure,
+    Menu,
+    MenuButton,
+    MenuList,
+    MenuItem,
 } from '@chakra-ui/react';
 import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
-import { FaHome, FaSignInAlt, FaUserPlus, FaFileAlt } from 'react-icons/fa';
+import { FaHome, FaSignInAlt, FaUserPlus, FaFileAlt, FaChalkboardTeacher } from 'react-icons/fa';
+import { RiAiGenerate } from "react-icons/ri";
 import { MdOutlineTravelExplore, MdCreateNewFolder, MdLogout } from "react-icons/md";
 import { Logo } from './icons';
 import { useNavigate } from 'react-router-dom';
@@ -116,15 +121,15 @@ export const Navbar = () => {
                                 </HStack>
                             </NavLink>
 
-                            <Box 
-                            px={2}
-                            py={1}
-                            className="feature-heading"
-                            rounded="md"
-                            color={"white"}
-                            textDecoration="none"
-                            _hover={{ transform: 'scale(1.1)', color: 'purple.800', bg: 'white', textDecoration: 'none' ,cursor: 'pointer'}}
-                            transition="transform 0.3s ease-in-out">
+                            <Box
+                                px={2}
+                                py={1}
+                                className="feature-heading"
+                                rounded="md"
+                                color={"white"}
+                                textDecoration="none"
+                                _hover={{ transform: 'scale(1.1)', color: 'purple.800', bg: 'white', textDecoration: 'none', cursor: 'pointer' }}
+                                transition="transform 0.3s ease-in-out">
                                 <HStack spacing={2} onClick={handleTeacherLogout}>
                                     <MdLogout size={24} />
                                     <span>Logout</span>
@@ -141,29 +146,46 @@ export const Navbar = () => {
                                 </HStack>
                             </NavLink>
 
-                            <NavLink href="/student/explore">
-                                <HStack spacing={2}>
-                                    <MdOutlineTravelExplore size={24} />
-                                    <span>Explore</span>
-                                </HStack>
-                            </NavLink>
+                            <Menu>
+                                <MenuButton
+                                    px={2}
+                                    py={1}
+                                    className="feature-heading"
+                                    rounded="md"
+                                    color={"white"}
+                                    _hover={{ transform: 'scale(1.1)', color: 'purple.800', bg: 'white', textDecoration: 'none' }}
+                                    transition="transform 0.3s ease-in-out"
+                                >
+                                    <HStack spacing={2}>
+                                        <RiAiGenerate size={24} />
+                                        <span>Generate</span>
+                                    </HStack>
+                                </MenuButton>
+                                <MenuList>
+                                    <MenuItem onClick={() => navigate("/student/explore")}>
+                                        <MdOutlineTravelExplore size={20} />
+                                        <span>Explore</span>
+                                    </MenuItem>
+                                    {/* <MenuItem onClick={() => navigate("/student/pers-courses")}>
+                                        <FaFileAlt size={20} />
+                                        <span>Personalized Content</span>
+                                    </MenuItem> */}
+                                    <MenuItem onClick={() => navigate("/student/shared-courses")}>
+                                        <FaChalkboardTeacher size={20} />
+                                        <span>Shared Courses</span>
+                                    </MenuItem>
+                                </MenuList>
+                            </Menu>
 
-                            <NavLink href="/student/pers-courses">
-                                <HStack spacing={2}>
-                                    <FaFileAlt size={24} />
-                                    <span>Personalized Content</span>
-                                </HStack>
-                            </NavLink>
-
-                            <Box 
-                            px={2}
-                            py={1}
-                            className="feature-heading"
-                            rounded="md"
-                            color={"white"}
-                            textDecoration="none"
-                            _hover={{ transform: 'scale(1.1)', color: 'purple.800', bg: 'white', textDecoration: 'none',cursor: "pointer" }}
-                            transition="transform 0.3s ease-in-out">
+                            <Box
+                                px={2}
+                                py={1}
+                                className="feature-heading"
+                                rounded="md"
+                                color={"white"}
+                                textDecoration="none"
+                                _hover={{ transform: 'scale(1.1)', color: 'purple.800', bg: 'white', textDecoration: 'none', cursor: "pointer" }}
+                                transition="transform 0.3s ease-in-out">
                                 <HStack spacing={2} onClick={handleStudentLogout}>
                                     <MdLogout size={24} />
                                     <span>Logout</span>
@@ -175,14 +197,14 @@ export const Navbar = () => {
                         <>
                             <NavLink href="/register">
                                 <HStack spacing={2}>
-                                    <FaUserPlus size={24}/>
+                                    <FaUserPlus size={24} />
                                     <span>Sign Up</span>
                                 </HStack>
                             </NavLink>
 
                             <NavLink href="/login">
                                 <HStack spacing={2}>
-                                    <FaSignInAlt size={24}/>
+                                    <FaSignInAlt size={24} />
                                     <span>Login</span>
                                 </HStack>
                             </NavLink>

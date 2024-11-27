@@ -29,6 +29,7 @@ const PerContent: React.FC = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [hasInsertedImages, setHasInsertedImages] = useState(false);
     const [apiCalled, setApiCalled] = useState(false);
+    const [imageLists, setImageLists] = useState<string[][]>([]);
     const lesson_id = localStorage.getItem('lesson_id');
     const handleSaveLesson = async () => {
         const lesson_name = localStorage.getItem('lesson_name');
@@ -41,6 +42,7 @@ const PerContent: React.FC = () => {
                 markdown_content: data,
                 relevant_images: images,
                 uploaded_images: uploadedImages,
+                markdown_images: imageLists,
                 lesson_id: lesson_id,
                 course_id: course_id
             }, { withCredentials: true });
@@ -56,79 +58,76 @@ const PerContent: React.FC = () => {
     };
 
     const insertImagesForAllSubmodules = () => {
-        const updatedData = data.map((item, index) => {
+        const updatedData = data.map((item, submoduleIndex) => {
             const submoduleKey = Object.keys(item)[0];
             const content = item[submoduleKey];
-            const imagesForSubmodule = images[index]?.slice(0, 2) || [];
+            const imagesForSubmodule = images[submoduleIndex]?.slice(0, 2) || [];
             let updatedContent = content;
+            setImageLists((prevImageLists) => {
+                const updatedLists = [...prevImageLists];
+                if (!updatedLists[submoduleIndex]) updatedLists[submoduleIndex] = [];
+                return updatedLists;
+            });
+    
             imagesForSubmodule.forEach((imageLink, i) => {
                 const isURL = imageLink.startsWith('http://') || imageLink.startsWith('https://');
-
-                if (!isURL) {
-                    imageLink = `data:image/png;base64,${imageLink}`;
-                    const file = base64ToFile(imageLink, `image-${i + 1}.png`);
-                    const fileUrl = URL.createObjectURL(file);
-                    const insertionIndex = i === 0 ? 3 : 6;
-                    updatedContent = insertImageAtIndex(updatedContent, fileUrl, file.name, insertionIndex);
-                } else {
-                    const insertionIndex = i === 0 ? 3 : 6;
-                    updatedContent = insertImageAtIndex(updatedContent, imageLink, `image-${i + 1}`, insertionIndex);
-                }
+                const uniqueId = `image-${submoduleIndex}-${i}`;
+                setImageLists((prevImageLists) => {
+                    const updatedLists = [...prevImageLists];
+                    updatedLists[submoduleIndex].push(imageLink);
+                    return updatedLists;
+                });
+                const insertionIndex = i === 0 ? 3 : 6;
+                updatedContent = insertImageAtIndex(updatedContent, uniqueId, insertionIndex);
             });
-
+    
             return { ...item, [submoduleKey]: updatedContent };
         });
-
+    
         setData(updatedData);
     };
+    
+    
 
-    const insertImageAtCursor = async(imageUrl: string, i: number) => {
+    const insertImageAtCursor = async (imageUrl: string, i: number) => {
         let fileUrl: string;
         if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
             fileUrl = imageUrl;
         } else if (/^data:image\/[a-zA-Z]+;base64,/.test(imageUrl)) {
-            const file = base64ToFile(imageUrl, `image-${i + 1}.png`);
-            fileUrl = URL.createObjectURL(file);
-        } else {
-            const response = await fetch(imageUrl);
-            const blob = await response.blob();
-            const fileName = `image-${i + 1}.png`;
-            const file = new File([blob], fileName, { type: blob.type });
-            const formData = new FormData();
-            formData.append("image", file);
-
-            try {
-            const response = await axios.post("/api/teacher/upload-image", formData, {
-                headers: {
-                "Content-Type": "multipart/form-data",
-                },
-            });
-            fileUrl = response.data.url;
-            } catch (error) {
-            console.error("Error uploading the image:", error);
-            alert("Failed to upload the image.");
-            }
+            fileUrl = imageUrl;
         }
+    
         setData((prevData) => {
-            return prevData.map((item) => {
+            return prevData.map((item, index) => {
                 if (selectedSubmodule && selectedSubmodule in item) {
                     const textarea = document.getElementById("markdown-textarea") as HTMLTextAreaElement;
                     const { selectionStart, selectionEnd } = textarea;
-
-                    const newContent = `${item[selectedSubmodule].slice(0, selectionStart)}![Image](${fileUrl})${item[selectedSubmodule].slice(selectionEnd)}`;
+                    const submoduleIndex = data.findIndex(sub => Object.keys(sub)[0] === selectedSubmodule);
+                    let listIndex: number;
+                    setImageLists((prevImageLists) => {
+                        const updatedLists = [...prevImageLists];
+                        if (!updatedLists[submoduleIndex]) updatedLists[submoduleIndex] = [];
+                        updatedLists[submoduleIndex].push(fileUrl);
+                        listIndex = updatedLists[submoduleIndex].length - 1;
+                        return updatedLists;
+                    });
+                    const uniqueId = `image-${submoduleIndex}-${listIndex}`;
+                    const newContent = `${item[selectedSubmodule].slice(0, selectionStart)}![${uniqueId}]${item[selectedSubmodule].slice(selectionEnd)}`;
                     return { ...item, [selectedSubmodule]: newContent };
                 }
                 return item;
             });
         });
     };
+    
+    
 
 
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                if (lesson_id==0) {
+                if (lesson_id==null) {
                     const response = await axios.get('/api/teacher/multimodal-rag-content', { withCredentials: true });
                     setImages(response.data.relevant_images);
                     setData(response.data.content);
@@ -141,6 +140,8 @@ const PerContent: React.FC = () => {
                     const mk = JSON.parse(response.data.markdown_content);
                     const rimg = JSON.parse(response.data.relevant_images);
                     const umg = JSON.parse(response.data.uploaded_images);
+                    const markimg = JSON.parse(response.data.markdown_images);
+                    setImageLists(markimg)
                     setImages(rimg);
                     setData(mk);
                     setUploadedImages(umg)
@@ -172,7 +173,7 @@ const PerContent: React.FC = () => {
         setData(updatedContent);
     };
 
-    if (isLoading) {
+    if (isLoading || !imageLists.length) {
         return (
             <>
                 <Navbar />
@@ -212,6 +213,8 @@ const PerContent: React.FC = () => {
                         contentData={data} // Pass the entire data
                         selectedSubmodule={selectedSubmodule}
                         onUpdateContent={handleUpdateContent}
+                        imagelist = {imageLists}
+                        setImageLists = {setImageLists}
                     // videos={videos}
                     />
                 )}

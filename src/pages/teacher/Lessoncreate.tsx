@@ -50,7 +50,7 @@ const LessonCreate = () => {
   const course_name = localStorage.getItem('course_name');
   const lesson_name = localStorage.getItem('lesson_name');
   const lessonNameInputRef = useRef<HTMLInputElement>(null);
-  
+
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
@@ -240,13 +240,24 @@ const LessonCreate = () => {
                     </FormControl>
 
                     <FormLabel m={0} as="legend" className='feature-heading' letterSpacing={2}><b>Select Search Method</b></FormLabel>
-                    <RadioGroup onChange={(value) => setWebSearch(value === 'web')} colorScheme='purple'>
+                    <RadioGroup value={webSearch === true ? 'web' : webSearch === false ? 'links' : 'none'}
+                      onChange={(value) => {
+                        if (value === 'web') {
+                          setWebSearch(true);
+                        } else if (value === 'links') {
+                          setWebSearch(false);
+                        } else if (value === 'none') {
+                          setWebSearch(null);
+                        }
+                      }} 
+                      colorScheme='purple'>
                       <Stack>
                         <Radio value="web" isChecked={webSearch}>Web Search</Radio>
                         <Radio value="links" isChecked={!webSearch}>Links</Radio>
+                        <Radio value="none">None</Radio>
                       </Stack>
                     </RadioGroup>
-                    {!webSearch && (
+                    {webSearch !== null && !webSearch && (
                       <FormControl>
                         <FormLabel className='feature-heading' letterSpacing={2}><b>Links</b></FormLabel>
                         {links.map((link, index) => (

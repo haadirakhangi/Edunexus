@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Box,Tabs, TabList, TabPanels, Tab, TabPanel, Textarea } from '@chakra-ui/react';
+import { Box, Tabs, TabList, TabPanels, Tab, TabPanel, Textarea } from '@chakra-ui/react';
 import { debounce } from 'lodash';
 import { renderMarkdown } from './renderMarkdown';
 
 interface ContentSecProps {
   contentData: { [submodule: string]: string }[];
   selectedSubmodule: string;
+  imagelist: (string[])[]; 
+  setImageLists: React.Dispatch<React.SetStateAction<string[][]>>;
   onUpdateContent: (updatedContent: { [submodule: string]: string }[]) => void;
 }
 
@@ -13,9 +15,11 @@ const ContentSec: React.FC<ContentSecProps> = ({
   contentData,
   selectedSubmodule,
   onUpdateContent,
+  imagelist,
+  setImageLists,
 }) => {
   const [markdownContent, setMarkdownContent] = useState<string>('');
-
+  
   useEffect(() => {
     const selected = contentData.find((item) => selectedSubmodule in item);
     if (selected) {
@@ -33,14 +37,37 @@ const ContentSec: React.FC<ContentSecProps> = ({
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
+
     setMarkdownContent(newContent);
+
     const updatedContent = contentData.map((item) =>
-      selectedSubmodule in item
-        ? { ...item, [selectedSubmodule]: newContent }
-        : item
+        selectedSubmodule in item
+            ? { ...item, [selectedSubmodule]: newContent }
+            : item
     );
+
+    const submoduleIndex = contentData.findIndex((sub) => Object.keys(sub)[0] === selectedSubmodule);
+
+    if (submoduleIndex !== -1) {
+        setImageLists((prevImageLists) => {
+            const updatedImageList = [...prevImageLists];
+            const currentImageList = updatedImageList[submoduleIndex] || [];
+
+            const remainingImages = currentImageList.filter((_, index) => {
+                const identifier = `![image-${submoduleIndex}-${index}]`;
+                return newContent.includes(identifier);
+            });
+
+            updatedImageList[submoduleIndex] = remainingImages;
+            return updatedImageList;
+        });
+    }
+    console.log(imagelist)
+
     debouncedUpdate(updatedContent);
-  };
+};
+
+
 
   return (
     <Box p={8} width={'full'} height={'100vh'} display="flex">
@@ -95,7 +122,7 @@ const ContentSec: React.FC<ContentSecProps> = ({
 
           <TabPanel>
             <Box bg={'white'} p={8} borderRadius={"30"}>
-              {renderMarkdown(markdownContent)}
+              {renderMarkdown(markdownContent,imagelist)}
             </Box>
           </TabPanel>
         </TabPanels>

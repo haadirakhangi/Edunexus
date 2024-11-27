@@ -1,11 +1,10 @@
-export const insertImageAtIndex = (content: string, imageUrl: string, imageName: string, lineIndex: number): string => {
-    // const isURL = imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
-    const newImageMarkdown = `\n![${imageName}](${imageUrl})\n`;
+export const insertImageAtIndex = (content: string, uniqueId: string, lineIndex: number): string => {
+    const newImageMarkdown = `\n![${uniqueId}]\n`;
     const lines = content.split('\n');
     if (lineIndex < 0 || lineIndex > lines.length) {
         throw new Error('Line index out of bounds');
     }
-    lines.splice(lineIndex, 0, newImageMarkdown.trim()); 
+    lines.splice(lineIndex, 0, newImageMarkdown.trim());
     return lines.join('\n');
 };
 

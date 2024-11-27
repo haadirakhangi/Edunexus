@@ -15,7 +15,10 @@ import LabManual from "./pages/teacher/course/Lab Manual/LabManual";
 import LabManualCreate from "./pages/teacher/course/Lab Manual/LabManualCreate";
 import "./pages/student/content/i18n"
 import LessonsGrid from "./pages/teacher/scheduler";
+import Studentscheduler from "./pages/student/Studentscheduler";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
+import SharedCourses from "./pages/student/SharedCourses";
+import PerContent from "./pages/student/course/course";
 function App() {
   return (
     <Routes>
@@ -35,9 +38,13 @@ function App() {
       <Route element={<Testing />} path="/testing" />
       <Route element={<Pico />} path="/pico" />
       <Route element={<Home />} path="/student/home" />
+      <Route element={<Studentscheduler />} path="/student/scheduler" />
+      <Route element={<SharedCourses />} path="/student/shared-courses" />
       <Route element={<Explore />} path="/student/explore" />
       <Route element={<CourseOverview />} path="/student/course-overview" />
       <Route element={<Content />} path="/student/content" />
+      <Route element={<PerContent />} path="/student/shared-lesson" />
+      <Route element={<LabManual />} path="/teacher/shared-lab-manual" />
     </Routes>
   );
 }

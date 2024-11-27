@@ -11,6 +11,7 @@ import {
   IconButton,
   Switch,
   useColorModeValue,
+  useToast,
 } from '@chakra-ui/react';
 import { Navbar } from '../../components/navbar';
 import { useNavigate } from 'react-router-dom';
@@ -28,6 +29,7 @@ type Course = {
 const TeacherDashboard = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const toast = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -49,6 +51,26 @@ const TeacherDashboard = () => {
     localStorage.setItem('course_name', course.course_name);
     localStorage.setItem('course_id', course.id);
     navigate('/teacher/scheduler');
+  };
+
+  const handleCopyCourseCode = (courseCode: string) => {
+    navigator.clipboard.writeText(courseCode).then(() => {
+      toast({
+        title: "Course Code Copied!",
+        description: `Course code ${courseCode} has been copied to clipboard.`,
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    }).catch((error) => {
+      toast({
+        title: "Failed to Copy",
+        description: "An error occurred while copying the course code.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    });
   };
 
   if (loading) {
@@ -91,7 +113,7 @@ const TeacherDashboard = () => {
                   icon={<DeleteIcon />}
                   size="sm"
                   colorScheme="red"
-                  onClick={() => handleDeleteCourse(course.id)}
+                  // onClick={() => handleDeleteCourse(course.id)}
                 />
 
                 <Flex alignItems="center">
@@ -100,8 +122,8 @@ const TeacherDashboard = () => {
                   </Text>
                   <Switch
                     colorScheme="purple"
-                    onChange={() => handlePrivacyToggle(course.id)}
-                    isChecked={course.isPublic}
+                    // onChange={() => handlePrivacyToggle(course.id)}
+                    // isChecked={course.isPublic}
                   />
                   <Text fontSize="sm" ml={2}>
                     Public
@@ -114,7 +136,15 @@ const TeacherDashboard = () => {
                 <Text fontWeight="bold" fontSize="lg" color="purple.500">
                   {course.course_name}
                 </Text>
-                <Text fontSize="sm">Course Code: {course.course_code}</Text>
+                <Text fontSize="sm">Course Code: <Text
+                  as="span"
+                  fontWeight="bold"
+                  color="purple.600"
+                  cursor="pointer"
+                  onClick={() => handleCopyCourseCode(course.course_code)}
+                >
+                  {course.course_code}
+                </Text></Text>
                 <Text fontSize="sm">Number of Lectures: {course.num_of_lectures}</Text>
               </VStack>
 
