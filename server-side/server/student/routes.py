@@ -18,8 +18,21 @@ from langchain_community.document_loaders import PyPDFLoader
 from api.serper_client import SerperProvider
 from server.constants import *
 from server.utils import ServerUtils
+from pymongo import MongoClient
+from pymongo.server_api import ServerApi
+from bson.objectid import ObjectId
+from urllib.parse import quote_plus
+import json
 
 students = Blueprint(name='students', import_name=__name__)
+password = quote_plus(os.getenv("MONGO_PASS"))
+uri = "mongodb+srv://hatim:" + password +"@cluster0.f7or37n.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+client = MongoClient(uri, server_api=ServerApi('1'))
+db = client["FYP"]
+teachers_collection = db["teacher"]
+lessons_collection = db["lessons"]
+courses_collection = db["course"]
+lab_manuals_collection = db["lab_manuals"]
 
 @students.route('/register',methods=['POST'])
 @cross_origin(supports_credentials=True)
@@ -927,3 +940,82 @@ def delete_info():
         db.session.delete(module)
         db.session.commit()
     return jsonify({"message": "An error occurred during evaluation"}), 200
+
+@students.route('/fetch-shared-course', methods=['POST'])
+def fetch_shared_courses():
+    course_code = request.json.get("course_code")
+    course = courses_collection.find_one({"course_code": course_code})
+    
+    if not course:
+        return jsonify({"message": "No course found for the given code", "response": False}), 404
+    teacher_id = course.get('teacher_id')
+    teacher = teachers_collection.find_one({"_id": ObjectId(teacher_id)})
+    teacher_first_name = teacher['first_name'] if teacher else 'Unknown'
+    teacher_last_name = teacher['last_name'] if teacher else 'Unknown'
+
+    course_data = {
+        'id': str(course['_id']),
+        'course_name': course.get('course_name'),
+        'teacher_name': teacher_first_name + " " + teacher_last_name,
+        'num_of_lectures': course.get('num_of_lectures'),
+        'course_code': course.get('course_code'),
+        'lessons_data': course.get('lessons_data'),
+    }
+    return jsonify({"courses": course_data, "response": True}), 200
+
+@students.route('/fetch-shared-lessons', methods=['POST'])
+def fetch_shared_lessons():
+    user_id = session.get('user_id')
+    data = request.json
+    course_id = data.get('course_id')
+    
+    if user_id is None:
+        return jsonify({"message": "User not logged in.", "response": False}), 401
+
+    if course_id is None:
+        return jsonify({"message": "Course ID not found in the request.", "response": False}), 400
+
+    course = courses_collection.find_one({"_id": ObjectId(course_id)})
+
+    if course is None:
+        return jsonify({"message": "Course not found for this teacher."}), 404
+
+    lessons_data : dict = json.loads(course.get("lessons_data", "{}"))
+    lesson_statuses = []
+    lesson_ids = []
+
+    for lesson_title in lessons_data.keys():
+        existing_lesson = lessons_collection.find_one({"title": lesson_title, "course_id": course_id})
+        if existing_lesson:
+            lesson_statuses.append("View")
+            lesson_ids.append(str(existing_lesson["_id"]))
+        else:
+            lesson_statuses.append("Generate")
+            lesson_ids.append(0)
+
+    lab_manuals = list(lab_manuals_collection.find({"course_id": course_id}))
+    manual_statuses = []
+    manual_ids = []
+
+    for manual in lab_manuals:
+        manual_statuses.append("View" if manual else "Generate")
+        manual_ids.append(str(manual["_id"]) if manual else 0)
+
+    manuals = [
+        {
+            "id": str(lm["_id"]),
+            "markdown_content": lm.get("markdown_content"),
+            "exp_aim": lm.get("exp_aim"),
+            "exp_number": lm.get("exp_number"),
+        }
+        for lm in lab_manuals
+    ]
+
+    return jsonify({
+        "lessons": lessons_data,
+        "lesson_statuses": lesson_statuses,
+        "lesson_ids": lesson_ids,
+        "lab_manuals": manuals,
+        "manual_statuses": manual_statuses,
+        "manual_ids": manual_ids
+    }), 200
