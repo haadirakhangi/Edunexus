@@ -446,6 +446,7 @@ def add_lesson():
     markdown_content = data.get('markdown_content', '')
     relevant_images = data.get('relevant_images', None)
     uploaded_images = data.get('uploaded_images', None)
+    markdown_images = data.get('markdown_images',None)
     course_id = data.get('course_id')
     lesson_id = data.get('lesson_id', None)
 
@@ -463,6 +464,7 @@ def add_lesson():
                 "markdown_content": json.dumps(markdown_content),
                 "relevant_images": json.dumps(relevant_images),
                 "uploaded_images": json.dumps(uploaded_images),
+                "markdown_images": json.dumps(markdown_images),
             }}
         )
     else:
@@ -471,6 +473,7 @@ def add_lesson():
             "markdown_content": json.dumps(markdown_content),
             "relevant_images": json.dumps(relevant_images),
             "uploaded_images": json.dumps(uploaded_images),
+            "markdown_images": json.dumps(markdown_images),
             "teacher_id": teacher_id,
             "course_id": course_id
         }
@@ -497,6 +500,7 @@ def get_lesson():
         "title": lesson.get("title"),
         "markdown_content": lesson.get("markdown_content"),
         "relevant_images": lesson.get("relevant_images"),
+        "markdown_images": lesson.get("markdown_images"),
         "uploaded_images": lesson.get("uploaded_images"),
         "teacher_id": lesson.get("teacher_id"),
         "course_id": lesson.get("course_id")
