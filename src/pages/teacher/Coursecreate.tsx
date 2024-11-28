@@ -170,7 +170,7 @@ const CourseCreate = () => {
           <Flex justify="center" align="center" width="100vw" height="90vh" textAlign="center">
             <VStack>
               <Spinner size="xl" color="purple.500" />
-              <Heading>Generating Lessons...</Heading>
+              <Heading>Generating Lesson Plan...</Heading>
             </VStack>
           </Flex>
         </>
