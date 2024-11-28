@@ -28,11 +28,11 @@ teachers = Blueprint(name='teachers', import_name=__name__)
 password = quote_plus(os.getenv("MONGO_PASS"))
 uri = "mongodb+srv://hatim:" + password +"@cluster0.f7or37n.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(uri, server_api=ServerApi('1'))
-db = client["FYP"]
-teachers_collection = db["teacher"]
-lessons_collection = db["lessons"]
-courses_collection = db["course"]
-lab_manuals_collection = db["lab_manuals"]
+mongodb = client["FYP"]
+teachers_collection = mongodb["teacher"]
+lessons_collection = mongodb["lessons"]
+courses_collection = mongodb["course"]
+lab_manuals_collection = mongodb["lab_manuals"]
 
 @teachers.route('/register', methods=['POST'])
 def register():
@@ -660,11 +660,11 @@ def fetch_lab_manual():
 
 @teachers.route('/download-ppt', methods=['POST'])
 def download_ppt():
-    # teacher_id = session.get("teacher_id")
-    # if teacher_id is None:
-    #     return jsonify({"message": "Teacher not logged in.", "response": False}), 401
+    teacher_id = session.get("teacher_id")
+    if teacher_id is None:
+        return jsonify({"message": "Teacher not logged in.", "response": False}), 401
     
-    # try: 
+    try: 
         data : dict = request.get_json()
         markdown_list = data.get("markdown_list")
         course_name = data.get("course_name")
@@ -678,8 +678,8 @@ def download_ppt():
         downloads_path = os.path.join(downloads_directory, lesson_name)
         PPT_GENERATOR.create_presentation(presentation_content, output_filename=downloads_path)
         return jsonify({"message": "Presentation Created Successfully", "presentation_content": presentation_content, "response": True}), 200
-    # except Exception as e:
-    #     print(f"Error while creating ppt: {e}")
+    except Exception as e:
+        print(f"Error while creating ppt: {e}")
 
 @teachers.route('/logout', methods=['GET'])
 @cross_origin(supports_credentials=True)
