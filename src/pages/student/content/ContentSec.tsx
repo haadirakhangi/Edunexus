@@ -1,8 +1,7 @@
 import { Box, useToast, Spinner, useColorModeValue, Text, VStack, Link, List, ListItem, Button, Center } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaDownload } from "react-icons/fa";
-import { FaFilePdf } from "react-icons/fa6";
+import { FaFilePdf, FaFileAudio } from "react-icons/fa6";
 import Quiz from './Quiz';
 import VoiceQuiz from './VoiceQuiz';
 import Slideshow from '../course_overview/Slideshow';
@@ -176,7 +175,7 @@ export const ContentSec = ({
                         mb={10}
                         colorScheme="purple" _hover={{ bg: useColorModeValue('purple.600', 'purple.800'), color: useColorModeValue('white', 'white') }}
                         onClick={() => subject?.subsections && fetchAudio(subject.subsections)}>
-                        <FaFilePdf size={20} />
+                        <FaFileAudio size={20} style={{marginRight:8}}/>
                         {trans('Generate Audio')}
                     </Button>
                     {isSpinnerLoading ? (
@@ -246,7 +245,7 @@ export const ContentSec = ({
                         onClick={handledownload}
                         colorScheme="purple" _hover={{ bg: useColorModeValue('purple.600', 'purple.800'), color: useColorModeValue('white', 'white') }}
                     >
-                        <FaDownload size={20} />
+                        <FaFilePdf size={20} style={{marginRight:8}}/>
                         {trans('Download Course')}
                     </Button>
                 </Box>
