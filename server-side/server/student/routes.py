@@ -1051,6 +1051,7 @@ def convert_docx():
         course_name = course.get('name', 'Unknown_Course')
         markdown = lab_manual.get('markdown_content', '')
         exp_num = lab_manual.get('exp_number', 'Unknown_Experiment')
+        image_list = json.loads(lab_manual.get('markdown_images'))
         doc = LabManualGenerator.convert_markdown_to_docx(markdown, course_name, exp_num)
 
         return send_file(
