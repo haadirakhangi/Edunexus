@@ -7,7 +7,7 @@ export const renderMarkdown = (
     const lines = content.split('\n');
     const renderedContent: JSX.Element[] = [];
     const imagePattern = /!\[(.*?)\]/;
-
+    console.log("IMAGE LIST: ", imageList)
     lines.forEach((line, idx) => {
         const imageMatch = line.match(imagePattern);
         if (imageMatch) {
@@ -17,7 +17,6 @@ export const renderMarkdown = (
                 
                 const submoduleIndex = parseInt(match[1], 10);
                 const imageIndex = parseInt(match[2], 10);
-                console.log(imageList);
                 const imageUrl =imageList[submoduleIndex]?.[imageIndex] || '';
                 if (imageUrl) {
                     renderedContent.push(

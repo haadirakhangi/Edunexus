@@ -40,7 +40,7 @@ const PerContent: React.FC = () => {
             const response = await axios.post('/api/teacher/add-lesson', {
                 title: lesson_name,
                 markdown_content: data,
-                relevant_images: images,
+                // relevant_images: images,
                 uploaded_images: uploadedImages,
                 markdown_images: imageLists,
                 lesson_id: lesson_id,
@@ -138,11 +138,11 @@ const PerContent: React.FC = () => {
                         lesson_id: lesson_id
                     }, { withCredentials: true });
                     const mk = JSON.parse(response.data.markdown_content);
-                    const rimg = JSON.parse(response.data.relevant_images);
+                    // const rimg = JSON.parse(response.data.relevant_images);
                     const umg = JSON.parse(response.data.uploaded_images);
                     const markimg = JSON.parse(response.data.markdown_images);
                     setImageLists(markimg)
-                    setImages(rimg);
+                    // setImages(rimg);
                     setData(mk);
                     setUploadedImages(umg)
                     setApiCalled(true);
