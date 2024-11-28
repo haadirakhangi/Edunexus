@@ -65,8 +65,8 @@ class GeminiProvider:
             system_instruction=f"You are ISSAC, a helpful assistant for the website Mindcraft. Use the functions provided to you to answer user's question about the Mindcraft platform. User Profile: {profile}",
             tools=tools
         )
-        chat = self.gemini_assistant.start_chat(enable_automatic_function_calling=True)
-        return chat
+        self.chat = self.gemini_assistant.start_chat(enable_automatic_function_calling=True)
+        return self.chat
     
     def return_chat(self):
         if self.chat is None:
