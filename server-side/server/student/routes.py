@@ -567,7 +567,6 @@ def course_overview(module_id, source_language, websearch):
 
 
 # module query --> generate mutlimodal content (with images) for submodules in a module
-
 @students.route('/query2/<int:module_id>/<string:source_language>/<string:websearch>', methods=['GET'])
 @cross_origin(supports_credentials=True)
 def query_module(module_id, source_language, websearch):
