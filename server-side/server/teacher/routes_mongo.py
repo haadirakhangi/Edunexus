@@ -573,21 +573,46 @@ def convert_docx():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in", "response": False}), 401
+
     try:
         data = request.json
-        markdown = data.get('markdown')
-        course_name = data.get('course_name')
-        exp_num = data.get('exp_num')
+        lab_manual_id = data.get('lab_manual_id')
+        if not lab_manual_id:
+            return jsonify({"message": "Lab manual ID is required", "response": False}), 400
+
+        from bson import ObjectId
+        if not ObjectId.is_valid(lab_manual_id):
+            return jsonify({"message": "Invalid lab manual ID", "response": False}), 400
         
-        doc=LabManualGenerator.convert_markdown_to_docx(markdown,course_name,exp_num)
+        lab_manual = lab_manuals_collection.find_one(
+            {"_id": ObjectId(lab_manual_id), "teacher_id": teacher_id}
+        )
+        if not lab_manual:
+            return jsonify({"message": "Lab manual not found", "response": False}), 404
+        course_id = lab_manual.get('course_id')
+        if not course_id:
+            return jsonify({"message": "Course ID not found in lab manual", "response": False}), 400
+
+        if not ObjectId.is_valid(course_id):
+            return jsonify({"message": "Invalid course ID", "response": False}), 400
+        course = courses_collection.find_one({"_id": ObjectId(course_id)})
+        if not course:
+            return jsonify({"message": "Course not found", "response": False}), 404
+        course_name = course.get('name', 'Unknown_Course')
+        markdown = lab_manual.get('markdown_content', '')
+        exp_num = lab_manual.get('exp_number', 'Unknown_Experiment')
+        doc = LabManualGenerator.convert_markdown_to_docx(markdown, course_name, exp_num)
+
         return send_file(
             doc,
             as_attachment=True,
             download_name=f"{course_name}_{exp_num}.docx",
             mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         )
-    except Exception as e:  
-        print("An error occured while creating document: ",e)
+    except Exception as e:
+        print("An error occurred while creating the document:", e)
+        return jsonify({"message": "Failed to create document", "response": False}), 500
+
 
 @teachers.route('/add-lab-manual', methods=['POST'])
 def add_lab_manual():
