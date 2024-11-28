@@ -247,33 +247,59 @@ class PptGenerator:
         tf.word_wrap = True
 
         for item in content:
-            p = tf.add_paragraph()
-            p.text = item['text']
+            if 'text' in item:
+                # Add paragraph for each text block and apply formatting
+                p = tf.add_paragraph()
+                p.alignment = PP_ALIGN.LEFT  # Align text to the left
+                p.text = ""  # Initialize text to avoid duplicate issues
+                PptGenerator.add_text_with_formatting(p, item['text'])
 
-            # Adjust font size based on style
-            if item['style'] == 'header':
-                p.font.size = Pt(24 - (item['level'] * 4))
-                p.font.bold = True
-                p.level = item['level'] - 1
-            elif item['style'] == 'bullet':
-                p.level = 1
-                p.font.size = Pt(18)
-            elif item['style'] == 'normal':
-                p.font.size = Pt(18)
-            elif item['style'] == 'formatted':
-                p.font.size = Pt(18)
-                if item['format'] == 'b':
+                # Adjust font size and bullet style based on type
+                if item['style'] == 'header':
+                    p.font.size = Pt(24 - (item['level'] * 4))
                     p.font.bold = True
-                if item['format'] == 'i':
-                    p.font.italic = True
-                if item['format'] == 'u':
-                    p.font.underline = True
+                    p.level = item['level'] - 1
+                elif item['style'] == 'bullet':
+                    p.level = 1
+                    p.font.size = Pt(18)
+                    p.text = "• " + item['text']  # Ensure bullet symbol is added manually
+                elif item['style'] == 'normal':
+                    p.font.size = Pt(18)
 
-            # Check if text exceeds slide size and reduce font size if necessary
-            while PptGenerator.check_text_exceeds_bounds(p):
-                p.font.size -= Pt(1)
-                if p.font.size < Pt(10):
-                    break
+                # Check if text exceeds slide size and reduce font size if necessary
+                while PptGenerator.check_text_exceeds_bounds(p):
+                    p.font.size -= Pt(1)
+                    if p.font.size < Pt(10):
+                        break
+                    # Check if text exceeds slide size and reduce font size if necessary
+        while PptGenerator.check_text_exceeds_bounds(p):
+            p.font.size -= Pt(1)
+            if p.font.size < Pt(10):
+                break
+
+    @staticmethod
+    def add_text_with_formatting(paragraph, html_text):
+        """ Parse HTML and add text with inline formatting (bold, italic, underline). """
+        soup = BeautifulSoup(html_text, 'html.parser')
+
+        for element in soup.descendants:
+            if isinstance(element, str):
+                # Add text directly if it's a string
+                run = paragraph.add_run()
+                run.text = element
+            elif element.name in ['b', 'i', 'u']:
+                run = paragraph.add_run()
+                run.text = element.get_text()
+
+                # Apply formatting based on the tag
+                if element.name == 'b':
+                    run.font.bold = True
+                if element.name == 'i':
+                    run.font.italic = True
+                if element.name == 'u':
+                    run.font.underline = True
+
+
 
     @staticmethod
     def check_text_exceeds_bounds(paragraph):
