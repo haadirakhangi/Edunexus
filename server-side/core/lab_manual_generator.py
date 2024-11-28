@@ -4,7 +4,9 @@ import pypandoc
 import os
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
-
+import base64
+from io import BytesIO
+from PIL import Image
 
 class LabManualGenerator:
     def __init__(self):
@@ -64,23 +66,70 @@ class LabManualGenerator:
                 final_manual_markdown += f"* [{link}]({link})\n"
         return final_manual_markdown
     
+    
     @staticmethod
-    def convert_markdown_to_docx(input_file, course_name, exp_num, reference_docx=None):
+    def save_base64_image(base64_string, file_name):
+        """Save a base64 string as an image file and return the file path."""
+        print("--------------BASE64 STRING----------------\n", base64_string)
+        
+        # Fix padding issue
+        base64_string = LabManualGenerator.fix_base64_padding(base64_string)
+        
+        try:
+            image_data = base64.b64decode(base64_string)
+            print("--------------IMAGE DATA----------------\n", image_data)
+            image = Image.open(BytesIO(image_data))
+        except Exception as e:
+            raise Exception(f"Failed to decode base64 string: {str(e)}")
+        
+        current_dir = os.path.dirname(__file__)
+        image_dir = os.path.join(current_dir, "temp_images")
+        os.makedirs(image_dir, exist_ok=True)
+        
+        image_path = os.path.join(image_dir, file_name)
+        image.save(image_path)
+        
+        return image_path
+
+    @staticmethod
+    def fix_base64_padding(base64_string):
+        """Fix base64 string padding if necessary."""
+        missing_padding = len(base64_string) % 4
+        if missing_padding:
+            base64_string += '=' * (4 - missing_padding)
+        return base64_string
+    @staticmethod
+    def convert_markdown_to_docx(input_file, course_name, exp_num, base64_images):
+        # Step 1: Replace placeholders in Markdown with image references
+        markdown_content = input_file
+        image_paths = []
+        
+        for i, base64_image in enumerate(base64_images):
+            image_path = LabManualGenerator.save_base64_image(base64_image, f"image_{i}.png")
+            image_paths.append(image_path)
+            # Replace the placeholder ![image-i] with the actual image reference in Markdown
+            markdown_content = markdown_content.replace(f"![image-{i}]", f"![image_{i}]({image_path})")
+        
+        # Step 2: Convert the modified Markdown content to a DOCX file
         extra_args = [
             '--standalone',
             '--from=markdown+hard_line_breaks+yaml_metadata_block+header_attributes'
         ]
         
-        if reference_docx:
-            extra_args.extend(['--reference-doc', reference_docx])
-        
         current_dir = os.path.dirname(__file__)
         output_dir = os.path.join(current_dir, "lab-manuals")
         os.makedirs(output_dir, exist_ok=True)
         
-        doc=f"{course_name} Experiment {exp_num}.docx"
+        doc = f"{course_name} Experiment {exp_num}.docx"
         output_file = os.path.join(output_dir, doc)
-        pypandoc.convert_text(input_file, 'docx', format='markdown', outputfile=output_file, extra_args=extra_args)
+        
+        pypandoc.convert_text(markdown_content, 'docx', format='markdown', outputfile=output_file, extra_args=extra_args)
+        
+        # Step 3: Clean up temporary image files
+        for image_path in image_paths:
+            os.remove(image_path)
         
         return output_file
+
+
             
