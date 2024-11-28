@@ -1,12 +1,9 @@
 from api.gemini_client import GeminiProvider
-from models.student_schema import Module
 import pandas as pd
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from sklearn.decomposition import PCA
 from sklearn.metrics.pairwise import cosine_similarity
 import os
-import csv
 
 class RecommendationGenerator:
     def __init__(self):
@@ -15,7 +12,7 @@ class RecommendationGenerator:
         self.data_dir = os.path.join(self.current_dir, 'recommendation_data', 'modules.csv')
         self.df_module = pd.read_csv(self.data_dir)
         self.X = np.array(self.df_module.summary)
-        self.model = SentenceTransformer('all-distilroberta-v1')
+        self.model = SentenceTransformer('all-distilroberta-v1', tokenizer_kwargs={"clean_up_tokenization_spaces": False})
         self.vec_embed = self.model.encode(self.X)
         self.df_module['embeddings'] = self.vec_embed.tolist()
 

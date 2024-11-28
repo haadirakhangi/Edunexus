@@ -11,9 +11,8 @@ import io
 import requests
 import re
 import ast
+import time
 
-
-# #
 # class PptGenerator:
 #     def __init__(self):
 #         self.gemini_client = GeminiProvider()
@@ -182,17 +181,9 @@ import ast
 #         return extracted_list
 
 
-
-#--------------------------------------------------------------------
-
-
 class PptGenerator:
-    def __init__(self, output_filename='presentation.pptx'):
+    def __init__(self):
         self.gemini_client = GeminiProvider()
-
-        self.prs = Presentation()
-        self.output_filename = output_filename
-        self.blank_slide_layout = self.prs.slide_layouts[6]
 
     @staticmethod
     def parse_html_content(html_text):
@@ -233,7 +224,8 @@ class PptGenerator:
 
         return parsed_content
 
-    def add_title(self, slide, title):
+    @staticmethod
+    def add_title(slide, title):
         left, top, width, height = Inches(0.5), Inches(0.5), Inches(9), Inches(1)
         txBox = slide.shapes.add_textbox(left, top, width, height)
         tf = txBox.text_frame
@@ -246,10 +238,9 @@ class PptGenerator:
         font.color.rgb = RGBColor(0, 51, 102)
         font.bold = True
 
-
-
-    def add_content(self, slide, html_content):
-        content = self.parse_html_content(html_content)
+    @staticmethod
+    def add_content(slide, html_content):
+        content = PptGenerator.parse_html_content(html_content)
         left, top, width, height = Inches(0.5), Inches(1.5), Inches(9), Inches(5)
         txBox = slide.shapes.add_textbox(left, top, width, height)
         tf = txBox.text_frame
@@ -257,11 +248,13 @@ class PptGenerator:
 
         for item in content:
             if 'text' in item:
+                # Add paragraph for each text block and apply formatting
                 p = tf.add_paragraph()
-                p.alignment = PP_ALIGN.LEFT  # Align the paragraph to the left
-                self.add_text_with_formatting(p, item['text'])
+                p.alignment = PP_ALIGN.LEFT  # Align text to the left
+                p.text = ""  # Initialize text to avoid duplicate issues
+                PptGenerator.add_text_with_formatting(p, item['text'])
 
-                # Adjust font size based on style
+                # Adjust font size and bullet style based on type
                 if item['style'] == 'header':
                     p.font.size = Pt(24 - (item['level'] * 4))
                     p.font.bold = True
@@ -269,22 +262,32 @@ class PptGenerator:
                 elif item['style'] == 'bullet':
                     p.level = 1
                     p.font.size = Pt(18)
+                    p.text = "• " + item['text']  # Ensure bullet symbol is added manually
                 elif item['style'] == 'normal':
                     p.font.size = Pt(18)
-                    
-            while self.check_text_exceeds_bounds(p):
-                p.font.size -= Pt(1)
-                if p.font.size < Pt(10):
-                    break
 
-    def add_text_with_formatting(self, paragraph, html_text):
+                # Check if text exceeds slide size and reduce font size if necessary
+                while PptGenerator.check_text_exceeds_bounds(p):
+                    p.font.size -= Pt(1)
+                    if p.font.size < Pt(10):
+                        break
+                    # Check if text exceeds slide size and reduce font size if necessary
+        while PptGenerator.check_text_exceeds_bounds(p):
+            p.font.size -= Pt(1)
+            if p.font.size < Pt(10):
+                break
+
+    @staticmethod
+    def add_text_with_formatting(paragraph, html_text):
+        """ Parse HTML and add text with inline formatting (bold, italic, underline). """
         soup = BeautifulSoup(html_text, 'html.parser')
 
         for element in soup.descendants:
             if isinstance(element, str):
+                # Add text directly if it's a string
                 run = paragraph.add_run()
                 run.text = element
-            else:
+            elif element.name in ['b', 'i', 'u']:
                 run = paragraph.add_run()
                 run.text = element.get_text()
 
@@ -298,8 +301,8 @@ class PptGenerator:
 
 
 
-
-    def check_text_exceeds_bounds(self, paragraph):
+    @staticmethod
+    def check_text_exceeds_bounds(paragraph):
         max_characters_per_line = 80
         max_lines = 10
 
@@ -307,26 +310,34 @@ class PptGenerator:
         lines = (text_length // max_characters_per_line) + 1
         return lines > max_lines
 
-    def create_presentation(self, slide_data_list):
+    @staticmethod
+    def create_presentation(slide_data_list : list[dict], output_filename):
+        prs = Presentation()
+        blank_slide_layout = prs.slide_layouts[6]
         for slide_data in slide_data_list:
-            slide = self.prs.slides.add_slide(self.blank_slide_layout)
-            self.add_title(slide, slide_data.get('title', 'Untitled'))
-            self.add_content(slide, slide_data.get('content', ''))
+            slide = prs.slides.add_slide(blank_slide_layout)
+            PptGenerator.add_title(slide, slide_data.get('title', 'Untitled'))
+            PptGenerator.add_content(slide, slide_data.get('slide_content', ''))
 
-        self.prs.save(self.output_filename)
-        print(f"Presentation saved as {self.output_filename}")
-        
+        prs.save(output_filename)
+        print(f"Presentation saved as {output_filename}")
+    
     def generate_ppt_content(self, markdown_list : list[dict]):
-        prompt = """You are a skilled and creative expert in designing PowerPoint presentations. Your task is to take the content of a course and summarize it effectively to create an engaging and concise presentation.\nFor each topic in the course, you will design slides summarizing the material provided. The number of slides (or dictionaries in the list) can be as much as necessary to adequately explain the topics. However, the number of slides must not be less than the number of topics and can be greater if required for clarity and depth. If a topic contains subtopics or sections, ensure that each subtopic is covered on separate slides where appropriate.\nEnsure that the summaries are:\n - Comprehensive yet concise.\n - Organized logically for easy understanding.\n - Engaging and aligned with professional presentation standards.\n - Tailored to the target audience of the presentation, in this case students, to match their level of expertise and interest.\n\n # Course Content:\n\n"""
+        prompt = """You are a skilled and creative expert in designing PowerPoint presentations. Your task is to take the content of a course and craft an engaging and concise presentation which is content-rich.\nFor each topic in the course, you will design slides explaining the topics provided. For each topic in the course, consolidate information into fewer slides (10-15 slides) by grouping related subtopics or concepts. Aim to minimize the total number of slides while ensuring each slide contains detailed and comprehensive content that thoroughly explains the topic. Strive for a balance between clarity and depth, presenting all critical information within a logical structure. \nEnsure that the slides are:\n - Organized logically for easy understanding.\n - Engaging and aligned with professional presentation standards.\n\n # Course Content:\n\n"""
         for index, markdown in enumerate(markdown_list):
             for key, value in markdown.items():
                 prompt += f"## Topic {index + 1}: {key}\n## Content {index +1}: {value}\n\n"
 
-        output_format_prompt = """-------------------\n# OUTPUT FORMAT INSTRUCTIONS:\nThe output should be a list of dictionaries where each dictionary represents the content of one slide. Each dictionary within the list must include two keys:\n'title': The title of the slide, summarizing the main point of the topic.\n'slide_content': The concise content to be added to the slide in the form of a html.\nProvide the output strictly as a list of dictionaries following the format as described. Do not include any additional text or explanation outside of the given structure. Do not include unnecessary text like ```json in the output. It should strictly only be a list of dictionary."""
+        output_format_prompt = """-------------------\n# OUTPUT FORMAT INSTRUCTIONS:\nThe output should be a list of dictionaries where each dictionary represents the content of one slide. Each dictionary within the list must include two keys:\n'title': The title of the slide, summarizing the main point of the topic.\n'slide_content': Detailed and comprehensive content to include on the slide, formatted as HTML. This should contain:\n - Paragraphs with detailed explanations, covering all relevant information.\n - Bullet points that expand on key details, ensuring clarity and depth.\n - Do not include any heading tags in the slide_content.\nProvide the output strictly as a list of dictionaries following the format as described. Do not include unnecessary text like ```json in the output. It should strictly only be a list of dictionary."""
         prompt += output_format_prompt
-        output = self.gemini_client.generate_response(prompt, remove_literals=False)
-        pattern = r"\[\s*(.*)\s*\]"
-        match = re.search(pattern, output, re.DOTALL)
-        extracted_list_string = match.group(0)
-        extracted_list = ast.literal_eval(extracted_list_string)
-        return extracted_list
+        while True:
+            try:
+                output = self.gemini_client.generate_response(prompt, remove_literals=False)
+                pattern = r"\[\s*(.*)\s*\]"
+                match = re.search(pattern, output, re.DOTALL)
+                extracted_list_string = match.group(0)
+                extracted_list = ast.literal_eval(extracted_list_string)
+                return extracted_list
+            except Exception as e:
+                print(f"Exception while creating PPT:{e}.\nTrying again in 10 seconds...")
+                time.sleep(10)

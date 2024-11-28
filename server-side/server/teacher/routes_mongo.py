@@ -602,7 +602,7 @@ def convert_docx():
     markdown = lab_manual.get('markdown_content', '')
     exp_num = lab_manual.get('exp_number', 'Unknown_Experiment')
     image_list = json.loads(lab_manual.get('markdown_images'))
-    doc = LabManualGenerator.convert_markdown_to_docx(input_file=markdown,course_name= course_name,exp_num= exp_num,base64_images= image_list)
+    doc = LabManualGenerator.convert_markdown_to_docx(input_file=markdown,course_name= course_name,exp_num= exp_num)
 
 
     return send_file(
@@ -702,7 +702,6 @@ def download_ppt():
         lesson_name = data.get("lesson_name")
         lesson_name += ".pptx"
         presentation_content = PPT_GENERATOR.generate_ppt_content(markdown_list=markdown_list)
-        print("PRESENTATION CONTENT", type(presentation_content)," ", type(presentation_content[0]),"\n\n",presentation_content)
         current_dir = os.path.dirname(__file__)
         downloads_directory = os.path.join(current_dir, 'downloaded-presentations', course_name)
         os.makedirs(downloads_directory, exist_ok=True)
