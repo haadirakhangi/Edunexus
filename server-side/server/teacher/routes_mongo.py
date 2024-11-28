@@ -573,21 +573,47 @@ def convert_docx():
     teacher_id = session.get('teacher_id')
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in", "response": False}), 401
+
     try:
         data = request.json
-        markdown = data.get('markdown')
-        course_name = data.get('course_name')
-        exp_num = data.get('exp_num')
+        lab_manual_id = data.get('lab_manual_id')
+        if not lab_manual_id:
+            return jsonify({"message": "Lab manual ID is required", "response": False}), 400
+
+        from bson import ObjectId
+        if not ObjectId.is_valid(lab_manual_id):
+            return jsonify({"message": "Invalid lab manual ID", "response": False}), 400
         
-        doc=LabManualGenerator.convert_markdown_to_docx(markdown,course_name,exp_num)
+        lab_manual = lab_manuals_collection.find_one(
+            {"_id": ObjectId(lab_manual_id), "teacher_id": teacher_id}
+        )
+        if not lab_manual:
+            return jsonify({"message": "Lab manual not found", "response": False}), 404
+        course_id = lab_manual.get('course_id')
+        if not course_id:
+            return jsonify({"message": "Course ID not found in lab manual", "response": False}), 400
+
+        if not ObjectId.is_valid(course_id):
+            return jsonify({"message": "Invalid course ID", "response": False}), 400
+        course = courses_collection.find_one({"_id": ObjectId(course_id)})
+        if not course:
+            return jsonify({"message": "Course not found", "response": False}), 404
+        course_name = course.get('name', 'Unknown_Course')
+        markdown = lab_manual.get('markdown_content', '')
+        exp_num = lab_manual.get('exp_number', 'Unknown_Experiment')
+        image_list = json.loads(lab_manual.get('markdown_images'))
+        doc = LabManualGenerator.convert_markdown_to_docx(markdown, course_name, exp_num)
+
         return send_file(
             doc,
             as_attachment=True,
             download_name=f"{course_name}_{exp_num}.docx",
             mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         )
-    except Exception as e:  
-        print("An error occured while creating document: ",e)
+    except Exception as e:
+        print("An error occurred while creating the document:", e)
+        return jsonify({"message": "Failed to create document", "response": False}), 500
+
 
 @teachers.route('/add-lab-manual', methods=['POST'])
 def add_lab_manual():
@@ -601,6 +627,7 @@ def add_lab_manual():
     exp_number = data.get('exp_num')
     markdown_content = data.get('markdown_content', '')
     uploaded_images = data.get('uploaded_images', None)
+    markdown_images = data.get('markdown_images', None)
     lab_manual_id = data.get('lab_manual_id', None)
 
     if course_id is None:
@@ -615,6 +642,7 @@ def add_lab_manual():
             {"_id": ObjectId(lab_manual_id)},
             {"$set":{
                 "markdown_content": markdown_content,
+                "markdown_images": json.dumps(markdown_images),
                 "uploaded_images":json.dumps(uploaded_images)
             }}
         )
@@ -625,6 +653,7 @@ def add_lab_manual():
             "exp_aim":exp_aim,
             "exp_number": exp_number,
             "markdown_content": markdown_content,
+            "markdown_images": json.dumps(markdown_images),
             "uploaded_images": json.dumps(uploaded_images)
         }
         result = lab_manuals_collection.insert_one(new_lab_manual)
@@ -651,6 +680,7 @@ def fetch_lab_manual():
         "course_id": lab_manual.get("course_id"),
         "teacher_id": lab_manual.get("teacher_id"),
         "markdown_content": lab_manual.get("markdown_content"),
+        "markdown_images": lab_manual.get("markdown_images"),
         "uploaded_images": lab_manual.get("uploaded_images"),
         "exp_aim": lab_manual.get("exp_aim"),
         "exp_number": lab_manual.get("exp_number")
