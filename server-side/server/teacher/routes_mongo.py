@@ -18,6 +18,7 @@ from server.constants import *
 from server.utils import ServerUtils
 import json
 import uuid
+import re
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from bson.objectid import ObjectId
@@ -221,7 +222,7 @@ async def multimodal_rag_submodules():
         files = request.files.getlist('files[]')
     lesson_name = request.form['lesson_name']
     course_name = request.form['course_name']
-    include_images = request.form['includeImages']
+    include_images = request.form.get("includeImages", "false")
     if include_images=="true":
         include_images=True
     else:
@@ -230,6 +231,7 @@ async def multimodal_rag_submodules():
         raise Exception("lesson_name must be provided")
     description = request.form['description']
     
+    lesson_name = re.sub(r'[<>:"/\\|?*]', '_', lesson_name)
     current_dir = os.path.dirname(__file__)
     uploads_path = os.path.join(current_dir, 'uploaded-documents', lesson_name)
     if not os.path.exists(uploads_path):

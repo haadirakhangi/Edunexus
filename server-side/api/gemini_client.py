@@ -6,6 +6,7 @@ import time
 load_dotenv()
 os.environ["GOOGLE_API_KEY"] = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+print("GEMINI API KEY", os.environ["GEMINI_API_KEY"])
 
 class GeminiProvider:
     def __init__(self, profile=None, tools=None):
