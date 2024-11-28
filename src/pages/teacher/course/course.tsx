@@ -63,6 +63,7 @@ const PerContent: React.FC = () => {
             const content = item[submoduleKey];
             const imagesForSubmodule = images[submoduleIndex]?.slice(0, 2) || [];
             let updatedContent = content;
+    
             setImageLists((prevImageLists) => {
                 const updatedLists = [...prevImageLists];
                 if (!updatedLists[submoduleIndex]) updatedLists[submoduleIndex] = [];
@@ -70,7 +71,12 @@ const PerContent: React.FC = () => {
             });
     
             imagesForSubmodule.forEach((imageLink, i) => {
-                const isURL = imageLink.startsWith('http://') || imageLink.startsWith('https://');
+                if (!imageLink.startsWith('http://') && !imageLink.startsWith('https://')) {
+                    if (!imageLink.startsWith('data:image/') || !imageLink.includes(';base64,')) {
+                        imageLink = `data:image/png;base64,${imageLink}`;
+                    }
+                }
+    
                 const uniqueId = `image-${submoduleIndex}-${i}`;
                 setImageLists((prevImageLists) => {
                     const updatedLists = [...prevImageLists];
@@ -86,6 +92,7 @@ const PerContent: React.FC = () => {
     
         setData(updatedData);
     };
+    
     
     
 
