@@ -15,9 +15,9 @@ const Register = () => {
       <Box mt={5}>
         <Tabs isFitted variant='enclosed' colorScheme='purple'>
           <TabList>
-            <Tab>Teacher</Tab>
-            <Tab>Student</Tab>
-            <Tab>Company</Tab>
+            <Tab _selected={{ bgColor: 'purple.600', color: 'white' }}>Teacher</Tab>
+            <Tab _selected={{ bgColor: 'purple.600', color: 'white' }}>Student</Tab>
+            <Tab _selected={{ bgColor: 'purple.600', color: 'white' }}>Company</Tab>
           </TabList>
           <TabPanels>
             <TabPanel bg={'purple.200'}>

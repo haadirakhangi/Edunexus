@@ -117,7 +117,7 @@ const Form2 = ({ register, errors, collegeIdFile, setCollegeIdFile }: { register
   return (
     <>
       <Text w="80vh" fontSize={'50px'} className='feature-heading' color={useColorModeValue('purple.600', 'purple.500')} textAlign={"center"} fontWeight="normal" mb="2%">
-        Student Details
+        <b>Student Details</b>
       </Text>
       <Flex>
         <FormControl as={GridItem} colSpan={[6, 3]} isInvalid={!!errors.country} mb={4} mr="3%">

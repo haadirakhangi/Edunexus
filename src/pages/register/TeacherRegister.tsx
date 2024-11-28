@@ -62,7 +62,7 @@ const Form1 = ({ register, errors }: { register: any; errors: any }) => {
   return (
     <>
       <Text w="80vh" className='feature-heading' fontSize={'50px'} color={useColorModeValue('purple.600', 'purple.500')} textAlign="center" fontWeight="normal" mb="2%">
-        <b>Teacher Basic Details</b>
+        <b>Basic Details</b>
       </Text>
       <Flex>
         <FormControl isInvalid={!!errors.firstName} mr="5%">
@@ -99,7 +99,7 @@ const Form2 = ({ register, errors }: { register: any; errors: any }) => {
   return (
     <>
       <Text w="80vh" className='feature-heading' fontSize={'50px'} color={useColorModeValue('purple.600', 'purple.500')} textAlign="center" fontWeight="normal" mb="2%">
-        <b>Teacher Personal Details</b>
+        <b>Personal Details</b>
       </Text>
       <FormControl isInvalid={!!errors.country} mb="4%">
         <FormLabel>Country</FormLabel>
@@ -144,7 +144,7 @@ const Form3 = ({ register, errors }: { register: any; errors: any }) => {
   return (
     <>
       <Text w="80vh" className='feature-heading' fontSize={'50px'} color={useColorModeValue('purple.600', 'purple.500')} textAlign="center" fontWeight="normal" mb="2%">
-        <b>Teacher Professional Details</b>
+        <b>Professional Details</b>
       </Text>
       <FormControl isInvalid={!!errors.collegeName} mb="4%">
         <FormLabel>College Name</FormLabel>
@@ -189,7 +189,7 @@ const TeacherRegister = () => {
   const toast = useToast();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [progress, setProgress] = useState(50);
+  const [progress, setProgress] = useState(33);
 
   const resolver: any = step === 1 ? yupResolver(form1Schema) :
     step === 2 ? yupResolver(form2Schema) :
