@@ -103,7 +103,7 @@ export const Sidebar = ({
         <VStack
             w={"30%"}
             boxShadow={'10px 0 15px -5px rgba(0, 0, 0, 0.3)'}
-            height={"90vh"}
+            height={"120%"}
             bg={useColorModeValue('white', 'white')}
             color={useColorModeValue('black', 'white')}
         >
