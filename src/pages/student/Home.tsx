@@ -163,17 +163,17 @@ function Home() {
             <TabPanel>
               <Center><Heading mb={4}>Top Recommendations for You</Heading></Center>
               <Grid templateColumns={{ base: "repeat(1, 1fr)", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }} gap={6}>
-              {Object.entries(recommendCourses).map(([key, module]) => (
+              {Object.entries(recommendCourses).map(([key, value], index) => (
                   <SlideFade
                     in={inProp}
                     transition={{ enter: { duration: 0.7 } }}
                     offsetY="50px"
-                    key={module.name}
+                    key={key}
                   >
                     <RecommendedCard
-                      key={module.name}
-                      moduleTopic={module.name}
-                      moduleSummary={module.summary || "Summary not available"}
+                      key={key}
+                      moduleTopic={key}
+                      moduleSummary={value || "Summary not available"}
                     />
                   </SlideFade>
                 ))}

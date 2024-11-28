@@ -13,7 +13,7 @@ import {
     MenuItem,
 } from '@chakra-ui/react';
 import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
-import { FaHome, FaSignInAlt, FaUserPlus, FaFileAlt, FaChalkboardTeacher } from 'react-icons/fa';
+import { FaHome, FaSignInAlt, FaUserPlus, FaChalkboardTeacher } from 'react-icons/fa';
 import { RiAiGenerate } from "react-icons/ri";
 import { MdOutlineTravelExplore, MdCreateNewFolder, MdLogout } from "react-icons/md";
 import { Logo } from './icons';
@@ -163,16 +163,16 @@ export const Navbar = () => {
                                 </MenuButton>
                                 <MenuList>
                                     <MenuItem onClick={() => navigate("/student/explore")}>
-                                        <MdOutlineTravelExplore size={20} />
-                                        <span>Explore</span>
+                                        <MdOutlineTravelExplore size={20} style={{marginRight:8}}/>
+                                        <span>Smart Courses</span>
                                     </MenuItem>
                                     {/* <MenuItem onClick={() => navigate("/student/pers-courses")}>
                                         <FaFileAlt size={20} />
                                         <span>Personalized Content</span>
                                     </MenuItem> */}
                                     <MenuItem onClick={() => navigate("/student/shared-courses")}>
-                                        <FaChalkboardTeacher size={20} />
-                                        <span>Shared Courses</span>
+                                        <FaChalkboardTeacher size={20} style={{marginRight:8}}/>
+                                        <span>View Shared Courses</span>
                                     </MenuItem>
                                 </MenuList>
                             </Menu>
