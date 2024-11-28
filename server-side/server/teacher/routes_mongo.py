@@ -601,6 +601,7 @@ def add_lab_manual():
     exp_number = data.get('exp_num')
     markdown_content = data.get('markdown_content', '')
     uploaded_images = data.get('uploaded_images', None)
+    markdown_images = data.get('markdown_images', None)
     lab_manual_id = data.get('lab_manual_id', None)
 
     if course_id is None:
@@ -615,6 +616,7 @@ def add_lab_manual():
             {"_id": ObjectId(lab_manual_id)},
             {"$set":{
                 "markdown_content": markdown_content,
+                "markdown_images": json.dumps(markdown_images),
                 "uploaded_images":json.dumps(uploaded_images)
             }}
         )
@@ -625,6 +627,7 @@ def add_lab_manual():
             "exp_aim":exp_aim,
             "exp_number": exp_number,
             "markdown_content": markdown_content,
+            "markdown_images": json.dumps(markdown_images),
             "uploaded_images": json.dumps(uploaded_images)
         }
         result = lab_manuals_collection.insert_one(new_lab_manual)
@@ -651,6 +654,7 @@ def fetch_lab_manual():
         "course_id": lab_manual.get("course_id"),
         "teacher_id": lab_manual.get("teacher_id"),
         "markdown_content": lab_manual.get("markdown_content"),
+        "markdown_images": lab_manual.get("markdown_images"),
         "uploaded_images": lab_manual.get("uploaded_images"),
         "exp_aim": lab_manual.get("exp_aim"),
         "exp_number": lab_manual.get("exp_number")
