@@ -94,7 +94,9 @@ const LessonCreate = () => {
     formData.append('lessonType', data.lessonType);
     formData.append('links', JSON.stringify(links));
     formData.append('includeImages', includeImages.toString());
-    formData.append('search_web', webSearch.toString());
+    if(webSearch!= null){
+      formData.append('search_web', webSearch.toString());
+    }
 
     if (pdfFile) {
       formData.append('files[]', pdfFile);
@@ -166,7 +168,7 @@ const LessonCreate = () => {
           <Flex justify="center" align="center" width="100vw" height="90vh" textAlign="center">
             <VStack>
               <Spinner size="xl" color="purple.500" />
-              <Heading>Generating SubModules...</Heading>
+              <Heading>Generating Lessons...</Heading>
             </VStack>
           </Flex>
         </>
@@ -252,9 +254,9 @@ const LessonCreate = () => {
                       }} 
                       colorScheme='purple'>
                       <Stack>
+                        <Radio value="none">None</Radio>
                         <Radio value="web" isChecked={webSearch}>Web Search</Radio>
                         <Radio value="links" isChecked={!webSearch}>Links</Radio>
-                        <Radio value="none">None</Radio>
                       </Stack>
                     </RadioGroup>
                     {webSearch !== null && !webSearch && (

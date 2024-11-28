@@ -17,7 +17,6 @@ export const renderMarkdown = (
                 
                 const submoduleIndex = parseInt(match[1], 10);
                 const imageIndex = parseInt(match[2], 10);
-                console.log(imageList);
                 const imageUrl =imageList[submoduleIndex]?.[imageIndex] || '';
                 if (imageUrl) {
                     renderedContent.push(

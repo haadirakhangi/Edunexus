@@ -20,8 +20,9 @@ import {
     useToast,
 } from '@chakra-ui/react';
 import axios from 'axios';
-import { FaRegClone } from 'react-icons/fa';
-import { AiOutlineFileText, AiOutlinePicture, AiOutlineCloudUpload, AiOutlineSave } from 'react-icons/ai';
+import { FaRegClone, FaSave } from 'react-icons/fa';
+import { MdOutlinePlayLesson, MdOutlineCloudUpload } from "react-icons/md";
+import { FaRegImages } from "react-icons/fa6";
 
 interface SidebarProps {
     contentData: { [submodule: string]: string }[];
@@ -163,7 +164,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         onClick={() => toggleTab(0)}
                     >
                         <Flex direction="column" align="center">
-                            <AiOutlineFileText style={{ marginBottom: '4px', fontSize: '24px' }} />
+                            <MdOutlinePlayLesson style={{ marginBottom: '4px', fontSize: '24px' }} />
                             <Text fontSize="sm">Topics</Text>
                         </Flex>
                     </Tab>
@@ -178,8 +179,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                         onClick={() => toggleTab(1)}
                     >
                         <Flex direction="column" align="center">
-                            <AiOutlinePicture style={{ marginBottom: '4px', fontSize: '24px' }} />
-                            <Text fontSize="sm">Images Section</Text>
+                            <FaRegImages style={{ marginBottom: '4px', fontSize: '24px' }} />
+                            <Text fontSize="sm">Images</Text>
                         </Flex>
                     </Tab>
                     <Tab
@@ -193,7 +194,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         onClick={() => toggleTab(2)}
                     >
                         <Flex direction="column" align="center">
-                            <AiOutlineCloudUpload style={{ marginBottom: '4px', fontSize: '24px' }} />
+                            <MdOutlineCloudUpload style={{ marginBottom: '4px', fontSize: '24px' }} />
                             <Text fontSize="sm">Uploaded</Text>
                         </Flex>
                     </Tab>
@@ -208,7 +209,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         onClick={() => handleSaveLesson()}
                     >
                         <Flex direction="column" align="center">
-                            <AiOutlineSave style={{ marginBottom: '4px', fontSize: '24px' }} />
+                            <FaSave style={{ marginBottom: '4px', fontSize: '24px' }} />
                             <Text fontSize="sm">Save</Text>
                         </Flex>
                     </Tab>
@@ -254,7 +255,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <Collapse in={activeTabIndex === 1} transition={{ enter: { duration: 0.1 }, exit: { duration: 0.1 } }}>
                             <TabPanel width={["80px", "200px", "350px"]} p={"10px"}>
                                 <Heading as="h3" size="md" textAlign="center" mb={2}>
-                                    Image Section
+                                    Images
                                 </Heading>
                                 <Tabs variant="enclosed" colorScheme="purple">
                                     <TabList>
@@ -277,7 +278,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                             _hover={{ transform: 'scale(1.05)', cursor: 'pointer' }}
                                             transition="transform 0.2s ease"
                                         >
-                                            <b>Image Generation</b>
+                                            <b>Generate Image</b>
                                         </Tab>
                                     </TabList>
 
