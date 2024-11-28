@@ -7,32 +7,28 @@ import {
     HStack,
     Flex,
 } from '@chakra-ui/react';
-import { useForm } from 'react-hook-form';
 import { Navbar } from '../../../../components/navbar';
 import LabManualContent from './LabManualContent';
 import LabManualSidebar from './LabManualSidebar';
-import { MarkdownContent_ex } from '../tp';
-
 
 const LabManual: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-    const [contentReady, setContentReady] = useState(false);
-    const { register, setValue, watch } = useForm<{ markdownContent: string }>();
-    const markdownContent = watch("markdownContent") || "";
+    const [markdownContent, setMarkdownContent] = useState<string>('');
+    const [imageList, setImageList] = useState<string[]>([]);
     const lab_manual_id = localStorage.getItem('lab_manual_id');
+
     const handleSaveLabManual = async () => {
         const course_id = localStorage.getItem('course_id');
-        
         const exp_num = Number(localStorage.getItem('exp_num'));
         const exp_aim = localStorage.getItem('exp_aim');
-        console.log("courseid",exp_aim);
 
         try {
             const response = await axios.post('/api/teacher/add-lab-manual', {
                 markdown_content: markdownContent,
                 uploaded_images: uploadedImages,
                 course_id: course_id,
+                markdown_images: imageList,
                 lab_manual_id: lab_manual_id,
                 exp_aim: exp_aim,
                 exp_num: exp_num,
@@ -40,7 +36,7 @@ const LabManual: React.FC = () => {
 
             alert("Lab Manual Saved Successfully!");
             if (response.data.response) {
-                localStorage.setItem('lab_manual_id', response.data.lab_manual_id.toString())
+                localStorage.setItem('lab_manual_id', response.data.lab_manual_id.toString());
             }
         } catch (error) {
             console.error('Error saving lab manual:', error);
@@ -52,10 +48,21 @@ const LabManual: React.FC = () => {
         const textarea = document.getElementById("lab-markdown-textarea") as HTMLTextAreaElement;
         if (textarea) {
             const { selectionStart, selectionEnd, value } = textarea;
-            const newContent = `${value.slice(0, selectionStart)}![Image](${imageUrl})${value.slice(selectionEnd)}`;
-            setValue("markdownContent", newContent);
+    
+            setImageList((prevImageList) => {
+                const imageIndex = prevImageList.length;
+                const uniqueId = `image-${imageIndex}`;
+                console.log(imageIndex);
+                const newContent = `${value.slice(0, selectionStart)}![${uniqueId}]${value.slice(selectionEnd)}`;
+                setMarkdownContent(newContent);
+    
+                return [...prevImageList, imageUrl];
+            });
         }
     };
+    
+    
+    
 
     const downloadDocxFile = async () => {
         try {
@@ -66,7 +73,7 @@ const LabManual: React.FC = () => {
             const exp_num = formData.exp_num;
             const response = await axios.post(
                 '/api/teacher/create-lab-manual-docx',
-                { markdown: markdownContent, course_id: course_id, course_name: course_name, exp_num: exp_num },
+                { markdown: markdownContent, markdown_images: imageList, course_id: course_id, course_name: course_name, exp_num: exp_num },
                 {
                     responseType: 'blob',
                     headers: {
@@ -87,12 +94,7 @@ const LabManual: React.FC = () => {
         }
     };
 
-
-
-
     useEffect(() => {
-        // setValue("markdownContent", MarkdownContent_ex);
-        // setContentReady(true);
         const fetchContent = async () => {
             setIsLoading(true);
             if (lab_manual_id == null) {
@@ -112,8 +114,7 @@ const LabManual: React.FC = () => {
                         lab_components
                     });
 
-                    setValue("markdownContent", response.data.MarkdownContent);
-                    setContentReady(true);
+                    setMarkdownContent(response.data.MarkdownContent);
                 } catch (error) {
                     console.error("Error fetching content:", error);
                 }
@@ -122,23 +123,16 @@ const LabManual: React.FC = () => {
                     lab_manual_id: lab_manual_id
                 }, { withCredentials: true });
                 const umg = JSON.parse(response.data.uploaded_images);
+                const mkmg = JSON.parse(response.data.markdown_images);
                 setUploadedImages(umg);
-                setValue("markdownContent", response.data.markdown_content);
-                setIsLoading(false);
-
+                setMarkdownContent(response.data.markdown_content);
+                setImageList(mkmg);
             }
+            setIsLoading(false);
         };
 
         fetchContent();
     }, []);
-
-    useEffect(() => {
-        if (contentReady) {
-            console.log(markdownContent)
-            setIsLoading(false);
-        }
-    }, [contentReady]);
-
 
     if (isLoading) {
         return (
@@ -166,12 +160,12 @@ const LabManual: React.FC = () => {
                     handleSaveLesson={handleSaveLabManual}
                     downloadDocxFile={downloadDocxFile}
                 />
-
                 <LabManualContent
                     markdownText={markdownContent}
-                    register={register}
+                    setImageLists={setImageList}
+                    setMarkdownContent={setMarkdownContent}
+                    imageList={imageList}
                 />
-
             </HStack>
         </>
     );

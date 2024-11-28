@@ -62,7 +62,6 @@ const ContentSec: React.FC<ContentSecProps> = ({
             return updatedImageList;
         });
     }
-    console.log(imagelist)
 
     debouncedUpdate(updatedContent);
 };

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
     Box,
     Tab,
@@ -17,6 +18,8 @@ const LabManualSidebar: React.FC<SidebarProps> = ({
     isLoading,
     downloadDocxFile,
 }) => {
+    const [activeTabIndex, setActiveTabIndex] = useState<number | null>(null);
+
     if (isLoading) {
         return null;
     }
@@ -26,6 +29,7 @@ const LabManualSidebar: React.FC<SidebarProps> = ({
             <Tabs
                 orientation="vertical"
                 variant="unstyled"
+                index={activeTabIndex ?? -1}
             >
                 <TabList bg={'#D1D1D1'} height={"100vh"} p={"2"} borderTopRightRadius={20} borderBottomRightRadius={20}>
                     <Tab

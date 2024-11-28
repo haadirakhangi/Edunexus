@@ -41,13 +41,17 @@ const LabManualSidebar: React.FC<SidebarProps> = ({
             files.forEach(file => handleDrop(null, file));
             return;
         }
-
+    
         if (file) {
-            const imageUrl = URL.createObjectURL(file);
-            const uniqueIdentifier = `${file.name}-${file.size}`;
-            if (!uploadedImages.some(url => url === uniqueIdentifier)) {
-                setUploadedImages(prevImages => [...prevImages, imageUrl]);
-            }
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64Image = reader.result as string;
+                const uniqueIdentifier = `${file.name}-${file.size}`;
+                if (!uploadedImages.some(url => url === uniqueIdentifier)) {
+                    setUploadedImages(prevImages => [...prevImages, base64Image]);
+                }
+            };
+            reader.readAsDataURL(file);
         }
     };
 

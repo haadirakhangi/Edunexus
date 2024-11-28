@@ -7,19 +7,17 @@ import {
     HStack,
     Flex,
 } from '@chakra-ui/react';
-import { useForm } from 'react-hook-form';
 import { Navbar } from '../../../../components/navbar';
 import LabManualContent from './LabManualContent';
 import LabManualSidebar from './LabManualSidebar';
 
-
-const LabManual: React.FC = () => {
+const StudentLabManual: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-    const [contentReady, setContentReady] = useState(false);
-    const { register, setValue, watch } = useForm<{ markdownContent: string }>();
-    const markdownContent = watch("markdownContent") || "";
+    const [markdownContent, setMarkdownContent] = useState<string>('');
+    const [imageList, setImageList] = useState<string[]>([]);
     const lab_manual_id = localStorage.getItem('lab_manual_id');
+
     const downloadDocxFile = async () => {
         try {
             const storedData = localStorage.getItem('labManualData');
@@ -29,7 +27,7 @@ const LabManual: React.FC = () => {
             const exp_num = formData.exp_num;
             const response = await axios.post(
                 '/api/teacher/create-lab-manual-docx',
-                { markdown: markdownContent, course_id: course_id, course_name: course_name, exp_num: exp_num },
+                { markdown: markdownContent, markdown_images: imageList, course_id: course_id, course_name: course_name, exp_num: exp_num },
                 {
                     responseType: 'blob',
                     headers: {
@@ -50,9 +48,6 @@ const LabManual: React.FC = () => {
         }
     };
 
-
-
-
     useEffect(() => {
         const fetchContent = async () => {
             setIsLoading(true);
@@ -60,21 +55,16 @@ const LabManual: React.FC = () => {
                 lab_manual_id: lab_manual_id
             }, { withCredentials: true });
             const umg = JSON.parse(response.data.uploaded_images);
+            const mkmg = JSON.parse(response.data.markdown_images);
+
             setUploadedImages(umg);
-            setValue("markdownContent", response.data.markdown_content);
+            setMarkdownContent(response.data.markdown_content);
+            setImageList(mkmg);
             setIsLoading(false);
         };
 
         fetchContent();
     }, []);
-
-    useEffect(() => {
-        if (contentReady) {
-            console.log(markdownContent)
-            setIsLoading(false);
-        }
-    }, [contentReady]);
-
 
     if (isLoading) {
         return (
@@ -98,14 +88,13 @@ const LabManual: React.FC = () => {
                     isLoading={isLoading}
                     downloadDocxFile={downloadDocxFile}
                 />
-
                 <LabManualContent
                     markdownText={markdownContent}
+                    imageList={imageList}
                 />
-
             </HStack>
         </>
     );
 };
 
-export default LabManual;
+export default StudentLabManual;

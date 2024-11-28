@@ -19,6 +19,7 @@ import Studentscheduler from "./pages/student/Studentscheduler";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import SharedCourses from "./pages/student/SharedCourses";
 import PerContent from "./pages/student/course/course";
+import StudentLabManual from "./pages/student/course/Lab Manual/LabManual";
 function App() {
   return (
     <Routes>
@@ -44,7 +45,7 @@ function App() {
       <Route element={<CourseOverview />} path="/student/course-overview" />
       <Route element={<Content />} path="/student/content" />
       <Route element={<PerContent />} path="/student/shared-lesson" />
-      <Route element={<LabManual />} path="/teacher/shared-lab-manual" />
+      <Route element={<StudentLabManual />} path="/student/shared-lab-manual" />
     </Routes>
   );
 }

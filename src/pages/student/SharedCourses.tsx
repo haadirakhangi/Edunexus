@@ -91,7 +91,7 @@ function SharedCourses() {
         <Box mt={4} ml={4}>
           <Input
             type="text"
-            placeholder="What do you want to learn?"
+            placeholder="Enter the Course Code!"
             size="lg"
             borderColor={"black"}
             width="30vw"

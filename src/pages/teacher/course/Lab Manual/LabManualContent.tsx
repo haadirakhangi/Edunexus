@@ -1,14 +1,38 @@
 import { Box, Tabs, TabList, TabPanels, Tab, TabPanel, Textarea } from '@chakra-ui/react';
-import { renderMarkdown } from '../renderMarkdown';
-import { UseFormRegister } from 'react-hook-form';
-
+import { LabrenderMarkdown } from '../renderMarkdown';
 
 interface LabManualContentProps {
-  markdownText: string | undefined;
-  register: UseFormRegister<{ markdownContent: string }>;
+  markdownText: string;
+  setMarkdownContent: React.Dispatch<React.SetStateAction<string>>;
+  imageList: string[];
+  setImageLists: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-const LabManualContent: React.FC<LabManualContentProps> = ({ markdownText, register }) => {
+const LabManualContent: React.FC<LabManualContentProps> = ({ markdownText, setMarkdownContent, imageList, setImageLists }) => {
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value;
+    setMarkdownContent(newContent);
+
+    setImageLists((prevImageList) => {
+        const updatedImageList = [...prevImageList];
+
+        const remainingImages = updatedImageList.filter((_, index) => {
+            const identifier = `![image-${index}]`;
+            return newContent.includes(identifier);
+        });
+
+        const newContentWithUpdatedIdentifiers = remainingImages.reduce((content, _, newIndex) => {
+            const oldIdentifierPattern = new RegExp(`!\\[image-\\d+\\]`, 'g');
+            return content.replace(oldIdentifierPattern, (_, offset) => {
+                return `![image-${newIndex}]`;
+            });
+        }, newContent);
+
+        setMarkdownContent(newContentWithUpdatedIdentifiers);
+
+        return remainingImages;
+    });
+};
 
   return (
     <Box p={8} width={'full'} height={'100vh'} display="flex">
@@ -46,7 +70,8 @@ const LabManualContent: React.FC<LabManualContentProps> = ({ markdownText, regis
           <TabPanel>
             <Textarea
               id="lab-markdown-textarea"
-              {...register("markdownContent")}
+              value={markdownText}
+              onChange={handleContentChange}
               bg={'white'}
               borderRadius={"30"}
               p={8}
@@ -60,13 +85,11 @@ const LabManualContent: React.FC<LabManualContentProps> = ({ markdownText, regis
 
           <TabPanel>
             <Box bg={'white'} p={8} borderRadius={"30"}>
-              {renderMarkdown(markdownText || "")}
+              {LabrenderMarkdown(markdownText, imageList)}
             </Box>
-
           </TabPanel>
         </TabPanels>
       </Tabs>
-
     </Box>
   );
 };
