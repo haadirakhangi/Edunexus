@@ -671,7 +671,6 @@ def download_ppt():
         lesson_name = data.get("lesson_name")
         lesson_name += ".pptx"
         presentation_content = PPT_GENERATOR.generate_ppt_content(markdown_list=markdown_list)
-        print("PRESENTATION CONTENT", type(presentation_content)," ", type(presentation_content[0]),"\n\n",presentation_content)
         current_dir = os.path.dirname(__file__)
         downloads_directory = os.path.join(current_dir, 'downloaded-presentations', course_name)
         os.makedirs(downloads_directory, exist_ok=True)
