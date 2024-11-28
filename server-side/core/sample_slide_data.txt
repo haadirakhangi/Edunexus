@@ -1,0 +1,61 @@
+slide_data = [
+    {
+        'title': 'Slide 1: Basic Formatting',
+        'content': '''
+            <h1>Introduction</h1>
+            <p>This is a paragraph with <b>bold</b>, <i>italics</i>, and <u>underline</u> formatting.</p>
+            <ul>
+                <li><b>Bold Item 1</b></li>
+                <li><i>Italic Item 2</i></li>
+                <li><u>Underlined Item 3</u></li>
+            </ul>
+        '''
+    },
+    {
+        'title': 'Slide 2: Long Text Example',
+        'content': '''
+            <h2>Detailed Information</h2>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin sit amet turpis pharetra, fermentum velit vel, egestas ligula. Curabitur at justo eget libero vehicula volutpat.</p>
+            <p>Nam lacinia est sed lorem consequat bibendum. <b>Vivamus non felis at nulla viverra auctor</b>. <i>Fusce interdum augue sit amet nisi suscipit fringilla</i>.</p>
+        '''
+    },
+    {
+        'title': 'Slide 3: Tables and Lists',
+        'content': '''
+            <h3>Data Presentation</h3>
+            <table>
+                <tr><th>Name</th><th>Age</th></tr>
+                <tr><td>Alice</td><td>25</td></tr>
+                <tr><td>Bob</td><td>30</td></tr>
+            </table>
+            <ul>
+                <li>Point A</li>
+                <li>Point B</li>
+                <li>Point C</li>
+            </ul>
+        '''
+    },
+    {
+        'title': 'Slide 4: Bullet Points and Mixed Formats',
+        'content': '''
+            <h2>Summary</h2>
+            <ul>
+                <li><b>Important</b> point 1</li>
+                <li><i>Highlighted</i> point 2</li>
+                <li><u>Underlined</u> point 3</li>
+            </ul>
+        '''
+    },
+    {
+         'title': 'Slide 1: Table Example',
+         'content': '''
+             <h2>Table of Data</h2>
+             <table>
+                 <tr><th>Name</th><th>Age</th><th>Occupation</th></tr>
+                 <tr><td>Alice</td><td>25</td><td>Engineer</td></tr>
+                 <tr><td>Bob</td><td>30</td><td>Designer</td></tr>
+                 <tr><td>Charlie</td><td>22</td><td>Student</td></tr>
+             </table>
+         '''
+     }
+]

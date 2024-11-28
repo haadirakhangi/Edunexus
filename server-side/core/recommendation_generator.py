@@ -20,17 +20,11 @@ class RecommendationGenerator:
         self.df_module['embeddings'] = self.vec_embed.tolist()
 
     def generate_recommendations_with_interests(self, user_course, user_interest):
-        recc_prompt = '''You will be given a student's area of interest and the current course the student is enrolled in . Your task is to suggest or recommend similar courses for the student. Generate 10 module names along with their summary. The output should be in json format where each key corresponds to the recommended course name and the value is a short description about the recommeded course.
-        Student's Current Course: {user_course}
-        Student's Interests: {user_interest}
-
-        Example output:
-        ```json
-        course name here : course summary here
-        ```
+        recc_prompt = f'''You will be given a student's area of interest and the current course the student is enrolled in . Your task is to suggest or recommend similar courses for the student. Generate 10 module names along with their summary. The output should be in json format where each key corresponds to the recommended course name and the value is a short description about the recommeded course.\nStudent's Current Course: {user_course}\nStudent's Interests: {user_interest}\n\n# Example output: {{course name here : course summary here}}
         '''
         
-        output = self.gemini_client.generate_json_response(recc_prompt.format(user_course = user_course, user_interest=user_interest))
+        output = self.gemini_client.generate_json_response(recc_prompt)
+        print("RECOMMENDATION OUTPUT:\n",output)
         return output
     
     def generate_recommendations_with_summary(self, module_summary, top_n=5):
@@ -40,5 +34,5 @@ class RecommendationGenerator:
         top_similar_df = sorted_df.head(top_n)
         print(top_similar_df['module_name'])
         output = {row['module_name']: row['summary'] for _, row in top_similar_df.iterrows()}
-        print("OUTPUT",output)
+        print("RECOMMENDATION OUTPUT WITH SUMMARY:\n",output)
         return output

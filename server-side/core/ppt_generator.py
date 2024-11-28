@@ -179,3 +179,119 @@ class PptGenerator:
         extracted_list = ast.literal_eval(extracted_list_string)
         return extracted_list
 
+
+
+#--------------------------------------------------------------------
+
+
+
+
+class HTMLToPowerPoint:
+    def __init__(self, output_filename='presentation.pptx'):
+        self.prs = Presentation()
+        self.output_filename = output_filename
+        self.blank_slide_layout = self.prs.slide_layouts[6]
+
+    @staticmethod
+    def parse_html_content(html_text):
+        soup = BeautifulSoup(html_text, 'html.parser')
+
+        parsed_content = []
+
+        for element in soup.find_all(['h1', 'h2', 'h3', 'p', 'ul', 'li', 'b', 'i', 'u']):
+            if element.name in ['h1', 'h2', 'h3']:
+                header_level = int(element.name[1])
+                parsed_content.append({
+                    'text': element.get_text(),
+                    'style': 'header',
+                    'level': header_level
+                })
+            elif element.name == 'p':
+                parsed_content.append({
+                    'text': element.get_text(),
+                    'style': 'normal',
+                    'level': 0
+                })
+            elif element.name == 'ul':
+                for li in element.find_all('li'):
+                    parsed_content.append({
+                        'text': li.get_text(),
+                        'style': 'bullet',
+                        'level': 1
+                    })
+            elif element.name in ['b', 'i', 'u']:
+                # For formatting inside paragraphs
+                parent = element.find_parent(['p', 'li'])
+                if parent:
+                    parsed_content.append({
+                        'text': parent.get_text(),
+                        'style': 'formatted',
+                        'format': element.name
+                    })
+
+        return parsed_content
+
+    def add_title(self, slide, title):
+        left, top, width, height = Inches(0.5), Inches(0.5), Inches(9), Inches(1)
+        txBox = slide.shapes.add_textbox(left, top, width, height)
+        tf = txBox.text_frame
+        p = tf.add_paragraph()
+        p.text = title
+        p.alignment = PP_ALIGN.CENTER
+        font = p.font
+        font.size = Pt(32)
+        font.color.rgb = RGBColor(0, 51, 102)
+        font.bold = True
+
+    def add_content(self, slide, html_content):
+        content = self.parse_html_content(html_content)
+        left, top, width, height = Inches(0.5), Inches(1.5), Inches(9), Inches(5)
+        txBox = slide.shapes.add_textbox(left, top, width, height)
+        tf = txBox.text_frame
+        tf.word_wrap = True
+
+        for item in content:
+            p = tf.add_paragraph()
+            p.text = item['text']
+
+            # Adjust font size based on style
+            if item['style'] == 'header':
+                p.font.size = Pt(24 - (item['level'] * 4))
+                p.font.bold = True
+                p.level = item['level'] - 1
+            elif item['style'] == 'bullet':
+                p.level = 1
+                p.font.size = Pt(18)
+            elif item['style'] == 'normal':
+                p.font.size = Pt(18)
+            elif item['style'] == 'formatted':
+                p.font.size = Pt(18)
+                if item['format'] == 'b':
+                    p.font.bold = True
+                if item['format'] == 'i':
+                    p.font.italic = True
+                if item['format'] == 'u':
+                    p.font.underline = True
+
+            # Check if text exceeds slide size and reduce font size if necessary
+            while self.check_text_exceeds_bounds(p):
+                p.font.size -= Pt(1)
+                if p.font.size < Pt(10):
+                    break
+
+    def check_text_exceeds_bounds(self, paragraph):
+        max_characters_per_line = 80
+        max_lines = 10
+
+        text_length = len(paragraph.text)
+        lines = (text_length // max_characters_per_line) + 1
+        return lines > max_lines
+
+    def create_presentation(self, slide_data_list):
+        for slide_data in slide_data_list:
+            slide = self.prs.slides.add_slide(self.blank_slide_layout)
+            self.add_title(slide, slide_data.get('title', 'Untitled'))
+            self.add_content(slide, slide_data.get('content', ''))
+
+        self.prs.save(self.output_filename)
+        print(f"Presentation saved as {self.output_filename}")

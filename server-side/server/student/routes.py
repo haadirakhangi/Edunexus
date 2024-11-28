@@ -28,11 +28,11 @@ students = Blueprint(name='students', import_name=__name__)
 password = quote_plus(os.getenv("MONGO_PASS"))
 uri = "mongodb+srv://hatim:" + password +"@cluster0.f7or37n.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(uri, server_api=ServerApi('1'))
-db = client["FYP"]
-teachers_collection = db["teacher"]
-lessons_collection = db["lessons"]
-courses_collection = db["course"]
-lab_manuals_collection = db["lab_manuals"]
+mongodb = client["FYP"]
+teachers_collection = mongodb["teacher"]
+lessons_collection = mongodb["lessons"]
+courses_collection = mongodb["course"]
+lab_manuals_collection = mongodb["lab_manuals"]
 
 @students.route('/register',methods=['POST'])
 @cross_origin(supports_credentials=True)
@@ -79,7 +79,7 @@ def login():
         return jsonify({"message": "Incorrect password", "response":False}), 200
     
     session["user_id"] = user.user_id
-    profile = f"This a profile of user, Name: {user.fname} {user.lname}, Email: {user.email}, Country: {user.country}, Age: {user.age}, Ongoing Course Name: {user.course_name}, User Interest: {user.interests}"
+    profile = f"Name: {user.fname} {user.lname}, Email: {user.email}, Country: {user.country}, Age: {user.age}, Ongoing Course Name: {user.course_name}, User Interest: {user.interests}"
 
     assistant = GEMINI_CLIENT.initialize_assistant(profile= profile, tools=TOOLS)
     return jsonify({"message": "User logged in successfully", "email":user.email, "response":True}), 200
@@ -180,7 +180,6 @@ def getuser():
     if len(user_queries) == 0:
         query_message = "You have not searched for any topic yet. Please search for a topic to get recommendations."
         recommended_modules = RECOMMENDATION_GENERATOR.generate_recommendations_with_interests(user_course, user_interest) 
-        print("Recommmended------------------------",recommended_modules)
         return jsonify({"message": "User found", "query_message":query_message,"recommended_topics":recommended_modules, "user_ongoing_modules":ongoing_modules, "user_completed_module":completed_modules, "response":True}), 200
     else:
         latest_query = Query.query.filter_by(user_id=user_id).order_by(desc(Query.date_search)).first() 
@@ -580,7 +579,6 @@ def course_overview(module_id, source_language, websearch):
 
 
 # module query --> generate mutlimodal content (with images) for submodules in a module
-
 @students.route('/query2/<int:module_id>/<string:source_language>/<string:websearch>', methods=['GET'])
 @cross_origin(supports_credentials=True)
 def query_module(module_id, source_language, websearch):
