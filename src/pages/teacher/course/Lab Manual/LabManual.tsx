@@ -66,14 +66,9 @@ const LabManual: React.FC = () => {
 
     const downloadDocxFile = async () => {
         try {
-            const storedData = localStorage.getItem('labManualData');
-            const course_id = localStorage.getItem('course_id');
-            const formData = storedData ? JSON.parse(storedData) : {};
-            const course_name = formData.course_name;
-            const exp_num = formData.exp_num;
             const response = await axios.post(
                 '/api/teacher/create-lab-manual-docx',
-                { markdown: markdownContent, markdown_images: imageList, course_id: course_id, course_name: course_name, exp_num: exp_num },
+                { lab_manual_id:  lab_manual_id},
                 {
                     responseType: 'blob',
                     headers: {
@@ -85,7 +80,7 @@ const LabManual: React.FC = () => {
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `${course_name}_${exp_num}.docx`);
+            link.setAttribute('download', `experiment.docx`);
             document.body.appendChild(link);
             link.click();
             link.remove();
