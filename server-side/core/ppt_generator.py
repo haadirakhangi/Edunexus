@@ -1,5 +1,4 @@
 from api.gemini_client import GeminiProvider
-import markdown
 from bs4 import BeautifulSoup
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -12,6 +11,7 @@ import requests
 import re
 import ast
 import time
+import os
 
 # class PptGenerator:
 #     def __init__(self):
@@ -311,16 +311,21 @@ class PptGenerator:
         return lines > max_lines
 
     @staticmethod
-    def create_presentation(slide_data_list : list[dict], output_filename):
+    def create_presentation(slide_data_list : list[dict], course_name, lesson_name):
         prs = Presentation()
         blank_slide_layout = prs.slide_layouts[6]
+        current_dir = os.path.dirname(__file__)
+        downloads_directory = os.path.join(current_dir, 'presentations', course_name)
+        os.makedirs(downloads_directory, exist_ok=True)
+        downloads_path = os.path.join(downloads_directory, lesson_name)
         for slide_data in slide_data_list:
             slide = prs.slides.add_slide(blank_slide_layout)
             PptGenerator.add_title(slide, slide_data.get('title', 'Untitled'))
             PptGenerator.add_content(slide, slide_data.get('slide_content', ''))
 
-        prs.save(output_filename)
-        print(f"Presentation saved as {output_filename}")
+        prs.save(downloads_path)
+        print(f"Presentation saved as {downloads_path}")
+        return downloads_path
     
     def generate_ppt_content(self, markdown_list : list[dict]):
         prompt = """You are a skilled and creative expert in designing PowerPoint presentations. Your task is to take the content of a course and craft an engaging and concise presentation which is content-rich.\nFor each topic in the course, you will design slides explaining the topics provided. For each topic in the course, consolidate information into fewer slides (10-15 slides) by grouping related subtopics or concepts. Aim to minimize the total number of slides while ensuring each slide contains detailed and comprehensive content that thoroughly explains the topic. Strive for a balance between clarity and depth, presenting all critical information within a logical structure. \nEnsure that the slides are:\n - Organized logically for easy understanding.\n - Engaging and aligned with professional presentation standards.\n\n # Course Content:\n\n"""

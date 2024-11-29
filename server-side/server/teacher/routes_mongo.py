@@ -699,32 +699,27 @@ def download_ppt():
         return jsonify({"message": "Teacher not logged in.", "response": False}), 401
     
     try:
-        data = request.get_json()
+        data : dict = request.get_json()
         lesson_id = data.get("lesson_id")
         
         if not lesson_id:
             return jsonify({"message": "Lesson ID not provided.", "response": False}), 400
         
-        lesson = lessons_collection.find_one({"_id": ObjectId(lesson_id)})
+        lesson : dict = lessons_collection.find_one({"_id": ObjectId(lesson_id)})
         if not lesson:
             return jsonify({"message": "Lesson not found.", "response": False}), 404
         
         course_id = lesson.get("course_id")
-        course = courses_collection.find_one({"_id": ObjectId(course_id)})
+        course : dict = courses_collection.find_one({"_id": ObjectId(course_id)})
         if not course:
             return jsonify({"message": "Course not found.", "response": False}), 404
         
         course_name = course.get("course_name", "Default Course")
-        lesson_name = lesson.get("title", "Default Lesson") + ".pptx"
-
+        lesson_name = lesson.get("title", "Default Lesson") 
+        lesson_name = re.sub(r'[<>:"/\\|?*]', '_', lesson_name) + ".pptx"
         markdown_list = ast.literal_eval(lesson.get("markdown_content", []))
         presentation_content = PPT_GENERATOR.generate_ppt_content(markdown_list=markdown_list)
-
-        current_dir = os.path.dirname(__file__)
-        downloads_directory = os.path.join(current_dir, 'downloaded-presentations', course_name)
-        os.makedirs(downloads_directory, exist_ok=True)
-        downloads_path = os.path.join(downloads_directory, lesson_name)
-        PPT_GENERATOR.create_presentation(presentation_content, output_filename=downloads_path)
+        downloads_path = PPT_GENERATOR.create_presentation(presentation_content, course_name=course_name, lesson_name=lesson_name)
         
         return send_file(
             downloads_path,
