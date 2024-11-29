@@ -60,7 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     };
 
     const handleImageGeneration = async (data: { prompt: string }) => {
-        const ngrokUrl = 'https://5225-34-91-142-72.ngrok-free.app';
+        const ngrokUrl = 'https://4a77-34-23-225-66.ngrok-free.app';
         setImageLoading(true);
         try {
             const response = await axios.post(`${ngrokUrl}/generate-image`, { prompt: data.prompt });
