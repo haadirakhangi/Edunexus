@@ -21,7 +21,7 @@ DEVICE_TYPE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 IMAGE_EMBEDDING_MODEL_NAME = "openai/clip-vit-base-patch16"
 CLIP_MODEL = AutoModel.from_pretrained(IMAGE_EMBEDDING_MODEL_NAME).to(DEVICE_TYPE)
 CLIP_PROCESSOR = AutoImageProcessor.from_pretrained(IMAGE_EMBEDDING_MODEL_NAME)
-CLIP_TOKENIZER = AutoTokenizer.from_pretrained(IMAGE_EMBEDDING_MODEL_NAME)
+CLIP_TOKENIZER = AutoTokenizer.from_pretrained(IMAGE_EMBEDDING_MODEL_NAME, clean_up_tokenization_spaces=True)
 EMBEDDINGS = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
 GEMINI_CLIENT = GeminiProvider()
 TAVILY_CLIENT = TavilyProvider()
