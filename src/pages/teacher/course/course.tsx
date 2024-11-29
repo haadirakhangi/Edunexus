@@ -57,6 +57,38 @@ const PerContent: React.FC = () => {
         }
     };
 
+    const handleSaveppt = async () => {
+        try {
+            const course_id = localStorage.getItem('course_id');
+            const lesson_id = localStorage.getItem('lesson_id');
+    
+            const response = await axios.post(
+                '/api/teacher/download-ppt',
+                {
+                    course_id: course_id,
+                    lesson_id: lesson_id,
+                },
+                {
+                    withCredentials: true,
+                    responseType: 'blob',
+                }
+            );
+    
+            const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'lesson.pptx');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Error downloading the presentation:', error);
+            alert('Failed to download the presentation.');
+        }
+    };
+    
+
     const insertImagesForAllSubmodules = () => {
         const updatedData = data.map((item, submoduleIndex) => {
             const submoduleKey = Object.keys(item)[0];
@@ -212,6 +244,7 @@ const PerContent: React.FC = () => {
                     onInsertImage={insertImageAtCursor}
                     setUploadedImages={setUploadedImages}
                     handleSaveLesson={handleSaveLesson}
+                    handleSaveppt={handleSaveppt}
                 />
 
 
