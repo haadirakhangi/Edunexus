@@ -19,6 +19,7 @@ from server.utils import ServerUtils
 import json
 import uuid
 import re
+import ast
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from bson.objectid import ObjectId
@@ -697,21 +698,47 @@ def download_ppt():
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in.", "response": False}), 401
     
-    try: 
-        data : dict = request.get_json()
-        markdown_list = data.get("markdown_list")
-        course_name = data.get("course_name")
-        lesson_name = data.get("lesson_name")
-        lesson_name += ".pptx"
+    try:
+        data = request.get_json()
+        lesson_id = data.get("lesson_id")
+        
+        if not lesson_id:
+            return jsonify({"message": "Lesson ID not provided.", "response": False}), 400
+        
+        lesson = lessons_collection.find_one({"_id": ObjectId(lesson_id)})
+        if not lesson:
+            return jsonify({"message": "Lesson not found.", "response": False}), 404
+        
+        course_id = lesson.get("course_id")
+        course = courses_collection.find_one({"_id": ObjectId(course_id)})
+        if not course:
+            return jsonify({"message": "Course not found.", "response": False}), 404
+        
+        course_name = course.get("course_name", "Default Course")
+        lesson_name = lesson.get("title", "Default Lesson") + ".pptx"
+
+        markdown_list = ast.literal_eval(lesson.get("markdown_content", []))
         presentation_content = PPT_GENERATOR.generate_ppt_content(markdown_list=markdown_list)
+
         current_dir = os.path.dirname(__file__)
         downloads_directory = os.path.join(current_dir, 'downloaded-presentations', course_name)
         os.makedirs(downloads_directory, exist_ok=True)
         downloads_path = os.path.join(downloads_directory, lesson_name)
         PPT_GENERATOR.create_presentation(presentation_content, output_filename=downloads_path)
-        return jsonify({"message": "Presentation Created Successfully", "presentation_content": presentation_content, "response": True}), 200
+        
+        return send_file(
+            downloads_path,
+            as_attachment=True,
+        )
+    
     except Exception as e:
         print(f"Error while creating ppt: {e}")
+        return jsonify({"message": "An error occurred while creating the presentation.", "response": False}), 500
+    
+    except Exception as e:
+        print(f"Error while creating ppt: {e}")
+        return jsonify({"message": "An error occurred while creating the presentation.", "response": False}), 500
+
 
 @teachers.route('/logout', methods=['GET'])
 @cross_origin(supports_credentials=True)
