@@ -41,3 +41,19 @@ lab-manuals/
 server/downloads
 presentations/
 >>>>>>> server-branch
+*.zip
+.ipynb_checkpoints/
+.env
+venv
+__pycache__/
+csv_data_files/
+instance/
+assistant_data/faiss_index_assistant/
+document-images/
+faiss-vectorstore/
+uploaded-documents/
+extracted-images/
+syllabus-vectorstore/
+lab-manuals/
+server/downloads
+presentations/
