@@ -1,5 +1,38 @@
-<<<<<<< HEAD
-# Logs
+# SERVER-SIDE
+
+.ipynb_checkpoints/
+.env
+venv
+__pycache__/
+csv_data_files/
+instance/
+assistant_data/faiss_index_assistant/
+document-images/
+faiss-vectorstore/
+uploaded-documents/
+extracted-images/
+syllabus-vectorstore/
+lab-manuals/
+server/downloads
+presentations/
+*.zip
+.ipynb_checkpoints/
+.env
+venv
+__pycache__/
+csv_data_files/
+instance/
+assistant_data/faiss_index_assistant/
+document-images/
+faiss-vectorstore/
+uploaded-documents/
+extracted-images/
+syllabus-vectorstore/
+lab-manuals/
+server/downloads
+presentations/
+
+# CLIENT-SIDE
 logs
 *.log
 npm-debug.log*
@@ -7,13 +40,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
 node_modules
 dist
 dist-ssr
 *.local
-
-# Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -23,37 +53,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-=======
 *.zip
-.ipynb_checkpoints/
-.env
-venv
-__pycache__/
-csv_data_files/
-instance/
-assistant_data/faiss_index_assistant/
-document-images/
-faiss-vectorstore/
-uploaded-documents/
-extracted-images/
-syllabus-vectorstore/
-lab-manuals/
-server/downloads
-presentations/
->>>>>>> server-branch
-*.zip
-.ipynb_checkpoints/
-.env
-venv
-__pycache__/
-csv_data_files/
-instance/
-assistant_data/faiss_index_assistant/
-document-images/
-faiss-vectorstore/
-uploaded-documents/
-extracted-images/
-syllabus-vectorstore/
-lab-manuals/
-server/downloads
-presentations/
+*.rar
