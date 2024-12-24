@@ -236,7 +236,7 @@ const LessonsGrid = () => {
                 </Grid>
               ) : (
                 <Text textAlign="center" color="gray.500">
-                  No Lab Manuals available.
+                  No Lab Manuals created yet. Generate one now!
                 </Text>
               )}
               <Button

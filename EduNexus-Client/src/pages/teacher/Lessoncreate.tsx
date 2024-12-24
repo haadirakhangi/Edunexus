@@ -220,7 +220,8 @@ const LessonCreate = () => {
                       >
                         <option value="theoretical">Theoretical</option>
                         <option value="mathematical">Mathematical</option>
-                        <option value="practical">Practical</option>
+                        <option value="technical">Technical</option>
+                        <option value="creative">Creative</option>
                       </Select>
                       <FormErrorMessage>{errors.lessonType?.message}</FormErrorMessage>
                     </FormControl>

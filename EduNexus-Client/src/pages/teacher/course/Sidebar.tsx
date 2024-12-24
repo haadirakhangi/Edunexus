@@ -409,7 +409,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     onDragOver={(e) => e.preventDefault()} overflowY="auto">
                                     {uploadedImages.length === 0 ? (
                                         <Box textAlign="center" p={4}>
-                                            No images available.
+                                            Drag and drop images here
                                         </Box>
                                     ) : (
                                         <SimpleGrid columns={[2, 2, 2]}>

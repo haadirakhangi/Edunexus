@@ -136,7 +136,7 @@ const LabManual: React.FC = () => {
                 <Flex justify="center" align="center" width="100vw" height="90vh" textAlign="center">
                     <VStack>
                         <Spinner size="xl" color="purple.500" />
-                        <Heading>Generating Content...</Heading>
+                        <Heading>Generating Lab Manual...</Heading>
                     </VStack>
                 </Flex>
             </>

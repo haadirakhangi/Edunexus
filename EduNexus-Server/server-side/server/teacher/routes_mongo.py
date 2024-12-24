@@ -223,6 +223,7 @@ async def multimodal_rag_submodules():
         files = request.files.getlist('files[]')
     lesson_name = request.form['lesson_name']
     course_name = request.form['course_name']
+    lesson_type = request.form.get('lesson_type', 'theoretical')
     include_images = request.form.get("includeImages", "false")
     if include_images=="true":
         include_images=True
@@ -319,7 +320,8 @@ async def multimodal_rag_submodules():
         submodules = SUB_MODULE_GENERATOR.generate_submodules_from_web(lesson_name, course_name)
         session['lesson_name'] = lesson_name
         session['course_name'] = course_name
-        session['user_profile'] = submodules
+        session['lesson_type'] = lesson_type
+        session['user_profile'] = description
         session['submodules'] = submodules
         session['is_multimodal_rag']=False
         print("\nGenerated Submodules:\n", submodules)
@@ -329,6 +331,7 @@ async def multimodal_rag_submodules():
         submodules = SUB_MODULE_GENERATOR.generate_submodules(lesson_name)
         session['lesson_name'] = lesson_name
         session['course_name'] = course_name
+        session['lesson_type'] = lesson_type
         session['user_profile'] = description
         session['submodules'] = submodules
         session['is_multimodal_rag'] = False
@@ -349,6 +352,7 @@ async def multimodal_rag_submodules():
         
     session['lesson_name'] = lesson_name
     session['course_name'] = course_name
+    session['lesson_type'] = lesson_type
     session['user_profile'] = description
     session['submodules'] = submodules
     session['document_directory_path'] = uploads_path 
@@ -373,11 +377,11 @@ async def multimodal_rag_content():
     search_web = session.get("search_web")
     course_name = session.get("course_name")
     lesson_name = session.get("lesson_name")
+    lesson_type = session.get("lesson_type")
+    user_profile = session.get("user_profile")
+    submodules = session.get("submodules")
     if is_multimodal_rag:
         document_paths = session.get("document_directory_path") 
-        lesson_name = session.get("lesson_name")
-        user_profile = session.get("user_profile")
-        submodules = session.get("submodules")
         text_vectorstore_path = session.get("text_vectorstore_path")
         image_vectorstore_path = session.get("image_vectorstore_path")
         input_type = session.get('input_type')
@@ -402,16 +406,15 @@ async def multimodal_rag_content():
         final_content = ServerUtils.json_list_to_markdown(content_list)
         return jsonify({"message": "Query successful", "relevant_images": relevant_images_list, "content": final_content, "response": True}), 200
     elif search_web:
-        submodules = session.get("submodules")
         keys_list = list(submodules.keys())
         submodules_split_one = {key: submodules[key] for key in keys_list[:2]}
         submodules_split_two = {key: submodules[key] for key in keys_list[2:4]}
         submodules_split_three = {key: submodules[key] for key in keys_list[4:]}
         with ThreadPoolExecutor() as executor:
             future_images_list = executor.submit(SerperProvider.module_image_from_web, submodules)
-            future_content_one = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_one, lesson_name,course_name,'first')
-            future_content_two = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_two, lesson_name, course_name,'second')
-            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content_from_web, submodules_split_three, lesson_name, course_name,'third')
+            future_content_one = executor.submit(CONTENT_GENERATOR.generate_content_from_web_with_profile, submodules_split_one, lesson_name, course_name, lesson_type, user_profile, 'first')
+            future_content_two = executor.submit(CONTENT_GENERATOR.generate_content_from_web_with_profile, submodules_split_two, lesson_name, course_name, lesson_type, user_profile, 'second')
+            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content_from_web_with_profile, submodules_split_three, lesson_name, course_name, lesson_type, user_profile, 'third')
         content_one = future_content_one.result()
         content_two = future_content_two.result()
         content_three = future_content_three.result()
@@ -420,16 +423,15 @@ async def multimodal_rag_content():
         final_content = ServerUtils.json_list_to_markdown(content_list)
         return jsonify({"message": "Query successful", "relevant_images": relevant_images_list, "content": final_content, "response": True}), 200
     else:
-        submodules = session.get("submodules")
         keys_list = list(submodules.keys())
         submodules_split_one = {key: submodules[key] for key in keys_list[:2]}
         submodules_split_two = {key: submodules[key] for key in keys_list[2:4]}
         submodules_split_three = {key: submodules[key] for key in keys_list[4:]}
         with ThreadPoolExecutor() as executor:
             future_images_list = executor.submit(SerperProvider.module_image_from_web, submodules)
-            future_content_one = executor.submit(CONTENT_GENERATOR.generate_content, submodules_split_one, lesson_name, course_name,'first')
-            future_content_two = executor.submit(CONTENT_GENERATOR.generate_content, submodules_split_two, lesson_name, course_name,'second')
-            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content, submodules_split_three, lesson_name, course_name,'third')
+            future_content_one = executor.submit(CONTENT_GENERATOR.generate_content_with_profile, submodules_split_one, lesson_name, course_name, lesson_type, user_profile, 'first')
+            future_content_two = executor.submit(CONTENT_GENERATOR.generate_content_with_profile, submodules_split_two, lesson_name, course_name, lesson_type, user_profile, 'second')
+            future_content_three = executor.submit(CONTENT_GENERATOR.generate_content_with_profile, submodules_split_three, lesson_name, course_name, lesson_type, user_profile, 'third')
         content_one = future_content_one.result()
         content_two = future_content_two.result()
         content_three = future_content_three.result()
@@ -490,7 +492,6 @@ def add_lesson():
 def get_lesson():
     data = request.get_json()
     lesson_id = data.get('lesson_id')
-    print("lesson id------------------",lesson_id)
     if not lesson_id:
         return jsonify({"message": "Lesson ID is required."}), 400
 

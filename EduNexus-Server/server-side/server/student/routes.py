@@ -84,8 +84,6 @@ def login():
     assistant = GEMINI_CLIENT.initialize_assistant(profile= profile, tools=TOOLS)
     return jsonify({"message": "User logged in successfully", "email":user.email, "response":True}), 200
 
-
-
 @students.route('/user_profile', methods=['GET', 'POST'])
 @cross_origin(supports_credentials=True)
 def user_profile():
