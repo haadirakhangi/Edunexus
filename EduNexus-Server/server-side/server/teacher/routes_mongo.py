@@ -261,6 +261,7 @@ async def multimodal_rag_submodules():
         multimodal_rag = MultiModalRAG(
             course_name=course_name,
             lesson_name=lesson_name,
+            lesson_type=lesson_type,
             documents_directory_path=uploads_path,  
             embeddings=EMBEDDINGS,
             clip_model=CLIP_MODEL,
@@ -276,6 +277,7 @@ async def multimodal_rag_submodules():
         multimodal_rag = MultiModalRAG(
             course_name=course_name,
             lesson_name=lesson_name,
+            lesson_type=lesson_type,
             documents_directory_path=uploads_path,  
             embeddings=EMBEDDINGS,
             clip_model=CLIP_MODEL,
@@ -291,6 +293,7 @@ async def multimodal_rag_submodules():
         multimodal_rag = MultiModalRAG(
             course_name=course_name,
             lesson_name=lesson_name,
+            lesson_type=lesson_type,
             documents_directory_path=uploads_path,  
             embeddings=EMBEDDINGS,
             clip_model=CLIP_MODEL,
@@ -305,6 +308,7 @@ async def multimodal_rag_submodules():
         multimodal_rag = MultiModalRAG(
             course_name=course_name,
             lesson_name=lesson_name,
+            lesson_type=lesson_type,
             documents_directory_path=uploads_path,  
             embeddings=EMBEDDINGS,
             clip_model=CLIP_MODEL,

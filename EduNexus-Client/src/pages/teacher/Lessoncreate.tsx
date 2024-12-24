@@ -91,7 +91,7 @@ const LessonCreate = () => {
     formData.append('lesson_name', lesson_name || '');
     formData.append('course_name', course_name || '');
     formData.append('description', data.lessonStyle);
-    formData.append('lessonType', data.lessonType);
+    formData.append('lesson_type', data.lessonType);
     formData.append('links', JSON.stringify(links));
     formData.append('includeImages', includeImages.toString());
     if(webSearch!= null){
@@ -221,7 +221,6 @@ const LessonCreate = () => {
                         <option value="theoretical">Theoretical</option>
                         <option value="mathematical">Mathematical</option>
                         <option value="technical">Technical</option>
-                        <option value="creative">Creative</option>
                       </Select>
                       <FormErrorMessage>{errors.lessonType?.message}</FormErrorMessage>
                     </FormControl>

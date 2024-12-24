@@ -59,6 +59,7 @@ class MultiModalRAG:
             self, 
             course_name=None,
             lesson_name=None,
+            lesson_type=None,
             documents_directory_path=None, 
             embeddings=None, 
             clip_model=None, 
@@ -75,6 +76,7 @@ class MultiModalRAG:
     ):
         self.course_name = course_name
         self.lesson_name = lesson_name
+        self.lesson_type = lesson_type
         if documents_directory_path is None:
             raise Exception("Document Directory Path path must be provided")
         self.documents_directory_path = documents_directory_path
@@ -168,7 +170,7 @@ class MultiModalRAG:
                     rel_docs = [doc.page_content for doc in relevant_docs]
                     context = '\n'.join(rel_docs)
                     image_explanation = await content_generator.generate_explanation_from_images(top_images[:2], val)
-                    output = await content_generator.generate_content_from_textbook_and_images(self.course_name, module_name, val, profile, context, image_explanation)
+                    output = await content_generator.generate_content_from_textbook_and_images(self.course_name, module_name, self.lesson_type, val, profile, context, image_explanation)
                 else:
                     rel_docs = [doc.page_content for doc in relevant_docs]
                     context = '\n'.join(rel_docs)
@@ -176,7 +178,7 @@ class MultiModalRAG:
                     try:
                         relevant_images, output = await asyncio.gather(
                             SerperProvider.submodule_image_from_web(val),
-                            content_generator.generate_single_content_from_textbook(self.course_name, module_name, val, profile, context)
+                            content_generator.generate_single_content_from_textbook(self.course_name, module_name, self.lesson_type, val, profile, context)
                         )
                         result_handler.tell(relevant_images)
                         result_handler.tell(output)
@@ -190,7 +192,7 @@ class MultiModalRAG:
                 try:
                     relevant_images, output = await asyncio.gather(
                         SerperProvider.submodule_image_from_web(val),
-                        content_generator.generate_single_content_from_textbook(self.course_name, module_name, val, profile, context)
+                        content_generator.generate_single_content_from_textbook(self.course_name, module_name, self.lesson_type, val, profile, context)
                     )
                     result_handler.tell(relevant_images)
                     result_handler.tell(output)
@@ -224,7 +226,7 @@ class MultiModalRAG:
                     rel_docs = [doc.page_content for doc in relevant_docs]
                     context = '\n'.join(rel_docs)
                     image_explanation = await content_generator.generate_explanation_from_images(top_images[:2], val)
-                    output = await content_generator.generate_content_from_textbook_and_images_with_web(self.course_name, module_name, val, profile, context, image_explanation, web_context)
+                    output = await content_generator.generate_content_from_textbook_and_images_with_web(self.course_name, module_name, self.lesson_type, val, profile, context, image_explanation, web_context)
                 else:
                     rel_docs = [doc.page_content for doc in relevant_docs]
                     context = '\n'.join(rel_docs)
@@ -232,7 +234,7 @@ class MultiModalRAG:
                     try:
                         relevant_images, output = await asyncio.gather(
                             SerperProvider.submodule_image_from_web(val),
-                            content_generator.generate_single_content_from_textbook_with_web(self.course_name, module_name, val, profile, context, web_context)
+                            content_generator.generate_single_content_from_textbook_with_web(self.course_name, module_name, self.lesson_type, val, profile, context, web_context)
                         )
                         result_handler.tell(relevant_images)
                         result_handler.tell(output)
@@ -250,7 +252,7 @@ class MultiModalRAG:
                 try:
                     relevant_images, output = await asyncio.gather(
                         SerperProvider.submodule_image_from_web(val),
-                        content_generator.generate_single_content_from_textbook_with_web(self.course_name, module_name, val, profile, context, web_context)
+                        content_generator.generate_single_content_from_textbook_with_web(self.course_name, module_name, self.lesson_type, val, profile, context, web_context)
                     )
                     result_handler.tell(relevant_images)
                     result_handler.tell(output)
