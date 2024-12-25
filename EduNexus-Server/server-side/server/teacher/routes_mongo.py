@@ -109,8 +109,7 @@ def create_course():
         course_name = request.form['course_name']
         num_lectures = request.form['num_lectures']
         lessons = request.form['lessons']
-
-        course_code = ServerUtils.generate_course_code()
+        course_code = ServerUtils.generate_course_code(courses_collection, length=6)
 
         new_course = {
             "course_name": course_name,

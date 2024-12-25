@@ -135,15 +135,15 @@ class ServerUtils:
                             if key == "title":
                                 markdown += f"## {value}\n"
                             elif key == "content":
-                                markdown += f"{value}\n"
+                                markdown += f"{value}\n\n"
             final_content.append({content["subject_name"]: markdown})
         return final_content
     
     @staticmethod
-    def generate_course_code(length=6):
+    def generate_course_code(course_collection, length=6):
         while True:
             course_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
-            if not TeacherCourse.query.filter_by(course_code=course_code).first():
+            if course_collection.find_one({"course_code": course_code}) is None:
                 return course_code
 
 class AssistantUtils:
