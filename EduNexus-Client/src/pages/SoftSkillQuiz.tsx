@@ -67,7 +67,7 @@ const SoftSkillQuiz: React.FC = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true); // Set loading to true when submission starts
     try {
-      await axios.post('/api/student/submit-soft-skill-quiz', { responses });
+      await axios.post('/api/job_seeker/submit-soft-skill-quiz', { responses });
       Swal.fire({
         title: 'Congratulations!',
         text: 'Your soft skill assessment has been submitted successfully.',

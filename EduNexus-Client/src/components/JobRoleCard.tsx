@@ -68,7 +68,7 @@ const JobRoleCard: React.FC<JobRoleCardProps> = ({ jobTitle, jobDescription }) =
         setIsLoading(true);
         try {
             // Send the job title as part of the POST request
-            const response = await axios.post('/api/student/skill-gap-analysis', { job_role });
+            const response = await axios.post('/api/job_seeker/skill-gap-analysis', { job_role });
             setSkillGapData(response.data.skill_gap_analysis);
             setInDemandData(response.data.required_skills)
             const formatted = Object.entries(response.data.required_skills || {}).map(([key, value]) => ({
@@ -209,7 +209,7 @@ const JobRoleCard: React.FC<JobRoleCardProps> = ({ jobTitle, jobDescription }) =
                     </ModalBody>
 
                     <ModalFooter>
-                        <Button colorScheme="purple" onClick={() => navigate('/student/dashboard')}>Go to Dashboard</Button>
+                        <Button colorScheme="purple" onClick={() => navigate('/job-seeker/dashboard')}>Go to Dashboard</Button>
                     </ModalFooter>
                 </ModalContent>
             </Modal>

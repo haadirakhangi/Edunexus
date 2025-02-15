@@ -30,7 +30,7 @@ const AssessmentPage = () => {
     const fetchAssessmentStatus = async () => {
       setLoading(true);
       try {
-        const response = await axios.get("/api/student/assessment-status");
+        const response = await axios.get("/api/job_seeker/assessment-status");
         const assessmentStatus = response.data;
         setPhases({
           TechnicalAssessment: assessmentStatus.technical_assessment.status === "Completed",
@@ -49,7 +49,7 @@ const AssessmentPage = () => {
 
   useEffect(() => {
     if (Object.values(phases).every((phase) => phase)) {
-      navigate("/student/job-roles");
+      navigate("/job-seeker/job-roles");
     }
   }, [phases, navigate]);
 
@@ -83,11 +83,11 @@ const AssessmentPage = () => {
 
   const handleCompletePhase = (phaseName) => {
     if (phaseName === "TechnicalAssessment") {
-      navigate("/student/technical-quiz");
+      navigate("/job-seeker/technical-quiz");
     } else if (phaseName === "SoftSkillAssessment") {
-      navigate("/student/soft-skill-quiz");
+      navigate("/job-seeker/soft-skill-quiz");
     } else if (phaseName === "ScenarioBasedAssessment") {
-      navigate("/student/roleplay-exercise");
+      navigate("/job-seeker/roleplay-exercise");
     }
   };
 

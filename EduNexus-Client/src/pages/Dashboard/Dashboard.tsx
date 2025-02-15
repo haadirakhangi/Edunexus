@@ -69,7 +69,7 @@ const Dashboard = () => {
 
         const fetchUserData = async () => {
             try {
-                const response = await axios.get('/api/student/user-dashboard', { withCredentials: true });
+                const response = await axios.get('/api/job_seeker/user-dashboard', { withCredentials: true });
                 setUserData(response.data.user_data);
                 setLoading(false);
             } catch (error) {

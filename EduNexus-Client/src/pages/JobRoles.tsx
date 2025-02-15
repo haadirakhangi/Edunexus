@@ -9,7 +9,7 @@ const JobRoles = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        axios.get('/api/student/fetch-job-roles')
+        axios.get('/api/job_seeker/fetch-job-roles')
             .then((response) => {
                 setJobRoles(response.data.job_roles);
                 setLoading(false);

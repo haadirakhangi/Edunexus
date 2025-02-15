@@ -34,8 +34,8 @@ const QuizPage: React.FC = () => {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const knowledgeResponse = await axios.get('/api/student/knowledge-assessment');
-        const interestResponse = await axios.get('/api/student/interest-assessment');
+        const knowledgeResponse = await axios.get('/api/job_seeker/knowledge-assessment');
+        const interestResponse = await axios.get('/api/job_seeker/interest-assessment');
         setKnowledgeQuestions(knowledgeResponse.data.quiz_questions);
         setInterestQuestions(interestResponse.data.quiz_questions);
         setLoading(false); // Set loading to false once data is fetched

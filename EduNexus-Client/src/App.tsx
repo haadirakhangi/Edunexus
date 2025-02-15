@@ -42,14 +42,13 @@ function App() {
       <Route element={<LabManual />} path="/teacher/lab-manual" />
       <Route element={<LabManualCreate />} path="/teacher/lab-manual-create" />
       <Route element={<LessonsGrid />} path="/teacher/scheduler" />
-      <Route element={<HomePage />} path="/" />
-      <Route element={<SoftSkillQuiz />} path="/student/soft-skill-quiz" />
-      <Route element={<HardSkillQuiz />} path="/student/technical-quiz" />
-      <Route element={<Interview />} path="/student/interview" />
-      <Route element={<MultimodalLive />} path="/student/roleplay-exercise" />
-      <Route element={<AssessmentPage />} path="/student/assessment" />
-      <Route element={<Dashboard />} path="/student/dashboard" />
-      <Route element={<JobRoles />} path="/student/job-roles" />
+      <Route element={<SoftSkillQuiz />} path="/job-seeker/soft-skill-quiz" />
+      <Route element={<HardSkillQuiz />} path="/job-seeker/technical-quiz" />
+      <Route element={<Interview />} path="/job-seeker/interview" />
+      <Route element={<MultimodalLive />} path="/job-seeker/roleplay-exercise" />
+      <Route element={<AssessmentPage />} path="/job-seeker/assessment" />
+      <Route element={<Dashboard />} path="/job-seeker/dashboard" />
+      <Route element={<JobRoles />} path="/job-seeker/job-roles" />
 
       <Route element={<Testing />} path="/testing" />
       <Route element={<Pico />} path="/pico" />
