@@ -154,7 +154,7 @@ const QuizPage: React.FC = () => {
       }, {} as Record<string, { score: number; maxScore: number }>);
 
       await axios.post(
-        '/api/student/submit-technical-quiz',
+        '/api/job_seeker/submit-technical-quiz',
         {
           knowledgeScores,
           interestScores,
@@ -169,7 +169,7 @@ const QuizPage: React.FC = () => {
         confirmButtonText: 'Next',
       }).then((result) => {
         if (result.isConfirmed) {
-          navigate('/student/assessment');
+          navigate('/job-seeker/assessment');
         }
       });
     } catch (error) {

@@ -75,7 +75,7 @@ const SoftSkillQuiz: React.FC = () => {
         confirmButtonText: 'Next',
       }).then((result) => {
         if (result.isConfirmed) {
-          navigate('/student/assessment');
+          navigate('/job-seeker/assessment');
         }
       });
     } catch (error) {
