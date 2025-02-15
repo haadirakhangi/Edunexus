@@ -62,7 +62,7 @@ class GeminiProvider:
 
     def upload_file(self, file_path, mime_type="video/mp4"):
         print("Uploading file...")
-        file = self.gemini_client.files.upload(path=file_path, config={"mime_type": mime_type})
+        file = self.gemini_client.files.upload(file=file_path, config={"mime_type": mime_type})
         print(f"Completed upload: {file.uri}.\nProcessing file...")
         while file.state == "PROCESSING":
             print('.', end='')

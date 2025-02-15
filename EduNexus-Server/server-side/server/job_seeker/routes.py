@@ -160,36 +160,36 @@ def interest_assessment():
 @job_seeker.route('/analyze-roleplay-exercise', methods=['POST'])
 @cross_origin(supports_credentials=True)
 def anaylze_conversation():
-    try:
-        if "student_id" not in session:
-            return jsonify({"error": "User not logged in"}), 401
-        student_id = session.get("student_id")
-        data : dict = request.form
-        if 'video_file' not in request.files:
-            return jsonify({"error": "Video file is required"}), 400
-        else:
-            video_file = request.files.get('video_file')
-        current_dir = os.path.dirname(__file__)
-        uploads_path = os.path.join(current_dir, 'videos', 'soft-skills-analysis')
-        if not os.path.exists(uploads_path):
-            os.makedirs(uploads_path)
+    # try:
+    if "student_id" not in session:
+        return jsonify({"error": "User not logged in"}), 401
+    student_id = session.get("student_id")
+    data : dict = request.form
+    if 'video_file' not in request.files:
+        return jsonify({"error": "Video file is required"}), 400
+    else:
+        video_file = request.files.get('video_file')
+    current_dir = os.path.dirname(__file__)
+    uploads_path = os.path.join(current_dir, 'videos', 'soft-skills-analysis')
+    if not os.path.exists(uploads_path):
+        os.makedirs(uploads_path)
 
-        filename = secure_filename(video_file.filename)
-        video_file_path = os.path.join(uploads_path, filename)
-        video_file.save(video_file_path)
-        scenario = data.get("scenario")
-        response = EVALUATOR.evaluate_video_for_soft_skills(video_file_path, scenario)
-        result = std_profile_coll.update_one(
-            {"_id": ObjectId(student_id)},
-            {"$set": {"soft_skill_assessment.roleplay": response}},
-        )
-        if result.matched_count == 0:
-            print(f"something wrong--> {ObjectId(student_id)}")
-            return jsonify({"error": "User not found"}), 404
-        return jsonify({"response": True, "roleplay_response": response}), 200
+    filename = secure_filename(video_file.filename)
+    video_file_path = os.path.join(uploads_path, filename)
+    video_file.save(video_file_path)
+    scenario = data.get("scenario")
+    response = EVALUATOR.evaluate_video_for_soft_skills(video_file_path, scenario)
+    result = std_profile_coll.update_one(
+        {"_id": ObjectId(student_id)},
+        {"$set": {"soft_skill_assessment.roleplay": response}},
+    )
+    if result.matched_count == 0:
+        print(f"something wrong--> {ObjectId(student_id)}")
+        return jsonify({"error": "User not found"}), 404
+    return jsonify({"response": True, "roleplay_response": response}), 200
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    # except Exception as e:
+    #     return jsonify({"error": str(e)}), 500
 
 @job_seeker.route('/logout', methods=['GET'])
 @cross_origin(supports_credentials=True)

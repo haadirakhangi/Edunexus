@@ -178,7 +178,7 @@ const MultimodalLive = () => {
 
             // Check if the response status is 200 (successful)
             if (response.status === 200) {
-                navigate('/student/job-roles');
+                navigate('/job-seeker/job-roles');
                 toast({
                     title: "Successfully analyzed",
                     description: "Your video was analyzed successfully.",
