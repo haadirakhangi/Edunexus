@@ -36,7 +36,7 @@ function Modules() {
   const [webSearchOn, setWebSearchOn] = useState(false);
   const languages = [
     { code: 'auto', name: 'Language : Auto' },
-    { code: 'en', name: 'English' },
+    { code: 'english', name: 'English' },
     { code: 'hi', name: 'Hindi' },
     { code: 'te', name: 'Telugu' },
     { code: 'ta', name: 'Tamil' },

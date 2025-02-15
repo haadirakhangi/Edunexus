@@ -46,7 +46,7 @@ const LessonCreate = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [submodules, setSubmodules] = useState<Record<string, string>>({});
   const [links, setLinks] = useState<string[]>([]);
-  const [webSearch, setWebSearch] = useState<boolean>(false);
+  const [webSearch, setWebSearch] = useState<boolean | null>(null);
   const course_name = localStorage.getItem('course_name');
   const lesson_name = localStorage.getItem('lesson_name');
   const lessonNameInputRef = useRef<HTMLInputElement>(null);
@@ -255,7 +255,7 @@ const LessonCreate = () => {
                       colorScheme='purple'>
                       <Stack>
                         <Radio value="none">None</Radio>
-                        <Radio value="web" isChecked={webSearch}>Web Search</Radio>
+                        <Radio value="web" isChecked={webSearch === true}>Web Search</Radio>
                         <Radio value="links" isChecked={!webSearch}>Links</Radio>
                       </Stack>
                     </RadioGroup>

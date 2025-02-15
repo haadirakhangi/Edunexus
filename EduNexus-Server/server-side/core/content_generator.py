@@ -1,4 +1,3 @@
-import PIL
 import time
 
 import PIL.Image
@@ -201,7 +200,7 @@ Technical Breakdown: If the image involves technical or specialized content (e.g
 Logical Flow: Ensure your explanation is organized and flows logically to make it easier for another model to use this analysis to explain the broader topic effectively.
 
 Provide as much detail as possible and aim to enrich the understanding of the images in the context of the topic. Explain both the images separately. Here are the two images:"""
-        output = self.gemini_client.explain_two_image(prompt=prompt, image1=PIL.Image.open(images[0]), image2=PIL.Image.open(images[1]))
+        output = self.gemini_client.explain_two_image(prompt=prompt, image1=images[0], image2=images[1])
         return output
     
     async def generate_content_from_textbook_and_images(self, course_name, module_name, lesson_type, submodule_name, profile, context, image_explanation):
