@@ -142,7 +142,7 @@ class QuizGenerator:
 
         **<INSTRUCTIONS>**
         1. Skill Input: The list of 5 skills will be provided below.
-        2. Quiz Generation: For each skill, create a multiple-choice quiz with 5-10 questions. Each question should:
+        2. Quiz Generation: For each skill, create a multiple-choice quiz with 2-3 questions (In-total 10-12 questions only). Each question should:
         * Be clear and unambiguous.
         * Have four plausible answer choices (A, B, C, D), including one correct answer.
         * Focus on practical application and real-world scenarios relevant to the skill.
