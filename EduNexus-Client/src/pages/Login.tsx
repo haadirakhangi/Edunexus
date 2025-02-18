@@ -48,7 +48,7 @@ const Login = () => {
   const handleLogin = async (data: LoginData, endpoint: string) => {
     try {
       const response = await axios.post(endpoint, data, { withCredentials: true });
-
+      console.log(data);
       if (response.data.response) {
        
         
@@ -184,17 +184,17 @@ const Login = () => {
 
               <TabPanel>
                 <Box my={8} textAlign='left'>
-                  <form onSubmit={teacherForm.handleSubmit((data) => handleLogin(data, '/api/job_seeker/login'))}>
-                    <FormControl isInvalid={!!teacherForm.formState.errors.email}>
+                  <form onSubmit={companyForm .handleSubmit((data) => handleLogin(data, '/api/job_seeker/login'))}>
+                    <FormControl isInvalid={!!companyForm .formState.errors.email}>
                       <FormLabel>Email address</FormLabel>
-                      <Input type='email' placeholder='Enter your email address' {...teacherForm.register('email')} />
-                      <FormErrorMessage color={useColorModeValue('purple.600', 'white')}>{teacherForm.formState.errors.email?.message}</FormErrorMessage>
+                      <Input type='email' placeholder='Enter your email address' {...companyForm .register('email')} />
+                      <FormErrorMessage color={useColorModeValue('purple.600', 'white')}>{companyForm .formState.errors.email?.message}</FormErrorMessage>
                     </FormControl>
 
-                    <FormControl mt={4} isInvalid={!!teacherForm.formState.errors.password}>
+                    <FormControl mt={4} isInvalid={!!companyForm .formState.errors.password}>
                       <FormLabel>Password</FormLabel>
-                      <Input type='password' placeholder='Enter your password' {...teacherForm.register('password')} />
-                      <FormErrorMessage>{teacherForm.formState.errors.password?.message}</FormErrorMessage>
+                      <Input type='password' placeholder='Enter your password' {...companyForm .register('password')} />
+                      <FormErrorMessage>{companyForm .formState.errors.password?.message}</FormErrorMessage>
                     </FormControl>
 
                     <HStack justifyContent='space-between' mt={4}>

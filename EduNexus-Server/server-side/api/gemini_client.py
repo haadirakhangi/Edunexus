@@ -94,8 +94,6 @@ class GeminiProvider:
             model=self.model,
             config=types.GenerateContentConfig(
                 system_instruction=f"You are ISSAC, a helpful assistant for the website Solo Leveling. Use the functions provided to you to answer user's question about the Solo Leveling platform. User Profile: {profile}",
-                tools=tools,
-                automatic_function_calling=True,
             )
         )
         return self.chat
