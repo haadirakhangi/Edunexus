@@ -733,10 +733,41 @@ def download_ppt():
     except Exception as e:
         print(f"Error while creating ppt: {e}")
         return jsonify({"message": "An error occurred while creating the presentation.", "response": False}), 500
+
+@teachers.route('/download-pdf', methods=['POST'])
+def download_pdf():
+    teacher_id = session.get("teacher_id")
+    if teacher_id is None:
+        return jsonify({"message": "Teacher not logged in.", "response": False}), 401
     
-    except Exception as e:
-        print(f"Error while creating ppt: {e}")
-        return jsonify({"message": "An error occurred while creating the presentation.", "response": False}), 500
+    data = request.get_json()
+    lesson_id = data.get("lesson_id")
+    
+    if not lesson_id:
+        return jsonify({"message": "Lesson ID not provided.", "response": False}), 400
+    
+    lesson = lessons_collection.find_one({"_id": ObjectId(lesson_id)})
+    if not lesson:
+        return jsonify({"message": "Lesson not found.", "response": False}), 404
+    
+    course_id = lesson.get("course_id")
+    course = courses_collection.find_one({"_id": ObjectId(course_id)})
+    if not course:
+        return jsonify({"message": "Course not found.", "response": False}), 404
+    
+    course_name = course.get("course_name", "Default Course")
+    lesson_name = lesson.get("title", "Default Lesson") 
+    lesson_name = re.sub(r'[<>:"/\\|?*]', '_', lesson_name) + ".pdf"
+    markdown_content = json.loads(lesson.get("markdown_content", "{}"))
+    markdown_images = json.loads(lesson.get("markdown_images", "{}"))
+
+    pdf_path = os.path.join("/tmp", lesson_name)
+    pdf_dir = os.path.dirname(pdf_path)
+    if not os.path.exists(pdf_dir):
+        os.makedirs(pdf_dir, exist_ok=True)
+    TEACHER_PDF_GENERATOR.generate_pdf(pdf_path, course_name, markdown_content,markdown_images)
+    
+    return send_file(pdf_path, as_attachment=True)
 
 
 @teachers.route('/logout', methods=['GET'])

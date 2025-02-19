@@ -31,10 +31,11 @@ const PerContent: React.FC = () => {
     const [apiCalled, setApiCalled] = useState(false);
     const [imageLists, setImageLists] = useState<string[][]>([]);
     const lesson_id = localStorage.getItem('lesson_id');
+
     const handleSaveLesson = async () => {
         const lesson_name = localStorage.getItem('lesson_name');
         const course_id = localStorage.getItem('course_id');
-        
+
 
         try {
             const response = await axios.post('/api/teacher/add-lesson', {
@@ -48,8 +49,8 @@ const PerContent: React.FC = () => {
             }, { withCredentials: true });
 
             alert(response.data.message);
-            if(response.data.response){
-                localStorage.setItem('lesson_id',response.data.lesson_id.toString())
+            if (response.data.response) {
+                localStorage.setItem('lesson_id', response.data.lesson_id.toString())
             }
         } catch (error) {
             console.error('Error saving lesson:', error);
@@ -57,11 +58,36 @@ const PerContent: React.FC = () => {
         }
     };
 
+    const downloadPDF = async () => {
+        try {
+            const course_id = localStorage.getItem('course_id');
+            const lesson_id = localStorage.getItem('lesson_id');
+
+            const response = await axios.post('/api/teacher/download-pdf',
+                {
+                    course_id: course_id,
+                    lesson_id: lesson_id,
+                },
+                { responseType: 'blob' } // Important for handling file downloads
+            );
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `course_${course_id}_lesson_${lesson_id}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error("Error downloading the PDF", error);
+        }
+    };
+
     const handleSaveppt = async () => {
         try {
             const course_id = localStorage.getItem('course_id');
             const lesson_id = localStorage.getItem('lesson_id');
-    
+
             const response = await axios.post(
                 '/api/teacher/download-ppt',
                 {
@@ -73,7 +99,7 @@ const PerContent: React.FC = () => {
                     responseType: 'blob',
                 }
             );
-    
+
             const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -87,7 +113,7 @@ const PerContent: React.FC = () => {
             alert('Failed to download the presentation.');
         }
     };
-    
+
 
     const insertImagesForAllSubmodules = () => {
         const updatedData = data.map((item, submoduleIndex) => {
@@ -95,20 +121,20 @@ const PerContent: React.FC = () => {
             const content = item[submoduleKey];
             const imagesForSubmodule = images[submoduleIndex]?.slice(0, 2) || [];
             let updatedContent = content;
-    
+
             setImageLists((prevImageLists) => {
                 const updatedLists = [...prevImageLists];
                 if (!updatedLists[submoduleIndex]) updatedLists[submoduleIndex] = [];
                 return updatedLists;
             });
-    
+
             imagesForSubmodule.forEach((imageLink, i) => {
                 if (!imageLink.startsWith('http://') && !imageLink.startsWith('https://')) {
                     if (!imageLink.startsWith('data:image/') || !imageLink.includes(';base64,')) {
                         imageLink = `data:image/png;base64,${imageLink}`;
                     }
                 }
-    
+
                 const uniqueId = `image-${submoduleIndex}-${i}`;
                 setImageLists((prevImageLists) => {
                     const updatedLists = [...prevImageLists];
@@ -118,15 +144,15 @@ const PerContent: React.FC = () => {
                 const insertionIndex = i === 0 ? 3 : 6;
                 updatedContent = insertImageAtIndex(updatedContent, uniqueId, insertionIndex);
             });
-    
+
             return { ...item, [submoduleKey]: updatedContent };
         });
-    
+
         setData(updatedData);
     };
-    
-    
-    
+
+
+
 
     const insertImageAtCursor = async (imageUrl: string, i: number) => {
         let fileUrl: string;
@@ -135,7 +161,7 @@ const PerContent: React.FC = () => {
         } else if (/^data:image\/[a-zA-Z]+;base64,/.test(imageUrl)) {
             fileUrl = imageUrl;
         }
-    
+
         setData((prevData) => {
             return prevData.map((item, index) => {
                 if (selectedSubmodule && selectedSubmodule in item) {
@@ -158,22 +184,22 @@ const PerContent: React.FC = () => {
             });
         });
     };
-    
-    
+
+
 
 
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                if (lesson_id==null) {
+                if (lesson_id == null) {
                     const response = await axios.get('/api/teacher/multimodal-rag-content', { withCredentials: true });
                     setImages(response.data.relevant_images);
                     setData(response.data.content);
                     setApiCalled(true);
                     setSelectedSubmodule(Object.keys(response.data.content[0] || {})[0]);
-                }else{
-                    const response = await axios.post('/api/teacher/get-lesson',{
+                } else {
+                    const response = await axios.post('/api/teacher/get-lesson', {
                         lesson_id: lesson_id
                     }, { withCredentials: true });
                     const mk = JSON.parse(response.data.markdown_content);
@@ -245,6 +271,7 @@ const PerContent: React.FC = () => {
                     setUploadedImages={setUploadedImages}
                     handleSaveLesson={handleSaveLesson}
                     handleSaveppt={handleSaveppt}
+                    downloadpdf = {downloadPDF}
                 />
 
 
@@ -253,8 +280,8 @@ const PerContent: React.FC = () => {
                         contentData={data} // Pass the entire data
                         selectedSubmodule={selectedSubmodule}
                         onUpdateContent={handleUpdateContent}
-                        imagelist = {imageLists}
-                        setImageLists = {setImageLists}
+                        imagelist={imageLists}
+                        setImageLists={setImageLists}
                     // videos={videos}
                     />
                 )}

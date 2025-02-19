@@ -15,6 +15,7 @@ from core.evaluator import Evaluator
 from core.recommendation_generator import RecommendationGenerator
 from core.lesson_planner import LessonPlanner
 from core.skills_analyzer import SkillsAnalyzer
+from core.teacher_pdf_generator import MarkdownPdfGenerator
 from server.utils import AssistantUtils
 import os
 
@@ -32,6 +33,7 @@ MODULE_GENERATOR = ModuleGenerator()
 SUB_MODULE_GENERATOR = SubModuleGenerator()
 CONTENT_GENERATOR = ContentGenerator()
 PDF_GENERATOR = PdfGenerator()
+TEACHER_PDF_GENERATOR = MarkdownPdfGenerator()
 LAB_MANUAL_GENERATOR = LabManualGenerator()
 PPT_GENERATOR = PptGenerator()
 QUIZ_GENERATOR = QuizGenerator()
