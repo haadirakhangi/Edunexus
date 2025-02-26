@@ -48,12 +48,26 @@ export const Navbar = () => {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [studentAuthenticated, setStudentAuthenticated] = useState(false);
     const [teacherAuthenticated, setTeacherAuthenticated] = useState(false);
+    const [jobseekerAuthenticated, setJobSeekerAuthenticated] = useState(false);
+
 
     const handleStudentLogout = async () => {
         try {
             await axios.get('/api/student/logout', { withCredentials: true });
             setStudentAuthenticated(false);
             sessionStorage.removeItem('student_authenticated');
+            localStorage.clear();
+            navigate("/");
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleJobSeekerLogout = async () => {
+        try {
+            await axios.get('/api/job_seeker/logout', { withCredentials: true });
+            setJobSeekerAuthenticated(false);
+            sessionStorage.removeItem('job_seeker_authenticated');
             localStorage.clear();
             navigate("/");
         } catch (error) {
@@ -77,8 +91,12 @@ export const Navbar = () => {
     useEffect(() => {
         const isStudentAuthenticated = sessionStorage.getItem('student_authenticated') === 'true';
         const isTeacherAuthenticated = sessionStorage.getItem('teacher_authenticated') === 'true';
+        const isJobSeekerAuthenticated = sessionStorage.getItem('job_seeker_authenticated') === 'true';
+
         setStudentAuthenticated(isStudentAuthenticated);
         setTeacherAuthenticated(isTeacherAuthenticated);
+        setJobSeekerAuthenticated(isJobSeekerAuthenticated);
+
     }, []);
 
     return (
@@ -193,7 +211,32 @@ export const Navbar = () => {
                             </Box>
                         </>
                     )}
-                    {!teacherAuthenticated && !studentAuthenticated && (
+                    {jobseekerAuthenticated && (
+                        <>
+                            <NavLink href="/student/dashboard">
+                                <HStack spacing={2}>
+                                    <FaHome size={24} />
+                                    <span>Home</span>
+                                </HStack>
+                            </NavLink>
+
+                            <Box
+                                px={2}
+                                py={1}
+                                className="feature-heading"
+                                rounded="md"
+                                color={"white"}
+                                textDecoration="none"
+                                _hover={{ transform: 'scale(1.1)', color: 'purple.800', bg: 'white', textDecoration: 'none', cursor: "pointer" }}
+                                transition="transform 0.3s ease-in-out">
+                                <HStack spacing={2} onClick={handleJobSeekerLogout}>
+                                    <MdLogout size={24} />
+                                    <span>Logout</span>
+                                </HStack>
+                            </Box>
+                        </>
+                    )}
+                    {!teacherAuthenticated && !studentAuthenticated && !jobseekerAuthenticated && (
                         <>
                             <NavLink href="/register">
                                 <HStack spacing={2}>

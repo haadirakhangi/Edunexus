@@ -34,3 +34,5 @@ flask[async]
 pypandoc-binary
 pymongo
 python-pptx
+google-genai
+markdown2

@@ -35,6 +35,7 @@ interface SidebarProps {
     setUploadedImages: React.Dispatch<React.SetStateAction<string[]>>;
     handleSaveLesson: () => Promise<void>;
     handleSaveppt: () => Promise<void>;
+    downloadpdf: () => Promise<void>;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -48,6 +49,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     setUploadedImages,
     handleSaveLesson,
     handleSaveppt,
+    downloadpdf,
 }) => {
     const [activeTabIndex, setActiveTabIndex] = useState<number | null>(null);
     const { register, handleSubmit, reset } = useForm<{ prompt: string }>();
@@ -228,6 +230,21 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <Flex direction="column" align="center">
                             <FaSave style={{ marginBottom: '4px', fontSize: '24px' }} />
                             <Text fontSize="sm">Download PPT</Text>
+                        </Flex>
+                    </Tab>
+                    <Tab
+                        _hover={{ transform: 'scale(1.05)', backgroundColor: 'gray.100', border: 'none' }}
+                        _selected={{ bg: 'purple.500', color: 'white' }}
+                        padding={1}
+                        my={2}
+                        _focus={{ outline: 'none', boxShadow: 'none' }}
+                        width={["80px", "100px", "70px"]}
+                        borderRadius="md"
+                        onClick={() => downloadpdf()}
+                    >
+                        <Flex direction="column" align="center">
+                            <FaSave style={{ marginBottom: '4px', fontSize: '24px' }} />
+                            <Text fontSize="sm">Download PDF</Text>
                         </Flex>
                     </Tab>
                 </TabList>

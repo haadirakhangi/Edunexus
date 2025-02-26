@@ -14,6 +14,8 @@ from core.lab_manual_generator import LabManualGenerator
 from core.evaluator import Evaluator
 from core.recommendation_generator import RecommendationGenerator
 from core.lesson_planner import LessonPlanner
+from core.skills_analyzer import SkillsAnalyzer
+from core.teacher_pdf_generator import MarkdownPdfGenerator
 from server.utils import AssistantUtils
 import os
 
@@ -25,15 +27,18 @@ CLIP_TOKENIZER = AutoTokenizer.from_pretrained(IMAGE_EMBEDDING_MODEL_NAME, clean
 EMBEDDINGS = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
 GEMINI_CLIENT = GeminiProvider()
 TAVILY_CLIENT = TavilyProvider()
+SERPER_CLIENT = SerperProvider()
 TOOLS = [AssistantUtils.get_page_context]
 MODULE_GENERATOR = ModuleGenerator()
 SUB_MODULE_GENERATOR = SubModuleGenerator()
 CONTENT_GENERATOR = ContentGenerator()
 PDF_GENERATOR = PdfGenerator()
+TEACHER_PDF_GENERATOR = MarkdownPdfGenerator()
 LAB_MANUAL_GENERATOR = LabManualGenerator()
 PPT_GENERATOR = PptGenerator()
 QUIZ_GENERATOR = QuizGenerator()
 LESSON_PLANNER = LessonPlanner()
+SKILLS_ANALYZER = SkillsAnalyzer()
 RECOMMENDATION_GENERATOR = RecommendationGenerator()
 EVALUATOR = Evaluator()
 USER_DOCS_PATH = os.path.join('server', 'user_docs')
