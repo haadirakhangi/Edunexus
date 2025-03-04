@@ -724,7 +724,8 @@ def download_ppt():
         markdown_list = ast.literal_eval(lesson.get("markdown_content", []))
         markdown_images_list = json.loads(lesson.get("markdown_images", []))
         presentation_content = PPT_GENERATOR.generate_ppt_content(markdown_list=markdown_list)
-        downloads_path = PPT_GENERATOR.create_presentation(presentation_content, course_name=course_name, lesson_name=lesson_name, markdown_images_list=markdown_images_list)
+        # ppt_gen = PPT_GENERATOR(presentation_content, course_name=course_name, lesson_name=lesson_name, markdown_images_list=markdown_images_list)
+        downloads_path=PPT_GENERATOR.generate_ppt(markdown_list=presentation_content, markdown_images_list=markdown_images_list, course_name=course_name, lesson_name=lesson_name)
         
         return send_file(
             downloads_path,

@@ -36,3 +36,4 @@ pymongo
 python-pptx
 google-genai
 markdown2
+markdown
