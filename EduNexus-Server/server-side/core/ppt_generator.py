@@ -13,6 +13,7 @@ import ast
 import time
 import os
 import random
+from io import BytesIO
 
 class PptGenerator:
     def __init__(self):

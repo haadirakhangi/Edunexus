@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 import time 
+import mimetypes
 load_dotenv()
 os.environ["GOOGLE_API_KEY"] = os.getenv("GEMINI_API_KEY")
 class GeminiProvider:
@@ -82,10 +83,12 @@ class GeminiProvider:
             image1_bytes = f.read()
         with open(image2_path, 'rb') as f:
             image2_bytes = f.read()
+        mime_type1 = mimetypes.guess_type(image1_path)[0] or "application/octet-stream"  
+        mime_type2 = mimetypes.guess_type(image2_path)[0] or "application/octet-stream"
 
         completion = self.gemini_client.models.generate_content(
             model= "gemini-1.5-flash",
-            contents=[prompt, types.Part.from_bytes(data=image1_bytes, mime_type=os.path.splitext(image1_path)[1] ), types.Part.from_bytes(data=image2_bytes, mime_type=os.path.splitext(image2_path)[1] ), prompt],
+            contents=[prompt, types.Part.from_bytes(data=image1_bytes, mime_type=mime_type1), types.Part.from_bytes(data=image2_bytes, mime_type=mime_type2), prompt],
         )
         return completion.text
     

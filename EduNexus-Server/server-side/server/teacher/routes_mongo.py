@@ -702,34 +702,34 @@ def download_ppt():
     if teacher_id is None:
         return jsonify({"message": "Teacher not logged in.", "response": False}), 401
     
-    # try:
-    data : dict = request.get_json()
-    lesson_id = data.get("lesson_id")
-    
-    if not lesson_id:
-        return jsonify({"message": "Lesson ID not provided.", "response": False}), 400
-    
-    lesson : dict = lessons_collection.find_one({"_id": ObjectId(lesson_id)})
-    if not lesson:
-        return jsonify({"message": "Lesson not found.", "response": False}), 404
-    
-    course_id = lesson.get("course_id")
-    course : dict = courses_collection.find_one({"_id": ObjectId(course_id)})
-    if not course:
-        return jsonify({"message": "Course not found.", "response": False}), 404
-    
-    course_name = course.get("course_name", "Default Course")
-    lesson_name = lesson.get("title", "Default Lesson") 
-    lesson_name = re.sub(r'[<>:"/\\|?*]', '_', lesson_name) + ".pptx"
-    markdown_list = ast.literal_eval(lesson.get("markdown_content", []))
-    markdown_images_list = json.loads(lesson.get("markdown_images", []))
-    presentation_content = PPT_GENERATOR.generate_ppt_content(markdown_list=markdown_list)
-    downloads_path = PPT_GENERATOR.create_presentation(presentation_content, course_name=course_name, lesson_name=lesson_name, markdown_images_list=markdown_images_list)
-    
-    return send_file(
-        downloads_path,
-        as_attachment=True,
-    )
+    try:
+        data : dict = request.get_json()
+        lesson_id = data.get("lesson_id")
+        
+        if not lesson_id:
+            return jsonify({"message": "Lesson ID not provided.", "response": False}), 400
+        
+        lesson : dict = lessons_collection.find_one({"_id": ObjectId(lesson_id)})
+        if not lesson:
+            return jsonify({"message": "Lesson not found.", "response": False}), 404
+        
+        course_id = lesson.get("course_id")
+        course : dict = courses_collection.find_one({"_id": ObjectId(course_id)})
+        if not course:
+            return jsonify({"message": "Course not found.", "response": False}), 404
+        
+        course_name = course.get("course_name", "Default Course")
+        lesson_name = lesson.get("title", "Default Lesson") 
+        lesson_name = re.sub(r'[<>:"/\\|?*]', '_', lesson_name) + ".pptx"
+        markdown_list = ast.literal_eval(lesson.get("markdown_content", []))
+        markdown_images_list = json.loads(lesson.get("markdown_images", []))
+        presentation_content = PPT_GENERATOR.generate_ppt_content(markdown_list=markdown_list)
+        downloads_path = PPT_GENERATOR.create_presentation(presentation_content, course_name=course_name, lesson_name=lesson_name, markdown_images_list=markdown_images_list)
+        
+        return send_file(
+            downloads_path,
+            as_attachment=True,
+        )
     
     except Exception as e:
         print(f"Error while creating ppt: {e}")
