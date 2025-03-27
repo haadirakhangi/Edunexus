@@ -74,11 +74,11 @@ const VoiceQuiz = ({ data, trans }) => {
 
     const handleFinish = async () => {
         console.log("Response", responses)
-        const response = await axios.post(`/api/evaluate_quiz/${source_lang}`, { responses });
+        const response = await axios.post(`/api/student/evaluate_quiz/${source_lang}`, { responses });
         const evaluationResponse = response.data;
         console.log("Evaluation Response", evaluationResponse);
         setEvaluation(evaluationResponse);
-        const secondResponse = await axios.post('/api/add_assignment_score', { evaluationResponse });
+        const secondResponse = await axios.post('/api/student/add_assignment_score', { evaluationResponse });
         const secondData = secondResponse.data;
         // Swal.fire({
         //     title: 'Quiz Finished!',
