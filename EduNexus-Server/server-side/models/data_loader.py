@@ -23,7 +23,7 @@ class DocumentLoader:
                 continue_on_failure=True,
             )
         elif input_type=="pdf_and_link":
-            web_loader = loader = WebBaseLoader(
+            web_loader = WebBaseLoader(
                 links,
                 continue_on_failure=True,
             )

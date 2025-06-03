@@ -355,6 +355,7 @@ def user_dashboard():
         student_id = session.get("student_id")
         user_data : dict = std_profile_coll.find_one({"_id": ObjectId(student_id)})
         required_skills = session['required_skills']
+        print(required_skills)
         online_courses = SERPER_CLIENT.find_courses(required_skills)
         if not user_data:
             return jsonify({"error": "User not found"}), 404
