@@ -1,7 +1,9 @@
 # 🧠 EduNexus – AI-Powered Learning & Career Platform
 
 EduNexus is a full-stack application designed to help **students** learn anything, **teachers** generate content easily, and **job seekers** prepare for careers using AI and RAG-based systems.
-Detailed feature descriptions for each can be found [here](https://github.com/haadirakhangi/Edunexus/blob/main/EduNexus-Server/README.md).
+Detailed feature descriptions for each can be found [here](https://github.com/haadirakhangi/Edunexus/blob/main/EduNexus-Server/README.md). 
+
+**Watch the demo video [here](https://youtu.be/bBiEBwCm4q0).**
 
 ---
 ## 🚀 Installation & Setup Guide
