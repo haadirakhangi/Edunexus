@@ -1,40 +1,179 @@
 # EduNexus
 
-## List of Features
+## 👩‍🏫 Teacher Side – Features
 
-1. **Content Update Notification**  
-   Develop a cutting-edge tool that proactively alerts educators to the latest research, trends, and developments within their subject areas, ensuring that teaching materials remain current, relevant, and of the highest quality.
+The Teacher Side of **Edunexus** is designed to empower educators by automating and enhancing the process of creating and delivering structured educational content. Below is a comprehensive list of features:
 
-2. **AI-Driven Student Onboarding**  
-   Create a sophisticated AI-powered chatbot designed to guide new students seamlessly through the onboarding process, providing personalized support and instant answers to questions about campus life, course offerings, and available resources.
+### 📘 Course & Lesson Planning
 
-3. **Placement-Related Innovations**
-   - **AI-Based Mock Interviews:** Design an advanced AI system that simulates mock interviews, delivering real-time, nuanced feedback on answers, body language, and communication skills. This tool will also generate personalized interview questions tailored to specific job roles and individual student resumes, significantly enhancing preparation for job interviews.
-   - **Placement Success Predictor:** Develop a predictive tool that analyzes a student’s academic record, extracurricular activities, and skill set to forecast their likelihood of securing specific job roles, offering insights and recommendations to improve their placement success.
-   - **Customized Learning Resources:** Create AI-driven training modules tailored to the specific requirements of companies and industries that frequently recruit from the institution, ensuring students acquire the precise skills needed for success in their chosen careers.
-   - **Skill Gap Analysis:** Build a tool that identifies gaps between the current skill sets of students and the requirements of potential employers, recommending targeted courses or certifications to bridge these gaps effectively.
+* **Syllabus-Based Course Creation**
+  Teachers can upload a complete syllabus (as PDF or via URLs) to auto-generate a structured lesson plan.
+* **Custom Lesson Setup**
+  Specify lesson count, names, style (e.g. theoretical, mathematical, analytical), and preferred content focus (e.g. include examples, problems, formulae).
 
-4. **Voice-Activated Classroom Assistants**  
-   Develop AI-powered voice assistants that support teachers in managing a range of classroom tasks, from taking notes to answering student queries in real-time, enhancing both teaching efficiency and student engagement.
+---
 
-5. **Real-Time Performance Feedback**  
-   Design an AI tool capable of providing immediate, detailed feedback on student presentations, speeches, and performances, analyzing key aspects such as clarity, grammar, and engagement to foster continuous improvement.
+### 🧠 Multimodal RAG-Based Content Generation
 
-6. **Note-Taking and Study Aids**
-   - **Interactive Flashcards:** Build an AI-driven flashcard system that adapts to a student’s learning progress, intelligently repeating challenging concepts more frequently and introducing new material at the optimal time for retention.
-   - **Automated Note-Taking:** Develop a sophisticated tool that leverages AI to automatically summarize lecture notes, highlighting key concepts and generating study guides that are concise, relevant, and tailored to the student's needs.
+* **Dynamic Knowledge Extraction**
+  Uses a Multimodal Retrieval-Augmented Generation (RAG) pipeline to extract relevant knowledge from documents, web links, and live web searches.
+* **Document Preprocessing**
+  Supports multilingual documents; uses language detection and automatic translation for non-English content.
+* **Parallel Text & Image Processing**
 
-7. **Adaptive Learning Modules**  
-   Create learning modules that dynamically adjust the difficulty of content based on real-time student performance, ensuring that students are consistently challenged but not overwhelmed, leading to a more personalized and effective learning experience.
+  * **Text Vector DB:** Documents are chunked and embedded using Google’s Generative AI embeddings and stored in FAISS.
+  * **Image Vector DB:** Extracted images are processed with CLIP embeddings for semantic search.
+* **Web & Link Support**
+  Teachers can input article links or use integrated web search (via Tavily API) to dynamically pull relevant content.
 
-8. **Personalized Learning Pathways**  
-   Develop an AI system that recommends educational content, including videos, articles, and exercises, precisely tailored to each student's current level of understanding and learning objectives, fostering a more customized educational journey.
+---
 
-9. **Smart Resource Aggregator**  
-   Build a comprehensive AI system that curates and organizes educational content from a wide array of sources, such as online courses, research papers, and academic articles, providing students with a rich, well-structured repository of learning materials.
+### ✍️ Submodule Generation & Editing
 
-10. **AI-Generated and Teacher-Refined Courses**  
-    Initiate the creation of courses using AI, grounded in the syllabus, which are then meticulously refined and fine-tuned by educators to ensure they meet the highest standards of quality and content curation.
+* **Submodule Creation**
+  Course modules are automatically divided into submodules using AI-based segmentation.
+* **Content Synthesis**
+  Combines top-matching text and images via similarity search and LLM-based synthesis.
+* **Visual Enhancements**
 
-11. **Dynamic Labs**  
-    Develop dynamic lab environments that present unique questions for each student, with automated systems for real-time checking and grading, offering an efficient, personalized, and engaging learning experience.
+  * Integrates images from documents, web, or AI-generated visuals using SDXL-Turbo.
+  * Teachers can edit or replace images manually.
+
+---
+
+### 🧪 Lab Manual Generator
+
+* **Component-Based Lab Creation**
+  Teachers select elements like Apparatus, Theory, Procedure, Observations, Results, and Conclusion.
+* **Editable Output**
+  Generated lab manual is displayed in Markdown format and can be downloaded as a Word (.docx) file.
+
+---
+
+### 📊 Presentation Generator
+
+* **Slide Suggestion via AI**
+  Generates slide titles using LLMs based on lesson content.
+* **Content Embedding & Mapping**
+  Retrieves relevant submodule content using vector similarity for each slide.
+* **Image Integration**
+
+  * Auto-generates images using SDXL-Turbo (via image prompts).
+  * If no image is needed, relevant images are scraped from the web.
+
+---
+
+### ☁️ Course Publishing & Sharing
+
+* **Cloud Storage**
+  All created content is stored in MongoDB.
+* **Course Sharing**
+  Courses are shareable with students using a **unique course code**.
+
+---
+
+### 🖼️ Interactive Markdown Editor
+
+* View, edit, and preview lesson material and generated content in real-time using a live Markdown interface.
+
+---
+
+Absolutely! Below are the detailed feature lists in **Markdown format** for both the **Student Side** and **Job Seeker Side** of **Edunexus**, designed to be added directly to your GitHub README.
+
+---
+
+## 🎓 Student Side – Features
+
+The Student Side of **Edunexus** is built to provide inclusive, personalized, and on-demand learning experiences for students of all backgrounds.
+
+### 📚 AI-Powered Course Generation
+
+* **Topic-Based Course Creation**
+  Students can input any topic (technical or non-technical) and generate a full course, including syllabus, lesson plans, and structured content.
+* **Web-Supported Generation**
+  If the AI model lacks specific training data, advanced web scraping fills in gaps to create a comprehensive course.
+* **Multi-Domain Coverage**
+  Supports a wide range of domains—from STEM to humanities, business, and niche topics.
+
+---
+
+### 🧠 Personalized Recommendation System
+
+* **AI-Generated Initial Recommendations**
+  Initial courses are recommended using generative AI and stored in the database.
+* **Contextual Similarity Matching**
+  Uses DistilRoBERTa embeddings + cosine similarity to match students' learning interests with relevant modules.
+* **Search-Aware Suggestions**
+  Learning behavior and search queries are tracked to generate smarter, real-time suggestions.
+
+---
+
+### 💬 Context-Aware Virtual Assistant
+
+* **Real-Time Help**
+  Integrated virtual assistant understands the current lesson/module and offers contextual doubt-solving.
+* **Topic-Aware Query Resolution**
+  The assistant is trained to answer lesson-specific queries with clarity and relevance.
+
+---
+
+### 📥 Course Access via Code
+
+* **Teacher-Generated Course Import**
+  Students can enter a unique course code to instantly access and enroll in teacher-generated structured content.
+
+---
+
+### 🎯 Inclusive & Accessible Learning
+
+* **Free & Personalized**
+  Caters to economically weaker sections by offering generative educational content at no cost.
+* **Dynamic Curriculum**
+  Personalized and non-static curriculum adapts to each learner's goals and pace.
+
+---
+
+## 💼 Job Seeker Side – Features
+
+The Job Seeker Side of **Edunexus** is designed to guide students from learning to employability by analyzing skills and providing personalized upskilling paths.
+
+### 📝 Intelligent Onboarding
+
+* **Welcome Survey**
+  Collects data on user’s background, current skills, interests, motivations, and long-term career goals.
+
+---
+
+### 🧪 Skill Assessment Engine
+
+* **Hard Skill Evaluation**
+  Topic-based quizzes test technical and domain-specific knowledge.
+* **Soft Skill Simulation**
+  Real-world scenarios assess communication, leadership, crisis handling, and interpersonal skills.
+
+---
+
+### 🧩 AI-Powered Skill Gap Analysis
+
+* **Role Matching Engine**
+  Identifies suitable job roles based on current skills, career goals, and market trends.
+* **Gap Identification**
+  Compares existing vs. required skills and creates a personalized upskilling journey.
+
+---
+
+### 🎓 Learning Path Generation
+
+* **Modular Course Roadmaps**
+  Breaks required skills into manageable modules tailored to the user's goals.
+* **Content Curation**
+  Recommends top-rated courses from Coursera, Udemy, UpGrad, etc., and includes mentor-created content from Edunexus creators.
+
+---
+
+### 🧪 Job-Role Simulations
+
+* **Real-World Role Practice**
+  Simulates day-to-day tasks in specific job roles to help students gain hands-on, experiential knowledge.
+* **Interview Preparedness**
+  Familiarizes students with responsibilities and expectations before they enter the workforce.
