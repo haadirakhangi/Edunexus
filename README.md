@@ -77,7 +77,13 @@ Make sure you have:
    npm install
    ```
 
-3. **Run the frontend dev server:**
+3. **Set environment variables:**
+
+   ```bash
+   VITE_GEMINI_API_KEY=your_gemini_key
+   ```
+   
+4. **Run the frontend dev server:**
 
    ```bash
    npm run dev
